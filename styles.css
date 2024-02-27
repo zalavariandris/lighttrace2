@@ -1,0 +1,11 @@
+canvas{
+    width: 512px;
+    height: 512px;
+    border: 1px solid green;
+    image-rendering: pixelated ;
+}
+
+body{
+    color: rgb(215, 215, 215);
+    background-color: rgb(17, 17, 17);
+}
