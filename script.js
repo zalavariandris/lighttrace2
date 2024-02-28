@@ -1,55 +1,115 @@
 
 // import createREGL from "https://cdnjs.cloudflare.com/ajax/libs/regl/2.1.0/regl.js"
-const regl = createREGL(document.body)
-console.log("COMPID")
+// extract object creators
+import {point, circle, segment} from "https://unpkg.com/@flatten-js/core?module";
 
-// This clears the color buffer to black and the depth buffer to 1
+/*
+Flatten JS
+*/
+// make some construction
+let s1 = segment(10,10,200,200);
+let s2 = segment(10,160,200,30);
+let c = circle(point(200, 110), 50);
+let ip = s1.intersect(s2);
 
-// In regl, draw operations are specified declaratively using. Each JSON
-// command is a complete description of all state. This removes the need to
-// .bind() things like buffers or shaders. All the boilerplate of setting up
-// and tearing down state is automated.
-const drawBunny = regl({
-    // In a draw call, we can pass the shader source code to regl
-    frag: `
-    precision mediump float;
-    uniform vec4 color;
+/*
+Flatten to D3js
+*/
 
-    uniform float time;
-    void main () {
-        gl_FragColor = color;
-    }`,
+/*
+reGL
+*/
+const regl = createREGL(document.getElementById("regl"))
+console.log("COMPILED")
 
-    vert: `
-    precision mediump float;
-    attribute vec2 position;
-    void main () {
-        gl_Position = vec4(position, 0, 1);
-    }`,
 
-    attributes: {
-        position: ({tick})=>{
-            const speed = 100;
-            let x = Math.sin(tick*0.001*speed);
-            x = Math.sin(x*0.5)*0.5;
-            return [
-                [x, 0],
-                [0, -1],
-                [1, 1]
-            ]
-        }
-    },
 
-    uniforms: {
-        color: ({tick})=>{
-            let t = tick;
-            t = Date.now()*0.001;
-            return [Math.sin(t), 0,0, 1]
-        }
-    },
+function intersect_circle(ray, circle){
 
-    count: 3
-})
+}
+
+function intersect_rectangle(ray, rectangle){
+
+}
+
+const drawRectangle = function({cx=0.0, cy=0.0, w=0.5,h=0.5,color=[1,1,1,1]}={}){
+    const draw = regl({
+        // In a draw call, we can pass the shader source code to regl
+        frag: `
+        precision mediump float;
+        uniform vec4 color;
+
+        uniform float time;
+        void main () {
+            gl_FragColor = color;
+        }`,
+
+        vert: `
+        precision mediump float;
+        attribute vec2 position;
+        void main () {
+            gl_Position = vec4(position, 0, 1);
+        }`,
+
+        uniforms: {
+            color: color
+        },
+
+        attributes:{
+            position:(ctx)=>{
+                return [[-w/2, +h/2], [+w/2, +h/2], [+w/2, -h/2], [-w/2, -h/2]]
+            }
+        },
+        elements:[[2, 1, 0], [2, 0, 3]],
+    })
+    draw();
+}
+
+const drawCircle = function({cx=0.0, cy=0.0, r=0.5, segs=64,color=[1,1,1,1]}={}){
+    let positions = [[0,0]]
+    for(let i=0;i<segs;i++){
+        const a = i/segs*Math.PI*2;
+        const [x, y] = [Math.cos(a), Math.sin(a)];
+        positions.push([x*r,y*r])
+    }
+    positions.push([r,0])
+
+    // positions = [[-0.5, +0.5], [+0.5, +0.5], [+0.5, -0.5], [-0.5, -0.5]]
+
+    const draw = regl({
+        // In a draw call, we can pass the shader source code to regl
+        frag: `
+        precision mediump float;
+        uniform vec4 color;
+
+        uniform float time;
+        void main () {
+            gl_FragColor = color;
+        }`,
+
+        vert: `
+        precision mediump float;
+        attribute vec2 position;
+        void main () {
+            gl_Position = vec4(position, 0, 1);
+        }`,
+
+        uniforms: {
+            color: color
+        },
+
+        attributes:{
+            position: positions
+        },
+        count:positions.length-0,
+        primitive: 'triangle fan',
+    })
+    draw();
+}
+
+function drawRays(){
+
+}
 
 regl.frame(() => {
     regl.clear({
@@ -57,5 +117,6 @@ regl.frame(() => {
         color: [0.1, 0.1, 0, 1]
     })
 
-    drawBunny()
+    drawRectangle({w:0.5, h:0.5, color: [0.8,0.2,0.2,1.0]})
+    drawCircle({r:0.5, color: [0.0,0.1,0.2,1.0]})
 })

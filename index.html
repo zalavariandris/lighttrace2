@@ -12,19 +12,21 @@
         "three": "https://unpkg.com/three@0.161.0/build/three.module.js",
         "three/addons/": "https://unpkg.com/three@0.161.0/examples/jsm/",
         "react": "https://unpkg.com/react@18/umd/react.development.js",
-        "react-dom": "https://unpkg.com/react-dom@18/umd/react-dom.development.js",
-
+        "react-dom": "https://unpkg.com/react-dom@18/umd/react-dom.development.js"
       }
     }
   </script>
   
-<script src="https://cdnjs.cloudflare.com/ajax/libs/regl/2.1.0/regl.js" integrity="sha512-FgmtfNZApTrLMIs/sEBR+RjqVxVqJM7iloUqYLlp2YFFqn7zyDVJ8FllBZMBMHKc2mAXZQ+lLy2ZizpXmI5PdA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/regl/2.1.0/regl.js" integrity="sha512-FgmtfNZApTrLMIs/sEBR+RjqVxVqJM7iloUqYLlp2YFFqn7zyDVJ8FllBZMBMHKc2mAXZQ+lLy2ZizpXmI5PdA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </head>
 
 <body>
   <h1>Light Tracer 2D v2</h1>
   
-  <main id="root"></main>
+  <main id="root">
+    <canvas id="regl"></canvas>
+    <canvas id="d3"></canvas>
+  </main>
   <script type="module" src="script.js"></script>
 </body>
 
