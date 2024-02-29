@@ -307,10 +307,12 @@
 				window.addEventListener("mousemove", (e)=>this.handleMouseMove(e));
 				window.addEventListener("mouseup", (e)=>this.handleMouseUp(e));
 				event.preventDefault(); // prevent text selection when dragging
+				event.stopPropagation();
 			}
 			
 			handleMouseUp(event){
 				this.setState({"isDragging": false})
+				// event.stopPropagation();
 			}
 			
 			handleMouseMove(event){
@@ -345,6 +347,7 @@
 					})
 					this.props.onDrag(dx, dy);
 				}
+				// event.stopPropagation();
 			}
 			
 			render(){
@@ -425,20 +428,6 @@
 			const [lights, setLights] = React.useState([
 				P(20,110)
 			])
-
-			const svgRef = React.useRef();
-			const [viewBox, setViewBox] = React.useState("0 0 512 512");
-			function handle_resize(){
-				if(svgRef.current != null){
-					const width = svgRef.current.clientWidth;
-					const height = svgRef.current.clientHeight;
-					setViewBox(0+" "+0+" "+width+" "+height);
-				}
-			}
-			React.useEffect(()=>{
-				handle_resize()
-				window.addEventListener("resize", handle_resize);
-			})
 			
 			// shot rays from light sources
 			const count = 100;
@@ -452,7 +441,6 @@
 				})
 			}).flat(1)
 			
-
 			function move_light(light, dx, dy){
 				const i = lights.indexOf(light);
 				let new_lights = lights.map((l)=>light.copy());
@@ -520,16 +508,107 @@
 			}
 			all_rays = all_rays.filter((ray)=>ray != null);
 			
+
+			const svgRef = React.useRef();
+			// const [viewBox, setViewBox] = React.useState("0 0 512 512");
+			const [viewBox, setViewBox] = React.useState({x:0,y:0,w:512,h:512});
+			function viewboxString(viewBox){
+				return viewBox.x+" "+viewBox.y+" "+viewBox.w+" "+viewBox.h;
+			}
+			
+			function handle_resize(){
+				if(svgRef.current != null){
+					const width = svgRef.current.clientWidth;
+					const height = svgRef.current.clientHeight;
+					setViewBox({x:0,y:0,w:width,h:height});
+				}
+			}
+			React.useEffect(()=>{
+				// handle_resize()
+				window.addEventListener("resize", handle_resize);
+			})
+			// var viewBox = {x:0,y:0,w:svgImage.clientWidth,h:svgImage.clientHeight};
+			// svgImage.setAttribute('viewBox', `${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`);
+			// const svgSize = {w:svgImage.clientWidth,h:svgImage.clientHeight};
+
+			let [isPanning, setIsPanning] = React.useState(false)
+			console.log(isPanning)
+			let [startPoint, setStartPoint] = React.useState({x:0,y:0});
+			let [endPoint, setEndPoint] = React.useState({x:0,y:0});
+			let [scale, setScale] = React.useState(1);
+
+			function onmousewheel(e) {
+				console.log(viewBox, e)
+				e.preventDefault();
+				const clientSize = {w: svgRef.current.clientWidth, h: svgRef.current.clientHeight}
+				var w = viewBox.w;
+				var h = viewBox.h;
+				var mx = e.clientX;//mouse x  
+				var my = e.clientY;
+				var dw = w*e.deltaY*0.01*-0.05;
+				var dh = h*e.deltaY*0.01*-0.05;
+				var dx = dw*mx/clientSize.w;
+				var dy = dh*my/clientSize.h;
+				const newViewbox = {x:viewBox.x+dx,y:viewBox.y+dy,w:viewBox.w-dw,h:viewBox.h-dh}
+				setViewBox(newViewbox);
+				setScale( clientSize.w/viewBox.w)
+				// zoomValue.innerText = `${Math.round(scale*100)/100}`;
+				// svgImage.setAttribute('viewBox', `${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`);
+			}
+
+
+			function onmousedown(e){
+				setIsPanning(true)
+				setStartPoint({x:e.clientX,y:e.clientY})
+				setEndPoint({x:e.clientX,y:e.clientY});
+				console.log(startPoint, endPoint)
+				e.preventDefault();
+			}
+
+			function onmousemove(e){
+				if (isPanning){
+					console.log(e)
+					const clientSize = {w: svgRef.current.clientWidth, h: svgRef.current.clientHeight}
+					let scale = clientSize.w/viewBox.w;
+					setEndPoint({x:e.clientX,y:e.clientY});
+					var dx = (startPoint.x - e.clientX)/scale;
+					var dy = (startPoint.y - e.clientY)/scale;
+					setStartPoint({x:e.clientX,y:e.clientY})
+					var movedViewBox = {x:viewBox.x+dx,y:viewBox.y+dy,w:viewBox.w,h:viewBox.h};
+					setViewBox(movedViewBox);
+				}
+			}
+
+			function onmouseup(e){
+				console.log(e)
+				if (isPanning){
+					const clientSize = {w: svgRef.current.clientWidth, h: svgRef.current.clientHeight}
+					let scale = clientSize.w/viewBox.w;
+					setEndPoint({x:e.clientX,y:e.clientY});
+					var dx = (startPoint.x - endPoint.x)/scale;
+					var dy = (startPoint.y - endPoint.y)/scale;
+					
+					const newViewBox = {x:viewBox.x+dx,y:viewBox.y+dy,w:viewBox.w,h:viewBox.h};
+					setViewBox(newViewBox);
+					setIsPanning(false)
+				}
+			}
+
+			function onmouseleave(e){
+				isPanning = false;
+			}
+
 			return (
 			<div>
 				<section>
 					<h3>Lights</h3>
 					<ul>
-						{lights.map(light => (
-							<li>{light.x}, {light.y}</li>
-							))}
-						</ul>
-					</section>
+					{lights.map(light => (
+						<li>{light.x}, {light.y}</li>
+						))}
+					</ul>
+
+				</section>
 					<section>
 						<h3>Shapes</h3>
 						<ul>
@@ -538,7 +617,15 @@
 								))}
 							</ul>
 						</section>
-						<svg ref={svgRef} viewBox={viewBox} preserveAspectRatio="none">
+						<div>viewbox: {viewboxString(viewBox)}</div>
+						<svg ref={svgRef} 
+							 viewBox={viewboxString(viewBox)}
+							 onMouseDown={onmousedown}
+							 onWheel={onmousewheel}
+							 onMouseMove={onmousemove}
+							 onMouseUp={onmouseup}
+							 onmouseleave={onmouseleave}
+							 preserveAspectRatio="none">
 							
 							<g className="circles">
 								{shapes.filter(shape=>shape instanceof Circle).map(shape => (
