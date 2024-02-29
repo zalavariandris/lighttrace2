@@ -21,6 +21,11 @@
 	<style>
 		svg{
 			background-color: #59D5E0;
+			position: fixed;
+			left: 10vw;
+			top:10vh;
+			width: 80vw;
+			height: 80vh;
 		}
 		svg .lightpath{
 			stroke: orange;
@@ -336,6 +341,56 @@
 				)
 			}  
 		}
+
+		function raytrace(rays, shapes){
+			// find intersections
+			let intersections = []
+			let secondaries = []
+			for(let primary of rays)
+			{
+				if(primary == null){
+					secondaries = [...secondaries, ...[null]]
+					continue;
+				}
+				
+				let ray_intersections = [];
+				for(let shape of shapes)
+				{
+					let shape_intersections = []
+					
+					if(shape instanceof Circle){
+						shape_intersections = [...shape_intersections, ...primary.intersectCircle(shape)];
+					} 
+					else if(shape instanceof Rectangle){
+						shape_intersections = [...shape_intersections, ...primary.intersectRectangle(shape)];
+					} else if(shape instanceof LineSegment){
+						shape_intersections = [...shape_intersections, ...primary.intersectLineSegment(shape)];
+					} 
+					ray_intersections = [...ray_intersections, ...shape_intersections];
+					
+				}
+				
+				if(ray_intersections.length>0)
+				{
+					// find closest interseciont
+					let closest = ray_intersections.reduce((a, b) => primary.origin.distance(a.origin) < primary.origin.distance(b.origin) ? a : b);
+					ray_intersections.push(closest)
+					
+					// reflect ray on intersection
+					const reflected_rays = [closest].map((i)=>{
+						const secondary_dir = primary.direction.reflect(i.direction)
+						return new Ray(i.origin, secondary_dir.normalized(100));
+					});
+					
+					secondaries = [...secondaries, ...reflected_rays]
+				}else[
+				secondaries = [...secondaries, ...[null]]
+				]
+			}
+			
+			// intersections
+			return [secondaries, intersections];
+		}
 		
 		function App(){
 			const [shapes, setShapes] = React.useState([
@@ -347,8 +402,22 @@
 			]);
 			
 			const [lights, setLights] = React.useState([
-			P(20,110)
+				P(20,110)
 			])
+
+			const svgRef = React.useRef();
+			const [viewBox, setViewBox] = React.useState("0 0 512 512");
+			function handle_resize(){
+				if(svgRef.current != null){
+					const width = svgRef.current.clientWidth;
+					const height = svgRef.current.clientHeight;
+					setViewBox(0+" "+0+" "+width+" "+height);
+				}
+			}
+			React.useEffect(()=>{
+				handle_resize()
+				window.addEventListener("resize", handle_resize);
+			})
 			
 			// shot rays from light sources
 			const count = 100;
@@ -365,55 +434,7 @@
 			
 			
 			
-			function raytrace(rays, shapes){
-				// find intersections
-				let intersections = []
-				let secondaries = []
-				for(let primary of rays)
-				{
-					if(primary == null){
-						secondaries = [...secondaries, ...[null]]
-						continue;
-					}
-					
-					let ray_intersections = [];
-					for(let shape of shapes)
-					{
-						let shape_intersections = []
-						
-						if(shape instanceof Circle){
-							shape_intersections = [...shape_intersections, ...primary.intersectCircle(shape)];
-						} 
-						else if(shape instanceof Rectangle){
-							shape_intersections = [...shape_intersections, ...primary.intersectRectangle(shape)];
-						} else if(shape instanceof LineSegment){
-							shape_intersections = [...shape_intersections, ...primary.intersectLineSegment(shape)];
-						} 
-						ray_intersections = [...ray_intersections, ...shape_intersections];
-						
-					}
-					
-					if(ray_intersections.length>0)
-					{
-						// find closest interseciont
-						let closest = ray_intersections.reduce((a, b) => primary.origin.distance(a.origin) < primary.origin.distance(b.origin) ? a : b);
-						ray_intersections.push(closest)
-						
-						// reflect ray on intersection
-						const reflected_rays = [closest].map((i)=>{
-							const secondary_dir = primary.direction.reflect(i.direction)
-							return new Ray(i.origin, secondary_dir.normalized(100));
-						});
-						
-						secondaries = [...secondaries, ...reflected_rays]
-					}else[
-					secondaries = [...secondaries, ...[null]]
-					]
-				}
-				
-				// intersections
-				return [secondaries, intersections];
-			}
+			
 			
 			
 			
@@ -503,7 +524,7 @@
 								))}
 							</ul>
 						</section>
-						<svg width="1024" height="1024">
+						<svg ref={svgRef} viewBox={viewBox} preserveAspectRatio="none">
 							
 							<g className="circles">
 								{shapes.filter(shape=>shape instanceof Circle).map(shape => (
