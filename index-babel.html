@@ -143,8 +143,6 @@
 					return new Vector(-ray.x, -ray.y);
 				}
 				
-				console.log(dotProduct);
-				
 				// Calculate the reflected vector
 				const reflectedX = ray.x - 2 * dotProduct * normalizedNormal.x;
 				const reflectedY = ray.y - 2 * dotProduct * normalizedNormal.y;
@@ -316,14 +314,32 @@
 			}
 			
 			handleMouseMove(event){
-				if (this.state.isDragging) { 
-					const mx = event.clientX; 
-					const my = event.clientY; 
-					const dx = mx-this.state.prevX;
-					const dy = my-this.state.prevY;
+				let svg = event.target.closest("SVG")
+				
+
+				// Get point in global SVG space
+				function cursorPoint(evt){
+					pt.x = evt.clientX; pt.y = evt.clientY;
+					return 
+				}
+
+
+				if (this.state.isDragging) {
+					let mousepos = svg.createSVGPoint();
+					mousepos.x = event.clientX; 
+					mousepos.y = event.clientY; 
+					mousepos = mousepos.matrixTransform(svg.getScreenCTM().inverse());
+
+					let prevmousepos = svg.createSVGPoint();
+					prevmousepos.x = this.state.prevX;
+					prevmousepos.y = this.state.prevY;
+					prevmousepos = prevmousepos.matrixTransform(svg.getScreenCTM().inverse());
+
+					const dx = mousepos.x-prevmousepos.x;
+					const dy = mousepos.y-prevmousepos.y;
 					this.setState({
-						prevX: mx,
-						prevY: my,
+						prevX: event.clientX,
+						prevY: event.clientY,
 						// x: this.state.x+dx,
 						// y: this.state.y+dy
 					})
@@ -332,6 +348,11 @@
 			}
 			
 			render(){
+				// Create an SVGPoint for future math
+
+				// const svg = svgRef.current;
+
+				
 				return (
 				<g className="draggable" onMouseDown={(e)=>this.handleMouseDown(e)} >
 					<g>
@@ -422,7 +443,6 @@
 			// shot rays from light sources
 			const count = 100;
 			const angles = Array.from({length:count},(v,k)=>k/count*Math.PI*2)
-			console.log(angles)
 			const rays = lights.map((light_pos)=>{
 				return angles.map((a)=>{
 					const x = Math.cos(a);
@@ -432,18 +452,12 @@
 				})
 			}).flat(1)
 			
-			
-			
-			
-			
-			
-			
+
 			function move_light(light, dx, dy){
 				const i = lights.indexOf(light);
 				let new_lights = lights.map((l)=>light.copy());
 				new_lights[i].x+=dx
 				new_lights[i].y+=dy;
-				console.log(new_lights)
 				setLights(new_lights);
 			}
 			
