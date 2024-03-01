@@ -29,19 +29,23 @@
 		}
 		svg .lightpath{
 			stroke: orange;
-			opacity: 1;
+			opacity: 0.3;
 		}
 		
 		svg .lightsource{
 			stroke: #FAA300;
 			fill: #F5DD61;
+			stroke-width: 1;
 		}
 		
 		svg .shape{
 			fill: #F4538A;
 			stroke: rgb(252, 252, 252);
-			stroke-width: 3;
+			stroke-width: 1;
 			/* stroke: black; */
+		}
+		svg .shape:hover, svg .lightsource:hover{
+			stroke-width: 2;
 		}
 	</style>
 </head>
@@ -178,16 +182,31 @@
 				
 				const t1 = (-b + Math.sqrt(discriminant)) / (2 * a);
 				const t2 = (-b - Math.sqrt(discriminant)) / (2 * a);
+
+
+				const insideCircle = d.magnitude() < circle.radius;
+
+				if(insideCircle)
+				{
+					return []
+					const exitT = Math.max(t1, t2);
+					if (exitT < 0) {
+						return [];
+					}
+					const exitOrigin = P(this.origin.x + exitT * this.direction.x, this.origin.y + exitT * this.direction.y);
+					const exitDirection = V(exitOrigin.x - circle.center.x, exitOrigin.y - circle.center.y).normalized();
+					return [new Ray(exitOrigin, exitDirection)];
+				}else{
+					const t = Math.min(t1, t2);
 				
-				const t = Math.min(t1, t2);
-				
-				if (t < 0) {
-					return [];
+					if (t < 0) {
+						return [];
+					}
+					const origin = P(this.origin.x + t * this.direction.x, this.origin.y + t * this.direction.y);
+					const direction = V(origin.x - circle.center.x, origin.y - circle.center.y).normalized();
+					
+					return [new Ray(origin, direction)];
 				}
-				const origin = P(this.origin.x + t * this.direction.x, this.origin.y + t * this.direction.y);
-				const direction = V(origin.x - circle.center.x, origin.y - circle.center.y).normalized();
-				
-				return [new Ray(origin, direction)];
 			}
 			
 			intersectLineSegment(lineSegment) {
@@ -627,6 +646,7 @@
 							 onmouseleave={onmouseleave}
 							 preserveAspectRatio="none">
 							
+
 							<g className="circles">
 								{shapes.filter(shape=>shape instanceof Circle).map(shape => (
 									<Draggable onDrag={(dx, dy)=>move_shape(shape, dx, dy)}>
@@ -691,6 +711,8 @@
 										</Draggable>
 										))}
 									</g>
+
+
 								</svg>
 							</div>
 							);
