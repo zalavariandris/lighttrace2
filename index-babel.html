@@ -26,6 +26,7 @@
 			top:10vh;
 			width: 80vw;
 			height: 80vh;
+			z-index: -1;
 		}
 		svg .lightpath{
 			stroke: orange;
@@ -116,6 +117,10 @@
 			magnitude() {
 				return Math.sqrt(this.x * this.x + this.y * this.y);
 			}
+
+			multiply(value){
+				return new Vector(this.x * value, this.y * value);
+			}
 			
 			normalize(value=1.0) {
 				const magnitude = this.magnitude();
@@ -170,12 +175,15 @@
 			intersectCircle(circle)
 			{
 				// 
-				const d = new Vector(this.origin.x - circle.center.x, this.origin.y - circle.center.y);
+				const d = new Vector(this.origin.x - circle.center.x, this.origin.y - circle.center.y); // to circle
+
+				const dotProduct = this.direction.dotProduct(d.normalized());
 				const a = this.direction.dotProduct(this.direction);
 				const b = 2 * this.direction.dotProduct(d);
 				const c = d.dotProduct(d) - circle.radius * circle.radius;
 				const discriminant = b * b - 4 * a * c;
 				
+				// console.log(discriminant)
 				if (discriminant < 0) {
 					return [];
 				}
@@ -184,31 +192,45 @@
 				const t2 = (-b - Math.sqrt(discriminant)) / (2 * a);
 
 
-				const insideCircle = d.magnitude() < circle.radius;
+				// const insideCircle = new Vector(this.origin.x-circle.center.x, this.origin.y-circle.center.y).magnitude()<(circle.radius+EPSILON);
+				const outsideCircle = new Vector(this.origin.x-circle.center.x, this.origin.y-circle.center.y).magnitude()>(circle.radius+EPSILON);
 
-				if(insideCircle)
-				{
-					return []
-					const exitT = Math.max(t1, t2);
-					if (exitT < 0) {
-						return [];
-					}
-					const exitOrigin = P(this.origin.x + exitT * this.direction.x, this.origin.y + exitT * this.direction.y);
-					const exitDirection = V(exitOrigin.x - circle.center.x, exitOrigin.y - circle.center.y).normalized();
-					return [new Ray(exitOrigin, exitDirection)];
-				}else{
+				if(outsideCircle){
+					// return []
 					const t = Math.min(t1, t2);
-				
-					if (t < 0) {
+					console.log("outside", t)
+					if (t < EPSILON)
+					{
 						return [];
 					}
 					const origin = P(this.origin.x + t * this.direction.x, this.origin.y + t * this.direction.y);
 					const direction = V(origin.x - circle.center.x, origin.y - circle.center.y).normalized();
 					
-					return [new Ray(origin, direction)];
+					return [new Ray(origin, direction.multiply(1))];
+
+					return []
+				}else{
+					
+					const t = Math.max(t1, t2);
+					console.log("inside", t)
+					if (t < EPSILON)
+					{
+						return [];
+					}
+					const origin = P(this.origin.x + t * this.direction.x, this.origin.y + t * this.direction.y);
+					// origin = P(10,10)
+
+					const direction = V(origin.x - circle.center.x, origin.y - circle.center.y).normalized();
+					
+					return [new Ray(origin, direction.multiply(1))];
 				}
+
+
+
+				return []
+
 			}
-			
+
 			intersectLineSegment(lineSegment) {
 				const ray = this;
 				const rayOrigin = ray.origin;
@@ -267,6 +289,7 @@
 				return [];
 			}
 			
+			
 			intersectRectangle(rectangle) {
 				
 				const top = rectangle.center.y+rectangle.height/2
@@ -293,18 +316,11 @@
 				}
 				return intersections;
 			}
-			
-			
-			
-			
 		}
-		
-		
 		function P(x,y){return new Point(x,y)}
 		function V(x,y){return new Vector(x,y)}
-		
-		//  wrapping it in parentheses to avoid the pitfalls of automatic semicolon insertion.
-		
+	</script>
+	<script type="text/babel">
 		class Draggable extends React.Component{
 			constructor(props){
 				super(props);
@@ -437,16 +453,18 @@
 		
 		function App(){
 			const [shapes, setShapes] = React.useState([
-			new Circle(P(200, 120), 50),
-			new Circle(P(520, 550), 100),
-			new Circle(P(120, 380), 80),
-			new Rectangle(P(700,700), 200,200),
-			new LineSegment(P(200, 200), P(300, 130)),
+				new Circle(P(200, 120), 50),
+				// new Circle(P(520, 550), 100),
+				// new Circle(P(120, 380), 80),
+				new Rectangle(P(700,700), 200,200),
+				new LineSegment(P(200, 200), P(300, 130)),
 			]);
 			
 			const [lights, setLights] = React.useState([
 				P(20,110)
 			])
+
+			const [maxBounce, setMaxBounce] = React.useState(3)
 			
 			// shot rays from light sources
 			const count = 100;
@@ -497,7 +515,7 @@
 			let current_rays = [...rays];
 			let all_rays = [...current_rays]
 			const path_count = rays.length
-			for(let i=0; i<6; i++){
+			for(let i=0; i<maxBounce; i++){
 				let [secondary, intersections] = raytrace(current_rays, shapes);
 				
 				
@@ -551,13 +569,11 @@
 			// const svgSize = {w:svgImage.clientWidth,h:svgImage.clientHeight};
 
 			let [isPanning, setIsPanning] = React.useState(false)
-			console.log(isPanning)
 			let [startPoint, setStartPoint] = React.useState({x:0,y:0});
 			let [endPoint, setEndPoint] = React.useState({x:0,y:0});
 			let [scale, setScale] = React.useState(1);
 
 			function onmousewheel(e) {
-				console.log(viewBox, e)
 				e.preventDefault();
 				const clientSize = {w: svgRef.current.clientWidth, h: svgRef.current.clientHeight}
 				var w = viewBox.w;
@@ -631,11 +647,15 @@
 					<section>
 						<h3>Shapes</h3>
 						<ul>
-							{shapes.map(shape => (
-								<li>{shape.constructor.name}</li>
-								))}
-							</ul>
-						</section>
+						{shapes.map(shape => (
+							<li>{shape.constructor.name}</li>
+							))}
+						</ul>
+					</section>
+					<section>
+						<h3>Raytrace</h3>
+						<input type="range" min="1" max="10" value={maxBounce} onInput={(e)=>setMaxBounce(e.target.value)}></input><span>{maxBounce}</span>
+					</section>
 						<div>viewbox: {viewboxString(viewBox)}</div>
 						<svg ref={svgRef} 
 							 viewBox={viewboxString(viewBox)}
@@ -643,7 +663,7 @@
 							 onWheel={onmousewheel}
 							 onMouseMove={onmousemove}
 							 onMouseUp={onmouseup}
-							 onmouseleave={onmouseleave}
+							 onMouseLeave={onmouseleave}
 							 preserveAspectRatio="none">
 							
 
