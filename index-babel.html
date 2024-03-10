@@ -18,19 +18,21 @@
 	<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
 	<script type="text/javascript" src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/regl/2.1.0/regl.js" integrity="sha512-FgmtfNZApTrLMIs/sEBR+RjqVxVqJM7iloUqYLlp2YFFqn7zyDVJ8FllBZMBMHKc2mAXZQ+lLy2ZizpXmI5PdA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
 	<style>
 		svg{
-			background-color: #59D5E0;
-			position: fixed;
+			/* background-color: #59D5E0; */
+			/* position: fixed;
 			left: 10vw;
 			top:10vh;
 			width: 80vw;
 			height: 80vh;
-			z-index: -1;
+			z-index: -1; */
 		}
 		svg .lightpath{
 			stroke: orange;
 			opacity: 0.3;
+			display: none;
 		}
 		
 		svg .lightsource{
@@ -48,6 +50,32 @@
 		svg .shape:hover, svg .lightsource:hover{
 			stroke-width: 2;
 		}
+
+		#info{
+			background-color: white;
+			position: fixed;
+			bottom: 0;
+			left: 0;
+		}
+
+		#controls{
+			position: fixed;
+			top:0;
+			right: 0;
+			background-color: white;
+		}
+
+		canvas.viewport, svg.viewport{
+			position: fixed;
+			z-index: -1;
+			left: 0;
+			top: 0;
+			width: 100vw;
+			height: 100vh;
+
+			/* width: 45vw;
+			height: 512px; */
+		}
 	</style>
 </head>
 
@@ -57,8 +85,13 @@
 		<div id="root">
 		</div>
 	</main>
-	
+	<script type="module">
+		import {vec2, glMatrix, mat4} from 'https://cdn.jsdelivr.net/npm/gl-matrix@3.4.3/+esm'
+		window.glMatrix = glMatrix
+		window.mat4 = mat4;
+	</script>
 	<script type="text/babel">
+			
 		// Define an epsilon value
 		const EPSILON = 1e-6;
 
@@ -105,6 +138,7 @@
 				return Math.sqrt(dx * dx + dy * dy);
 			}
 		}
+		
 		class Vector{
 			constructor(x,y){this.x=x; this.y=y;}
 			copy(other){
@@ -198,7 +232,7 @@
 				if(outsideCircle){
 					// return []
 					const t = Math.min(t1, t2);
-					console.log("outside", t)
+					// console.log("outside", t)
 					if (t < EPSILON)
 					{
 						return [];
@@ -212,7 +246,7 @@
 				}else{
 					
 					const t = Math.max(t1, t2);
-					console.log("inside", t)
+					// console.log("inside", t)
 					if (t < EPSILON)
 					{
 						return [];
@@ -326,7 +360,6 @@
 				super(props);
 				this.state = {
 					isDragging: false,
-					// x:50,y:50,
 					prevX: 0,
 					prevY: 0
 				}
@@ -392,14 +425,528 @@
 
 				
 				return (
-				<g className="draggable" onMouseDown={(e)=>this.handleMouseDown(e)} >
-					<g>
-						{this.props.children}
+					<g className="draggable" onMouseDown={(e)=>this.handleMouseDown(e)}>
+						<g>
+							{this.props.children}
+						</g>
 					</g>
-				</g>
 				)
 			}  
 		}
+
+		class SVGViewport extends React.Component{
+			constructor({...props}){
+				super(props);
+				this.svgRef = React.createRef();
+				this.isPanning = false;
+				this.startPoint = {x:0,y:0};
+				this.endPoint = {x:0,y:0};
+				this.scale = 1;
+			}
+
+			onmousewheel(e)
+			{
+				let viewBox = this.props.viewBox;
+				const clientSize = {w: this.svgRef.current.clientWidth, h: this.svgRef.current.clientHeight}
+				var w = viewBox.w;
+				var h = viewBox.h;
+				var mx = e.clientX;//mouse x  
+				var my = e.clientY;
+				var dw = w*e.deltaY*0.01*-0.05;
+				var dh = h*e.deltaY*0.01*-0.05;
+				var dx = dw*mx/clientSize.w;
+				var dy = dh*my/clientSize.h;
+				const newViewBox = {
+					x:viewBox.x+dx,
+					y:viewBox.y+dy,
+					w:viewBox.w-dw,
+					h:viewBox.h-dh
+				}
+
+				this.props.onViewChange(viewBox)
+				this.scale = clientSize.w/viewBox.w
+
+
+				this.props.onViewChange(newViewBox)
+			}
+
+			onmousedown(e)
+			{
+				this.isPanning = true,
+				this.startPoint = {x:e.clientX,y:e.clientY},
+				this.endPoint = {x:e.clientX,y:e.clientY}
+
+				e.preventDefault();
+			}
+
+			onmousemove(e)
+			{
+				if (this.isPanning)
+				{
+					const viewBox = this.props.viewBox;
+					const clientSize = {w: this.svgRef.current.clientWidth, h: this.svgRef.current.clientHeight}
+					let scale = clientSize.w/viewBox.w;
+					
+					var dx = (this.startPoint.x - e.clientX)/this.scale;
+					var dy = (this.startPoint.y - e.clientY)/this.scale;
+					
+					var newViewBox = {
+						x:viewBox.x+dx,
+						y:viewBox.y+dy,
+						w:viewBox.w,
+						h:viewBox.h};
+
+	
+					this.endPoint = {x:e.clientX,y:e.clientY},
+					this.startPoint = {x:e.clientX,y:e.clientY}
+
+
+					this.props.onViewChange(newViewBox)
+				}
+			}
+
+			onmouseup(e)
+			{
+				if (this.isPanning)
+				{
+					const viewBox = this.props.viewBox;
+					const clientSize = {w: this.svgRef.current.clientWidth, h: this.svgRef.current.clientHeight}
+					let scale = clientSize.w/viewBox.w;
+					
+					var dx = (this.startPoint.x - this.endPoint.x)/this.scale;
+					var dy = (this.startPoint.y - this.endPoint.y)/this.scale;
+					const newViewBox = {
+						x:viewBox.x+dx,
+						y:viewBox.y+dy,
+						w:viewBox.w,
+						h:viewBox.h
+					};
+
+
+					this.endPoint = {x:e.clientX,y:e.clientY},
+					this.isPanning = false
+
+
+					this.props.onViewChange(newViewBox)
+				}
+			}
+
+			onmouseleave(e)
+			{
+				this.isPanning = false
+
+			}
+
+			viewboxString(viewBox){
+				return viewBox.x+" "+viewBox.y+" "+viewBox.w+" "+viewBox.h;
+			}
+
+			pointsToSvgPath(points) {
+				let path = "M" + points.map(p => `${p.x},${p.y}`).join(" L");
+				return path;
+			}
+
+			moveShape(shape, dx, dy){
+				this.props.onShapeDrag(shape, dx, dy);
+			}
+
+			moveLight(light, dx, dy){
+				this.props.onLightDrag(light, dx, dy);
+			}
+
+			render()
+			{
+				const scene = this.props.scene;
+				const viewBox = this.props.viewBox;
+				return (
+					<svg width={this.props.width} height={this.props.height} className={this.props.className}
+						ref={this.svgRef} 
+						viewBox={this.viewboxString(viewBox)}
+						onMouseDown={(e)=>this.onmousedown(e)}
+						onWheel={(e)=>this.onmousewheel(e)}
+						onMouseMove={(e)=>this.onmousemove(e)}
+						onMouseUp={(e)=>this.onmouseup(e)}
+						onMouseLeave={(e)=>this.onmouseleave(e)}>
+
+						<g className="circles">
+							{scene.shapes.filter(shape=>shape instanceof Circle).map(shape => (
+								<Draggable onDrag={(dx, dy)=>this.moveShape(shape, dx, dy)}>
+									<circle cx={shape.center.x} cy={shape.center.y} r={shape.radius} className="shape"></circle>
+								</Draggable>
+							))}
+						</g>
+							
+						<g className="linesegment">
+							{scene.shapes.filter(shape=>shape instanceof LineSegment).map(shape => (
+								<Draggable onDrag={(dx, dy)=>this.moveShape(shape, dx, dy)}>
+									<line x1={shape.p1.x} y1={shape.p1.y} x2={shape.p2.x} y2={shape.p2.y}  className="shape"></line>
+								</Draggable>
+							))}
+						</g>
+								
+						<g className="rectangles">
+							{scene.shapes.filter(shape=>shape instanceof Rectangle).map(shape => (
+								<Draggable onDrag={(dx, dy)=>this.moveShape(shape, dx, dy)}>
+									<rect x={shape.center.x-shape.width/2}
+										y={shape.center.y-shape.height/2}
+										width={shape.width}
+										height={shape.height}
+										className="shape">
+									</rect>
+								</Draggable>
+							))}
+						</g>
+								
+						<g className="rays" style={{display: "none"}}>
+							{scene.rays.map(ray => (
+								<g>
+									<line x1={ray.origin.x} 
+										y1={ray.origin.y} 
+										x2={ray.origin.x+ray.direction.x*1}
+										y2={ray.origin.y+ray.direction.y*1}
+										className="lightray">
+									</line>
+								</g>
+							))}
+						</g>
+								
+						<g className="paths">
+							{scene.paths.filter(path=>path.length>1).map((points) => (
+								<g>
+									<path d={this.pointsToSvgPath(points)}
+										fill="none"
+										className="lightpath">
+									</path>
+								</g>
+							))}
+						</g>
+								
+						<g className="lights"> 
+							{scene.lights.map(light => (
+								<Draggable onDrag={(dx, dy)=>this.moveLight(light, dx, dy)}>
+									<circle cx={light.x} 
+										cy={light.y} 
+										r="10" 
+										className="lightsource">
+									</circle>
+								</Draggable>
+							))}
+						</g>
+					</svg>
+				)
+			}
+		}
+
+		window.addEventListener("resize", ()=>{
+			console.log("resize")
+		})
+
+		const GLViewport = React.forwardRef(({...props}, ref)=>{
+			const refCanvas = React.useRef(null);
+			const reglRef = React.useRef(null)
+			const [resolution, setResolution] = React.useState({width: 512, height: 512})
+
+			React.useImperativeHandle(ref, () => {
+				return refCanvas.current;
+			});
+
+
+			// Function to handle window resize
+			const handleResize = () => {
+				setResolution({
+					width: refCanvas.current.offsetWidth,
+					height: refCanvas.current.offsetHeight
+				});
+			};
+
+			React.useLayoutEffect(() => {
+				// Set initial resolution
+				handleResize();
+
+				// Listen for window resize event
+				window.addEventListener('resize', handleResize);
+
+				return () => {
+					// Remove event listener on component unmount
+					window.removeEventListener('resize', handleResize);
+				};
+			}, []);
+
+			// Create REGL on component init
+			React.useEffect(()=>{
+				console.log("create REGL")
+				const ctx = refCanvas.current.getContext("webgl");
+				reglRef.current = createREGL(ctx)
+				if(reglRef.current){
+					renderGL(reglRef.current, props.scene, props.viewBox);
+				}
+			}, []);
+
+			// Rerender on change
+			React.useEffect(()=>{
+				if(reglRef.current){
+					renderGL(reglRef.current, props.scene, props.viewBox);
+				}
+			});
+
+			// The GL render function
+			function renderGL(regl, scene, viewBox={x:0, y:0, w:512, h:512})
+			{
+				console.log("rendergl", resolution.width, "x", resolution.height)
+				function makeCircle (N)
+				{
+					return Array(N).fill().map((_, i) => {
+						var phi = 2 * Math.PI * (i / N)
+						return [Math.cos(phi), Math.sin(phi)]
+					})
+				}
+
+				function makeQuad(){
+					return [
+						[-1, -1],
+						[ 1, -1],
+						[ 1,  1],
+						[-1,  1]
+					]
+				}
+
+				const draw = (args) => {
+					regl({
+
+					}, regl(args))
+				}
+
+				function drawShape(shape, view, projection){
+					var m = mat4.identity([]);
+					let N = 1;
+					let position = []
+					if(shape instanceof Circle)
+					{
+						N=36;
+						mat4.translate(m, m, [shape.center.x, shape.center.y, 0])
+						mat4.scale(m, m, [shape.radius, shape.radius, shape.radius])
+						position = makeCircle(N);
+					}
+					if(shape instanceof Rectangle)
+					{
+						N=4;
+						mat4.translate(m, m, [shape.center.x, shape.center.y, 0])
+						mat4.scale(m, m, [shape.width/2, shape.height/2, 1])
+						position = makeQuad();
+					}
+					if(shape instanceof LineSegment)
+					{
+						N=4;
+						const rad = Math.atan2(shape.p2.y-shape.p1.y, shape.p2.x-shape.p1.x);
+						const length = shape.p1.distance(shape.p2);
+						const center = [shape.p1.x/2 + shape.p2.x/2, shape.p1.y/2 + shape.p2.y/2];
+						mat4.translate(m, m, [center[0], center[1], 0])
+						mat4.rotateZ(m,m, rad);
+						mat4.scale(m, m, [length/2, 2, 1])
+						position = makeQuad();
+					}
+
+
+					regl({
+						context:{framebufferWidth: resolution.width, framebufferHeight: resolution.height},
+						viewport: {x: 0, y: 0, w: resolution.width, h: resolution.height},
+						// In a draw call, we can pass the shader source code to regl
+						frag: `
+						precision mediump float;
+						uniform vec4 color;
+						void main () {
+							gl_FragColor = color;
+						}`,
+
+						vert: `
+						precision mediump float;
+						attribute vec2 position;
+						uniform mat4 projection;
+						uniform mat4 view;
+						uniform mat4 model;
+						void main () {
+							gl_Position = projection * view * model * vec4(position, 0, 1);
+						}`,
+
+						attributes: {
+							position: position
+						},
+
+						uniforms: {
+							color: [.3, .6, .7, 1.0],
+							// projection: mat4.ortho(-1,1,-1,1,-1,1,1),
+							model: m,
+							view: mat4.identity([]),
+							projection: projection
+						},
+						primitive: 'triangle fan',
+						count: N
+					})()
+				}
+
+				function drawLight(light, view, projection)
+				{
+					var m = mat4.identity([]);
+					mat4.translate(m, m, [light.x, light.y, 0])
+					mat4.scale(m, m, [10,10, 1])
+
+					regl({
+						context:{framebufferWidth: resolution.width, framebufferHeight: resolution.height},
+						viewport: {x: 0, y: 0, w: resolution.width, h: resolution.height},
+						// In a draw call, we can pass the shader source code to regl
+						frag: `
+						precision mediump float;
+						uniform vec4 color;
+						void main () {
+							gl_FragColor = color;
+						}`,
+
+						vert: `
+						precision mediump float;
+						attribute vec2 position;
+						uniform mat4 projection;
+						uniform mat4 view;
+						uniform mat4 model;
+						void main () {
+							gl_Position = projection * view * model * vec4(position, 0, 1);
+						}`,
+
+						attributes: {
+							position: makeCircle(36)
+						},
+
+						uniforms: {
+							color: [1,1,0.3, 1.0],
+							model: m,
+							view: mat4.identity([]),
+							projection: projection
+						},
+						primitive: 'triangle fan',
+						count: 36,
+					})()
+				}
+
+				function drawPaths(paths, view, projection)
+				{
+					let lines = []
+					for(let path of paths)
+					{
+						for(let i=0; i<path.length-1; i++){
+							lines.push([path[i].x, path[i].y]);
+							lines.push([path[i+1].x, path[i+1].y]);
+						}
+					}
+
+					const draw_lines = regl({
+						context:{framebufferWidth: resolution.width, framebufferHeight: resolution.height},
+						viewport: {x: 0, y: 0, w: resolution.width, h: resolution.height},
+						// In a draw call, we can pass the shader source code to regl
+						frag: `
+						precision mediump float;
+						uniform vec4 color;
+						void main () {
+							gl_FragColor = color;
+						}`,
+
+						vert: `
+						precision mediump float;
+						attribute vec2 position;
+						uniform mat4 projection;
+						void main () {
+							gl_Position = projection * vec4(position, 0, 1);
+						}`,
+
+						attributes: {
+							position: lines
+						},
+
+						uniforms: {
+							color: [1, 1, .9, 1],
+							projection: projection
+						},
+
+						blend: {
+							enable: true,
+							func: {
+								srcRGB: 'src alpha',
+								srcAlpha: 1,
+								dstRGB: 'one minus src alpha',
+								dstAlpha: 1
+							},
+							equation: {
+								rgb: 'add',
+								alpha: 'add'
+							},
+							color: [0, 0, 0, 0]
+						},
+
+						count: lines.length*2,
+						primitive: "lines"
+					})
+
+					draw_lines()
+				}
+			
+				function calc_projection_matrix(resolution, viewBox)
+				{
+					// adjust viewbox width to match resolution aspect "contain"
+					let resolution_aspect = resolution.width/resolution.height;
+					let view_aspect = viewBox.w/viewBox.h;
+					let newViewBox = viewBox;
+					if(resolution_aspect > view_aspect)
+					{
+						const new_view_width = viewBox.h * resolution_aspect;
+						newViewBox = {
+							x: viewBox.x+(viewBox.w-new_view_width)/2,
+							w: new_view_width,
+							y: viewBox.y,
+							h: viewBox.h
+						}
+					}
+					else
+					{
+						const new_view_height = viewBox.w / resolution_aspect;
+						newViewBox = {
+							x: viewBox.x,
+							w: viewBox.w,
+							y: viewBox.y+(viewBox.h-new_view_height)/2,
+							h: new_view_height
+						}
+					}
+
+					const projection = mat4.identity([]);
+					mat4.ortho(projection, newViewBox.x,newViewBox.x+newViewBox.w,newViewBox.h+newViewBox.y,newViewBox.y,-1,1) //left, right, bottom, top, near, far
+					return projection
+				}
+
+				// render scene
+				function renderScene(){
+					const projection = calc_projection_matrix(resolution, viewBox);
+					const view = mat4.identity([]);
+
+					regl.clear({
+						color: [0, 0, 0, 1],
+						depth: 1
+					})
+
+					drawPaths(scene.paths, view, projection);
+
+					for(let light of scene.lights){
+						drawLight(light, view, projection);
+					}
+
+					for(let shape of scene.shapes){
+						drawShape(shape, view, projection);
+					}
+				}
+
+				renderScene()
+			}
+
+			return (
+				<canvas ref={refCanvas} width={resolution.width} height={resolution.height} className={props.className}></canvas>
+			)
+		})
 
 		function raytrace(rays, shapes){
 			// find intersections
@@ -443,7 +990,7 @@
 					
 					secondaries = [...secondaries, ...reflected_rays]
 				}else[
-				secondaries = [...secondaries, ...[null]]
+					secondaries = [...secondaries, ...[null]]
 				]
 			}
 			
@@ -451,7 +998,10 @@
 			return [secondaries, intersections];
 		}
 		
-		function App(){
+		
+
+		function App()
+		{
 			const [shapes, setShapes] = React.useState([
 				new Circle(P(200, 120), 50),
 				// new Circle(P(520, 550), 100),
@@ -465,19 +1015,12 @@
 			])
 
 			const [maxBounce, setMaxBounce] = React.useState(3)
-			
-			// shot rays from light sources
-			const count = 100;
-			const angles = Array.from({length:count},(v,k)=>k/count*Math.PI*2)
-			const rays = lights.map((light_pos)=>{
-				return angles.map((a)=>{
-					const x = Math.cos(a);
-					const y = Math.sin(a);
-					const dir = V(x,y);
-					return new Ray(light_pos, dir.normalized(1000))
-				})
-			}).flat(1)
-			
+	
+			const svgRef = React.useRef();
+			const glRef = React.useRef();
+
+			const [viewBox, setViewBox] = React.useState({x:0,y:0,w:512,h:512});
+
 			function move_light(light, dx, dy){
 				const i = lights.indexOf(light);
 				let new_lights = lights.map((l)=>light.copy());
@@ -510,6 +1053,18 @@
 				return path;
 			}
 			
+			// shot rays from light sources
+			const count = 100;
+			const angles = Array.from({length:count},(v,k)=>k/count*Math.PI*2)
+			const rays = lights.map((light_pos)=>{
+				return angles.map((a)=>{
+					const x = Math.cos(a);
+					const y = Math.sin(a);
+					const dir = V(x,y);
+					return new Ray(light_pos, dir.normalized(1000))
+				})
+			}).flat(1)
+
 			// const intesections = intersect(rays, shapes)
 			let paths = rays.map((ray)=>[ray.origin])
 			let current_rays = [...rays];
@@ -545,202 +1100,57 @@
 			}
 			all_rays = all_rays.filter((ray)=>ray != null);
 			
-
-			const svgRef = React.useRef();
-			// const [viewBox, setViewBox] = React.useState("0 0 512 512");
-			const [viewBox, setViewBox] = React.useState({x:0,y:0,w:512,h:512});
-			function viewboxString(viewBox){
-				return viewBox.x+" "+viewBox.y+" "+viewBox.w+" "+viewBox.h;
-			}
-			
-			function handle_resize(){
-				if(svgRef.current != null){
-					const width = svgRef.current.clientWidth;
-					const height = svgRef.current.clientHeight;
-					setViewBox({x:0,y:0,w:width,h:height});
-				}
-			}
-			React.useEffect(()=>{
-				// handle_resize()
-				window.addEventListener("resize", handle_resize);
-			})
-			// var viewBox = {x:0,y:0,w:svgImage.clientWidth,h:svgImage.clientHeight};
-			// svgImage.setAttribute('viewBox', `${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`);
-			// const svgSize = {w:svgImage.clientWidth,h:svgImage.clientHeight};
-
-			let [isPanning, setIsPanning] = React.useState(false)
-			let [startPoint, setStartPoint] = React.useState({x:0,y:0});
-			let [endPoint, setEndPoint] = React.useState({x:0,y:0});
-			let [scale, setScale] = React.useState(1);
-
-			function onmousewheel(e) {
-				e.preventDefault();
-				const clientSize = {w: svgRef.current.clientWidth, h: svgRef.current.clientHeight}
-				var w = viewBox.w;
-				var h = viewBox.h;
-				var mx = e.clientX;//mouse x  
-				var my = e.clientY;
-				var dw = w*e.deltaY*0.01*-0.05;
-				var dh = h*e.deltaY*0.01*-0.05;
-				var dx = dw*mx/clientSize.w;
-				var dy = dh*my/clientSize.h;
-				const newViewbox = {x:viewBox.x+dx,y:viewBox.y+dy,w:viewBox.w-dw,h:viewBox.h-dh}
-				setViewBox(newViewbox);
-				setScale( clientSize.w/viewBox.w)
-				// zoomValue.innerText = `${Math.round(scale*100)/100}`;
-				// svgImage.setAttribute('viewBox', `${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`);
-			}
-
-
-			function onmousedown(e){
-				setIsPanning(true)
-				setStartPoint({x:e.clientX,y:e.clientY})
-				setEndPoint({x:e.clientX,y:e.clientY});
-				console.log(startPoint, endPoint)
-				e.preventDefault();
-			}
-
-			function onmousemove(e){
-				if (isPanning){
-					console.log(e)
-					const clientSize = {w: svgRef.current.clientWidth, h: svgRef.current.clientHeight}
-					let scale = clientSize.w/viewBox.w;
-					setEndPoint({x:e.clientX,y:e.clientY});
-					var dx = (startPoint.x - e.clientX)/scale;
-					var dy = (startPoint.y - e.clientY)/scale;
-					setStartPoint({x:e.clientX,y:e.clientY})
-					var movedViewBox = {x:viewBox.x+dx,y:viewBox.y+dy,w:viewBox.w,h:viewBox.h};
-					setViewBox(movedViewBox);
-				}
-			}
-
-			function onmouseup(e){
-				console.log(e)
-				if (isPanning){
-					const clientSize = {w: svgRef.current.clientWidth, h: svgRef.current.clientHeight}
-					let scale = clientSize.w/viewBox.w;
-					setEndPoint({x:e.clientX,y:e.clientY});
-					var dx = (startPoint.x - endPoint.x)/scale;
-					var dy = (startPoint.y - endPoint.y)/scale;
-					
-					const newViewBox = {x:viewBox.x+dx,y:viewBox.y+dy,w:viewBox.w,h:viewBox.h};
-					setViewBox(newViewBox);
-					setIsPanning(false)
-				}
-			}
-
-			function onmouseleave(e){
-				isPanning = false;
-			}
-
 			return (
-			<div>
-				<section>
-					<h3>Lights</h3>
-					<ul>
-					{lights.map(light => (
-						<li>{light.x}, {light.y}</li>
-						))}
-					</ul>
+				<div>
+					<div id="info">
+						<section>
+							<h3>Lights</h3>
+							<ul>
+							{lights.map(light => (
+								<li>{light.x}, {light.y}</li>
+								))}
+							</ul>
 
-				</section>
-					<section>
-						<h3>Shapes</h3>
-						<ul>
-						{shapes.map(shape => (
-							<li>{shape.constructor.name}</li>
-							))}
-						</ul>
-					</section>
-					<section>
-						<h3>Raytrace</h3>
-						<input type="range" min="1" max="10" value={maxBounce} onInput={(e)=>setMaxBounce(e.target.value)}></input><span>{maxBounce}</span>
-					</section>
-						<div>viewbox: {viewboxString(viewBox)}</div>
-						<svg ref={svgRef} 
-							 viewBox={viewboxString(viewBox)}
-							 onMouseDown={onmousedown}
-							 onWheel={onmousewheel}
-							 onMouseMove={onmousemove}
-							 onMouseUp={onmouseup}
-							 onMouseLeave={onmouseleave}
-							 preserveAspectRatio="none">
-							
+						</section>
+						<section>
+							<h3>Shapes</h3>
+							<ul>
+							{shapes.map(shape => (
+								<li>{shape.constructor.name}</li>
+								))}
+							</ul>
+						</section>
+					</div>
+					<div id="controls">
+						<section>
+							<h3>Raytrace</h3>
+							<input type="range" min="1" max="10" value={maxBounce} onInput={(e)=>setMaxBounce(e.target.value)}></input><span>{maxBounce}</span>
+						</section>
+					</div>
 
-							<g className="circles">
-								{shapes.filter(shape=>shape instanceof Circle).map(shape => (
-									<Draggable onDrag={(dx, dy)=>move_shape(shape, dx, dy)}>
-										<circle cx={shape.center.x} cy={shape.center.y} r={shape.radius} className="shape"></circle>
-									</Draggable>
-									))}
-								</g>
-								
-								<g className="linesegment">
-									{shapes.filter(shape=>shape instanceof LineSegment).map(shape => (
-										<Draggable onDrag={(dx, dy)=>move_shape(shape, dx, dy)}>
-											<line x1={shape.p1.x} y1={shape.p1.y} x2={shape.p2.x} y2={shape.p2.y}  className="shape"></line>
-										</Draggable>
-										))}
-									</g>
-									
-									<g className="rectangles">
-										{shapes.filter(shape=>shape instanceof Rectangle).map(shape => (
-											<Draggable onDrag={(dx, dy)=>move_shape(shape, dx, dy)}>
-												<rect x={shape.center.x-shape.width/2}
-												y={shape.center.y-shape.height/2}
-												width={shape.width}
-												height={shape.height}
-												className="shape">
-											</rect>
-										</Draggable>
-										))}
-									</g>
-									
-									<g className="rays" style={{display: "none"}}>
-										{all_rays.map(ray => (
-											<g>
-												<line x1={ray.origin.x} 
-												y1={ray.origin.y} 
-												x2={ray.origin.x+ray.direction.x*1}
-												y2={ray.origin.y+ray.direction.y*1}
-												className="lightray">
-											</line>
-										</g>
-										))}
-									</g>
-									
-									<g className="paths">
-										{paths.filter(path=>path.length>1).map((points) => (
-											<g>
-												<path d={pointsToSvgPath(points)}
-												fill="none"
-												className="lightpath">
-											</path>
-										</g>
-										))}
-									</g>
-									
-									<g className="lights"> 
-										{lights.map(light => (
-											<Draggable onDrag={(dx, dy)=>move_light(light, dx, dy)}>
-												<circle cx={light.x} 
-												cy={light.y} 
-												r="10" 
-												className="lightsource">
-											</circle>
-										</Draggable>
-										))}
-									</g>
+					<GLViewport
+						ref={glRef}
+						width="256" height="256" className="viewport"
+						scene={{shapes: shapes, lights:lights, rays:rays, paths: paths}}
+						viewBox={viewBox}>
+					</GLViewport>		
+					<SVGViewport
+						ref={svgRef}
+						width="256" height="256" className="viewport"
+						scene={{shapes: shapes, lights:lights, rays:rays, paths: paths}}
+						viewBox={viewBox} 
+						onViewChange={(value)=>setViewBox(value)}
+						onShapeDrag={(shape, dx, dy)=>move_shape(shape, dx, dy)}
+						onLightDrag={(light, dx, dy)=>move_light(light, dx, dy)}>
+					</SVGViewport>
 
-
-								</svg>
-							</div>
-							);
-						}
-					</script>
-					<script type="text/babel">
-						const rdom = ReactDOM.createRoot(document.getElementById('root'))
-						rdom.render(React.createElement(App));
-					</script>
-				</body>
-				</html>
+				</div>
+			);
+		}
+	</script>
+	<script type="text/babel">
+		const rdom = ReactDOM.createRoot(document.getElementById('root'))
+		rdom.render(React.createElement(App));
+	</script>
+</body>
+</html>
