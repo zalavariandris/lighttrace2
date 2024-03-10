@@ -637,9 +637,249 @@
 			}
 		}
 
-		window.addEventListener("resize", ()=>{
-			console.log("resize")
-		})
+		function makeCircle (N)
+		{
+			return Array(N).fill().map((_, i) => {
+				var phi = 2 * Math.PI * (i / N)
+				return [Math.cos(phi), Math.sin(phi)]
+			})
+		}
+
+		function makeQuad()
+		{
+			return [
+				[-1, -1],
+				[ 1, -1],
+				[ 1,  1],
+				[-1,  1]
+			]
+		}
+
+		function drawShape(regl, shape, view, projection, resolution)
+		{
+			var m = mat4.identity([]);
+			let N = 1;
+			let position = []
+			if(shape instanceof Circle)
+			{
+				N=36;
+				mat4.translate(m, m, [shape.center.x, shape.center.y, 0])
+				mat4.scale(m, m, [shape.radius, shape.radius, shape.radius])
+				position = makeCircle(N);
+			}
+			if(shape instanceof Rectangle)
+			{
+				N=4;
+				mat4.translate(m, m, [shape.center.x, shape.center.y, 0])
+				mat4.scale(m, m, [shape.width/2, shape.height/2, 1])
+				position = makeQuad();
+			}
+			if(shape instanceof LineSegment)
+			{
+				N=4;
+				const rad = Math.atan2(shape.p2.y-shape.p1.y, shape.p2.x-shape.p1.x);
+				const length = shape.p1.distance(shape.p2);
+				const center = [shape.p1.x/2 + shape.p2.x/2, shape.p1.y/2 + shape.p2.y/2];
+				mat4.translate(m, m, [center[0], center[1], 0])
+				mat4.rotateZ(m,m, rad);
+				mat4.scale(m, m, [length/2, 2, 1])
+				position = makeQuad();
+			}
+
+			regl({
+				context:{framebufferWidth: resolution.width, framebufferHeight: resolution.height},
+				viewport: {x: 0, y: 0, w: resolution.width, h: resolution.height},
+				// In a draw call, we can pass the shader source code to regl
+				frag: `
+				precision mediump float;
+				uniform vec4 color;
+				void main () {
+					gl_FragColor = color;
+				}`,
+
+				vert: `
+				precision mediump float;
+				attribute vec2 position;
+				uniform mat4 projection;
+				uniform mat4 view;
+				uniform mat4 model;
+				void main () {
+					gl_Position = projection * view * model * vec4(position, 0, 1);
+				}`,
+
+				attributes: {
+					position: position
+				},
+
+				uniforms: {
+					color: [.3, .6, .7, 1.0],
+					// projection: mat4.ortho(-1,1,-1,1,-1,1,1),
+					model: m,
+					view: mat4.identity([]),
+					projection: projection
+				},
+				primitive: 'triangle fan',
+				count: N
+			})()
+		}
+
+		function drawLight(regl, light, view, projection, resolution)
+		{
+			var m = mat4.identity([]);
+			mat4.translate(m, m, [light.x, light.y, 0])
+			mat4.scale(m, m, [10,10, 1])
+
+			regl({
+				context:{framebufferWidth: resolution.width, framebufferHeight: resolution.height},
+				viewport: {x: 0, y: 0, w: resolution.width, h: resolution.height},
+				// In a draw call, we can pass the shader source code to regl
+				frag: `
+				precision mediump float;
+				uniform vec4 color;
+				void main () {
+					gl_FragColor = color;
+				}`,
+
+				vert: `
+				precision mediump float;
+				attribute vec2 position;
+				uniform mat4 projection;
+				uniform mat4 view;
+				uniform mat4 model;
+				void main () {
+					gl_Position = projection * view * model * vec4(position, 0, 1);
+				}`,
+
+				attributes: {
+					position: makeCircle(36)
+				},
+
+				uniforms: {
+					color: [1,1,0.3, 1.0],
+					model: m,
+					view: mat4.identity([]),
+					projection: projection
+				},
+				primitive: 'triangle fan',
+				count: 36,
+			})()
+		}
+
+		function drawPaths(regl, paths, view, projection, resolution)
+		{
+			let lines = []
+			for(let path of paths)
+			{
+				for(let i=0; i<path.length-1; i++){
+					lines.push([path[i].x, path[i].y]);
+					lines.push([path[i+1].x, path[i+1].y]);
+				}
+			}
+
+			const draw_lines = regl({
+				context:{framebufferWidth: resolution.width, framebufferHeight: resolution.height},
+				viewport: {x: 0, y: 0, w: resolution.width, h: resolution.height},
+				// In a draw call, we can pass the shader source code to regl
+				frag: `
+				precision mediump float;
+				uniform vec4 color;
+				void main () {
+					gl_FragColor = color;
+				}`,
+
+				vert: `
+				precision mediump float;
+				attribute vec2 position;
+				uniform mat4 projection;
+				void main () {
+					gl_Position = projection * vec4(position, 0, 1);
+				}`,
+
+				attributes: {
+					position: lines
+				},
+
+				uniforms: {
+					color: [1, 1, .9, 1],
+					projection: projection
+				},
+
+				blend: {
+					enable: true,
+					func: {
+						srcRGB: 'src alpha',
+						srcAlpha: 1,
+						dstRGB: 'one minus src alpha',
+						dstAlpha: 1
+					},
+					equation: {
+						rgb: 'add',
+						alpha: 'add'
+					},
+					color: [0, 0, 0, 0]
+				},
+
+				count: lines.length*2,
+				primitive: "lines"
+			})
+
+			draw_lines()
+		}
+
+		function fit_viewbox_in_resolution(viewBox, resolution)
+		{
+			// adjust viewbox width to match resolution aspect "contain"
+			let resolution_aspect = resolution.width/resolution.height;
+			let view_aspect = viewBox.w/viewBox.h;
+			let newViewBox = viewBox;
+			if(resolution_aspect > view_aspect)
+			{
+				const new_view_width = viewBox.h * resolution_aspect;
+				newViewBox = {
+					x: viewBox.x+(viewBox.w-new_view_width)/2,
+					w: new_view_width,
+					y: viewBox.y,
+					h: viewBox.h
+				}
+			}
+			else
+			{
+				const new_view_height = viewBox.w / resolution_aspect;
+				newViewBox = {
+					x: viewBox.x,
+					w: viewBox.w,
+					y: viewBox.y+(viewBox.h-new_view_height)/2,
+					h: new_view_height
+				}
+			}
+
+			return newViewBox
+		}
+
+		function renderScene(regl, scene, viewBox, resolution)
+		{
+			/* render scene */
+
+			const newViewBox = fit_viewbox_in_resolution(viewBox, resolution);
+			const projection = mat4.identity([]);
+			mat4.ortho(projection, newViewBox.x,newViewBox.x+newViewBox.w,newViewBox.h+newViewBox.y,newViewBox.y,-1,1) //left, right, bottom, top, near, far
+			const view = mat4.identity([]);
+
+			regl.clear({
+				color: [0, 0, 0, 1],
+				depth: 1
+			})
+
+			drawPaths(regl, scene.paths, view, projection, resolution);
+
+			for(let light of scene.lights){
+				drawLight(regl, light, view, projection, resolution);
+			}
+
+			for(let shape of scene.shapes){
+				drawShape(regl, shape, view, projection, resolution);
+			}
+		}
 
 		const GLViewport = React.forwardRef(({...props}, ref)=>{
 			const refCanvas = React.useRef(null);
@@ -693,254 +933,7 @@
 			function renderGL(regl, scene, viewBox={x:0, y:0, w:512, h:512})
 			{
 				console.log("rendergl", resolution.width, "x", resolution.height)
-				function makeCircle (N)
-				{
-					return Array(N).fill().map((_, i) => {
-						var phi = 2 * Math.PI * (i / N)
-						return [Math.cos(phi), Math.sin(phi)]
-					})
-				}
-
-				function makeQuad(){
-					return [
-						[-1, -1],
-						[ 1, -1],
-						[ 1,  1],
-						[-1,  1]
-					]
-				}
-
-				const draw = (args) => {
-					regl({
-
-					}, regl(args))
-				}
-
-				function drawShape(shape, view, projection){
-					var m = mat4.identity([]);
-					let N = 1;
-					let position = []
-					if(shape instanceof Circle)
-					{
-						N=36;
-						mat4.translate(m, m, [shape.center.x, shape.center.y, 0])
-						mat4.scale(m, m, [shape.radius, shape.radius, shape.radius])
-						position = makeCircle(N);
-					}
-					if(shape instanceof Rectangle)
-					{
-						N=4;
-						mat4.translate(m, m, [shape.center.x, shape.center.y, 0])
-						mat4.scale(m, m, [shape.width/2, shape.height/2, 1])
-						position = makeQuad();
-					}
-					if(shape instanceof LineSegment)
-					{
-						N=4;
-						const rad = Math.atan2(shape.p2.y-shape.p1.y, shape.p2.x-shape.p1.x);
-						const length = shape.p1.distance(shape.p2);
-						const center = [shape.p1.x/2 + shape.p2.x/2, shape.p1.y/2 + shape.p2.y/2];
-						mat4.translate(m, m, [center[0], center[1], 0])
-						mat4.rotateZ(m,m, rad);
-						mat4.scale(m, m, [length/2, 2, 1])
-						position = makeQuad();
-					}
-
-
-					regl({
-						context:{framebufferWidth: resolution.width, framebufferHeight: resolution.height},
-						viewport: {x: 0, y: 0, w: resolution.width, h: resolution.height},
-						// In a draw call, we can pass the shader source code to regl
-						frag: `
-						precision mediump float;
-						uniform vec4 color;
-						void main () {
-							gl_FragColor = color;
-						}`,
-
-						vert: `
-						precision mediump float;
-						attribute vec2 position;
-						uniform mat4 projection;
-						uniform mat4 view;
-						uniform mat4 model;
-						void main () {
-							gl_Position = projection * view * model * vec4(position, 0, 1);
-						}`,
-
-						attributes: {
-							position: position
-						},
-
-						uniforms: {
-							color: [.3, .6, .7, 1.0],
-							// projection: mat4.ortho(-1,1,-1,1,-1,1,1),
-							model: m,
-							view: mat4.identity([]),
-							projection: projection
-						},
-						primitive: 'triangle fan',
-						count: N
-					})()
-				}
-
-				function drawLight(light, view, projection)
-				{
-					var m = mat4.identity([]);
-					mat4.translate(m, m, [light.x, light.y, 0])
-					mat4.scale(m, m, [10,10, 1])
-
-					regl({
-						context:{framebufferWidth: resolution.width, framebufferHeight: resolution.height},
-						viewport: {x: 0, y: 0, w: resolution.width, h: resolution.height},
-						// In a draw call, we can pass the shader source code to regl
-						frag: `
-						precision mediump float;
-						uniform vec4 color;
-						void main () {
-							gl_FragColor = color;
-						}`,
-
-						vert: `
-						precision mediump float;
-						attribute vec2 position;
-						uniform mat4 projection;
-						uniform mat4 view;
-						uniform mat4 model;
-						void main () {
-							gl_Position = projection * view * model * vec4(position, 0, 1);
-						}`,
-
-						attributes: {
-							position: makeCircle(36)
-						},
-
-						uniforms: {
-							color: [1,1,0.3, 1.0],
-							model: m,
-							view: mat4.identity([]),
-							projection: projection
-						},
-						primitive: 'triangle fan',
-						count: 36,
-					})()
-				}
-
-				function drawPaths(paths, view, projection)
-				{
-					let lines = []
-					for(let path of paths)
-					{
-						for(let i=0; i<path.length-1; i++){
-							lines.push([path[i].x, path[i].y]);
-							lines.push([path[i+1].x, path[i+1].y]);
-						}
-					}
-
-					const draw_lines = regl({
-						context:{framebufferWidth: resolution.width, framebufferHeight: resolution.height},
-						viewport: {x: 0, y: 0, w: resolution.width, h: resolution.height},
-						// In a draw call, we can pass the shader source code to regl
-						frag: `
-						precision mediump float;
-						uniform vec4 color;
-						void main () {
-							gl_FragColor = color;
-						}`,
-
-						vert: `
-						precision mediump float;
-						attribute vec2 position;
-						uniform mat4 projection;
-						void main () {
-							gl_Position = projection * vec4(position, 0, 1);
-						}`,
-
-						attributes: {
-							position: lines
-						},
-
-						uniforms: {
-							color: [1, 1, .9, 1],
-							projection: projection
-						},
-
-						blend: {
-							enable: true,
-							func: {
-								srcRGB: 'src alpha',
-								srcAlpha: 1,
-								dstRGB: 'one minus src alpha',
-								dstAlpha: 1
-							},
-							equation: {
-								rgb: 'add',
-								alpha: 'add'
-							},
-							color: [0, 0, 0, 0]
-						},
-
-						count: lines.length*2,
-						primitive: "lines"
-					})
-
-					draw_lines()
-				}
-			
-				function calc_projection_matrix(resolution, viewBox)
-				{
-					// adjust viewbox width to match resolution aspect "contain"
-					let resolution_aspect = resolution.width/resolution.height;
-					let view_aspect = viewBox.w/viewBox.h;
-					let newViewBox = viewBox;
-					if(resolution_aspect > view_aspect)
-					{
-						const new_view_width = viewBox.h * resolution_aspect;
-						newViewBox = {
-							x: viewBox.x+(viewBox.w-new_view_width)/2,
-							w: new_view_width,
-							y: viewBox.y,
-							h: viewBox.h
-						}
-					}
-					else
-					{
-						const new_view_height = viewBox.w / resolution_aspect;
-						newViewBox = {
-							x: viewBox.x,
-							w: viewBox.w,
-							y: viewBox.y+(viewBox.h-new_view_height)/2,
-							h: new_view_height
-						}
-					}
-
-					const projection = mat4.identity([]);
-					mat4.ortho(projection, newViewBox.x,newViewBox.x+newViewBox.w,newViewBox.h+newViewBox.y,newViewBox.y,-1,1) //left, right, bottom, top, near, far
-					return projection
-				}
-
-				// render scene
-				function renderScene(){
-					const projection = calc_projection_matrix(resolution, viewBox);
-					const view = mat4.identity([]);
-
-					regl.clear({
-						color: [0, 0, 0, 1],
-						depth: 1
-					})
-
-					drawPaths(scene.paths, view, projection);
-
-					for(let light of scene.lights){
-						drawLight(light, view, projection);
-					}
-
-					for(let shape of scene.shapes){
-						drawShape(shape, view, projection);
-					}
-				}
-
-				renderScene()
+				renderScene(regl, scene, viewBox, resolution)
 			}
 
 			return (
