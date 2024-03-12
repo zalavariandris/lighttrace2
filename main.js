@@ -187,9 +187,7 @@ class Ray{
         
         // Calculate the determinant
         const determinant = rayDirection.x * lineSegmentDirection.y - rayDirection.y * lineSegmentDirection.x;
-        
-        
-        
+
         // If the determinant is close to zero, the lines are parallel
         if (Math.abs(determinant) < EPSILON) {
             return [];
@@ -206,18 +204,19 @@ class Ray{
             rayOrigin.y + t1 * rayDirection.y,
             );
             
-            // Check if the intersection point is at the ray origin
-            if (Math.abs(t1) < EPSILON) {
-                return rayOrigin;
-            }
+            // TODO EDGE cases
+            // // Check if the intersection point is at the ray origin
+            // if (Math.abs(t1) < EPSILON) {
+            //     return rayOrigin;
+            // }
             
-            // Check if the intersection point is at one of the line segment endpoints
-            if (Math.abs(t2) < EPSILON) {
-                return lineSegmentP1;
-            }
-            if (Math.abs(t2 - 1) < EPSILON) {
-                return lineSegmentP2;
-            }
+            // // Check if the intersection point is at one of the line segment endpoints
+            // if (Math.abs(t2) < EPSILON) {
+            //     return lineSegmentP1;
+            // }
+            // if (Math.abs(t2 - 1) < EPSILON) {
+            //     return lineSegmentP2;
+            // }
             
             // Calculate the line normal
             const V = new Vector(lineSegmentP1.x - lineSegmentP2.x, lineSegmentP1.y - lineSegmentP2.y);
@@ -328,15 +327,14 @@ class Draggable extends React.Component{
         // Create an SVGPoint for future math
 
         // const svg = svgRef.current;
+        const h = React.createElement;
 
-        
-        return (
-            <g className="draggable" onMouseDown={(e)=>this.handleMouseDown(e)}>
-                <g>
-                    {this.props.children}
-                </g>
-            </g>
-        )
+
+        return h('g', { className: 'draggable', onMouseDown: (e) => this.handleMouseDown(e) },
+            h('g', null,
+                this.props.children
+            )
+        );
     }  
 }
 
@@ -464,82 +462,96 @@ class SVGViewport extends React.Component{
     {
         const scene = this.props.scene;
         const viewBox = this.props.viewBox;
-        return (
-            <svg width={this.props.width} height={this.props.height} className={this.props.className}
-                ref={this.svgRef} 
-                viewBox={this.viewboxString(viewBox)}
-                onMouseDown={(e)=>this.onmousedown(e)}
-                onWheel={(e)=>this.onmousewheel(e)}
-                onMouseMove={(e)=>this.onmousemove(e)}
-                onMouseUp={(e)=>this.onmouseup(e)}
-                onMouseLeave={(e)=>this.onmouseleave(e)}>
 
-                <g className="circles">
-                    {scene.shapes.filter(shape=>shape instanceof Circle).map(shape => (
-                        <Draggable onDrag={(dx, dy)=>this.moveShape(shape, dx, dy)}>
-                            <circle cx={shape.center.x} cy={shape.center.y} r={shape.radius} className="shape"></circle>
-                        </Draggable>
-                    ))}
-                </g>
-                    
-                <g className="linesegment">
-                    {scene.shapes.filter(shape=>shape instanceof LineSegment).map(shape => (
-                        <Draggable onDrag={(dx, dy)=>this.moveShape(shape, dx, dy)}>
-                            <line x1={shape.p1.x} y1={shape.p1.y} x2={shape.p2.x} y2={shape.p2.y}  className="shape"></line>
-                        </Draggable>
-                    ))}
-                </g>
-                        
-                <g className="rectangles">
-                    {scene.shapes.filter(shape=>shape instanceof Rectangle).map(shape => (
-                        <Draggable onDrag={(dx, dy)=>this.moveShape(shape, dx, dy)}>
-                            <rect x={shape.center.x-shape.width/2}
-                                y={shape.center.y-shape.height/2}
-                                width={shape.width}
-                                height={shape.height}
-                                className="shape">
-                            </rect>
-                        </Draggable>
-                    ))}
-                </g>
-                        
-                <g className="rays" style={{display: "none"}}>
-                    {scene.rays.map(ray => (
-                        <g>
-                            <line x1={ray.origin.x} 
-                                y1={ray.origin.y} 
-                                x2={ray.origin.x+ray.direction.x*1}
-                                y2={ray.origin.y+ray.direction.y*1}
-                                className="lightray">
-                            </line>
-                        </g>
-                    ))}
-                </g>
-                        
-                <g className="paths">
-                    {scene.paths.filter(path=>path.length>1).map((points) => (
-                        <g>
-                            <path d={this.pointsToSvgPath(points)}
-                                fill="none"
-                                className="lightpath">
-                            </path>
-                        </g>
-                    ))}
-                </g>
-                        
-                <g className="lights"> 
-                    {scene.lights.map(light => (
-                        <Draggable onDrag={(dx, dy)=>this.moveLight(light, dx, dy)}>
-                            <circle cx={light.x} 
-                                cy={light.y} 
-                                r="10" 
-                                className="lightsource">
-                            </circle>
-                        </Draggable>
-                    ))}
-                </g>
-            </svg>
-        )
+        const h = React.createElement;
+
+        return h('svg', {
+            width: this.props.width,
+            height: this.props.height,
+            className: this.props.className,
+            ref: this.svgRef,
+            viewBox: this.viewboxString(viewBox),
+            onMouseDown: (e) => this.onmousedown(e),
+            onWheel: (e) => this.onmousewheel(e),
+            onMouseMove: (e) => this.onmousemove(e),
+            onMouseUp: (e) => this.onmouseup(e),
+            onMouseLeave: (e) => this.onmouseleave(e)
+            },
+            h('g', { className: 'circles' },
+                scene.shapes.filter(shape => shape instanceof Circle).map(shape =>
+                    h(Draggable, { onDrag: (dx, dy) => this.moveShape(shape, dx, dy) },
+                        h('circle', {
+                            cx: shape.center.x,
+                            cy: shape.center.y,
+                            r: shape.radius,
+                            className: 'shape'
+                        })
+                    )
+                )
+            ),
+            h('g', { className: 'linesegment' },
+                scene.shapes.filter(shape => shape instanceof LineSegment).map(shape =>
+                    h(Draggable, { onDrag: (dx, dy) => this.moveShape(shape, dx, dy) },
+                        h('line', {
+                            x1: shape.p1.x,
+                            y1: shape.p1.y,
+                            x2: shape.p2.x,
+                            y2: shape.p2.y,
+                            className: 'shape'
+                        })
+                    )
+                )
+            ),
+            h('g', { className: 'rectangles' },
+                scene.shapes.filter(shape => shape instanceof Rectangle).map(shape =>
+                    h(Draggable, { onDrag: (dx, dy) => this.moveShape(shape, dx, dy) },
+                        h('rect', {
+                            x: shape.center.x - shape.width / 2,
+                            y: shape.center.y - shape.height / 2,
+                            width: shape.width,
+                            height: shape.height,
+                            className: 'shape'
+                        })
+                    )
+                )
+            ),
+            h('g', { className: 'rays', style: { display: "none" } },
+                scene.rays.map(ray =>
+                    h('g', null,
+                        h('line', {
+                            x1: ray.origin.x,
+                            y1: ray.origin.y,
+                            x2: ray.origin.x + ray.direction.x * 1,
+                            y2: ray.origin.y + ray.direction.y * 1,
+                            className: 'lightray'
+                        })
+                    )
+                )
+            ),
+            h('g', { className: 'paths' },
+                scene.paths.filter(path => path.length > 1).map(points =>
+                    h('g', null,
+                        h('path', {
+                            d: this.pointsToSvgPath(points),
+                            fill: 'none',
+                            className: 'lightpath'
+                        })
+                    )
+                )
+            ),
+            h('g', { className: 'lights' },
+                scene.lights.map(light =>
+                    h(Draggable, { onDrag: (dx, dy) => this.moveLight(light, dx, dy) },
+                        h('circle', {
+                            cx: light.x,
+                            cy: light.y,
+                            r: '10',
+                            className: 'lightsource'
+                        })
+                    )
+                )
+            )
+        );
     }
 }
 
@@ -849,10 +861,14 @@ const GLViewport = React.forwardRef(({...props}, ref)=>{
         }
     }
 
-    return (
-        <canvas ref={refCanvas} width={resolution.width} height={resolution.height} className={props.className}></canvas>
-    )
-})
+    const h = React.createElement;
+    return h("canvas", {
+        ref:refCanvas,
+        width: resolution.width,
+        height: resolution.height,
+        className:props.className
+    })
+});
 
 function raytrace(rays, shapes){
     // find intersections
@@ -1005,52 +1021,59 @@ function App()
         all_rays = [...all_rays, ...secondary]
     }
     all_rays = all_rays.filter((ray)=>ray != null);
-    
-    return (
-        <div>
-            <div id="info">
-                <section>
-                    <h3>Lights</h3>
-                    <ul>
-                    {lights.map(light => (
-                        <li>{light.x}, {light.y}</li>
-                        ))}
-                    </ul>
 
-                </section>
-                <section>
-                    <h3>Shapes</h3>
-                    <ul>
-                    {shapes.map(shape => (
-                        <li>{shape.constructor.name}</li>
-                        ))}
-                    </ul>
-                </section>
-            </div>
-            <div id="controls">
-                <section>
-                    <h3>Raytrace</h3>
-                    <input type="range" min="1" max="10" value={maxBounce} onInput={(e)=>setMaxBounce(e.target.value)}></input><span>{maxBounce}</span>
-                </section>
-            </div>
-
-            <GLViewport
-                ref={glRef}
-                width="256" height="256" className="viewport"
-                scene={{shapes: shapes, lights:lights, rays:rays, paths: paths}}
-                viewBox={viewBox}>
-            </GLViewport>		
-            <SVGViewport
-                ref={svgRef}
-                width="256" height="256" className="viewport"
-                scene={{shapes: shapes, lights:lights, rays:rays, paths: paths}}
-                viewBox={viewBox} 
-                onViewChange={(value)=>setViewBox(value)}
-                onShapeDrag={(shape, dx, dy)=>move_shape(shape, dx, dy)}
-                onLightDrag={(light, dx, dy)=>move_light(light, dx, dy)}>
-            </SVGViewport>
-
-        </div>
+    const h = React.createElement;
+    return h('div', null,
+        h('div', { id: 'info' },
+            h('section', null,
+                h('h3', null, 'Lights'),
+                h('ul', null,
+                    lights.map(light =>
+                        h('li', null, `${light.x}, ${light.y}`)
+                    )
+                )
+            ),
+            h('section', null,
+                h('h3', null, 'Shapes'),
+                h('ul', null,
+                    shapes.map(shape =>
+                        h('li', null, shape.constructor.name)
+                    )
+                )
+            )
+        ),
+        h('div', { id: 'controls' },
+            h('section', null,
+                h('h3', null, 'Raytrace'),
+                h('input', {
+                    type: 'range',
+                    min: '1',
+                    max: '10',
+                    value: maxBounce,
+                    onInput: (e) => setMaxBounce(e.target.value)
+                }),
+                h('span', null, maxBounce)
+            )
+        ),
+        h(GLViewport, {
+            ref: glRef,
+            width: '256',
+            height: '256',
+            className: 'viewport',
+            scene: { shapes: shapes, lights: lights, rays: rays, paths: paths },
+            viewBox: viewBox
+        }),
+        h(SVGViewport, {
+            ref: svgRef,
+            width: '256',
+            height: '256',
+            className: 'viewport',
+            scene: { shapes: shapes, lights: lights, rays: rays, paths: paths },
+            viewBox: viewBox,
+            onViewChange: (value) => setViewBox(value),
+            onShapeDrag: (shape, dx, dy) => move_shape(shape, dx, dy),
+            onLightDrag: (light, dx, dy) => move_light(light, dx, dy)
+        })
     );
 }
 
