@@ -614,11 +614,20 @@ function drawShape(regl, shape, view, projection, resolution)
         }`,
 
         attributes: {
-            position: position
+            position: ()=>{
+                if(shape instanceof Circle){
+                    return makeCircle(36);
+                }
+                else if(shape instanceof Rectangle){
+                    return makeQuad();
+                }else{
+                    return []
+                }
+            }
         },
 
         uniforms: {
-            color: [.3, .6, .7, 1.0],
+            color: [.3, .1, .7, 1.0],
             // projection: mat4.ortho(-1,1,-1,1,-1,1,1),
             model: m,
             view: mat4.identity([]),
@@ -629,47 +638,7 @@ function drawShape(regl, shape, view, projection, resolution)
     })()
 }
 
-function drawLight(regl, light, view, projection, resolution)
-{
-    var m = mat4.identity([]);
-    mat4.translate(m, m, [light.x, light.y, 0])
-    mat4.scale(m, m, [10,10, 1])
 
-    regl({
-        context:{framebufferWidth: resolution.width, framebufferHeight: resolution.height},
-        viewport: {x: 0, y: 0, w: resolution.width, h: resolution.height},
-        // In a draw call, we can pass the shader source code to regl
-        frag: `
-        precision mediump float;
-        uniform vec4 color;
-        void main () {
-            gl_FragColor = color;
-        }`,
-
-        vert: `
-        precision mediump float;
-        attribute vec2 position;
-        uniform mat4 projection;
-        uniform mat4 view;
-        uniform mat4 model;
-        void main () {
-            gl_Position = projection * view * model * vec4(position, 0, 1);
-        }`,
-
-        attributes: {
-            position: makeCircle(36)
-        },
-
-        uniforms: {
-            color: [1,1,0.3, 1.0],
-            model: m,
-            view: mat4.identity([]),
-            projection: projection
-        },
-        primitive: 'triangle fan',
-        count: 36,
-    })()
-}
 
 function drawPaths(regl, paths, view, projection, resolution)
 {
@@ -762,31 +731,6 @@ function fit_viewbox_in_resolution(viewBox, resolution)
     return newViewBox
 }
 
-function renderScene(regl, scene, viewBox, resolution)
-{
-    /* render scene */
-
-    const newViewBox = fit_viewbox_in_resolution(viewBox, resolution);
-    const projection = mat4.identity([]);
-    mat4.ortho(projection, newViewBox.x,newViewBox.x+newViewBox.w,newViewBox.h+newViewBox.y,newViewBox.y,-1,1) //left, right, bottom, top, near, far
-    const view = mat4.identity([]);
-
-    regl.clear({
-        color: [0, 0, 0, 1],
-        depth: 1
-    })
-
-    drawPaths(regl, scene.paths, view, projection, resolution);
-
-    for(let light of scene.lights){
-        drawLight(regl, light, view, projection, resolution);
-    }
-
-    for(let shape of scene.shapes){
-        drawShape(regl, shape, view, projection, resolution);
-    }
-}
-
 const GLViewport = React.forwardRef(({...props}, ref)=>{
     const refCanvas = React.useRef(null);
     const reglRef = React.useRef(null)
@@ -820,10 +764,14 @@ const GLViewport = React.forwardRef(({...props}, ref)=>{
 
     // Create REGL on component init
     React.useEffect(()=>{
-        console.log("create REGL")
-        const ctx = refCanvas.current.getContext("webgl");
-        reglRef.current = createREGL(ctx)
-        if(reglRef.current){
+        if(refCanvas.current)
+        {
+            console.log("create REGL")
+            console.log("refcanvas:", refCanvas.current)
+            reglRef.current = createREGL(refCanvas.current,{
+                extensions: ['OES_texture_float', "OES_texture_half_float"]
+            })
+            console.log(reglRef.current)
             renderGL(reglRef.current, props.scene, props.viewBox);
         }
     }, []);
@@ -838,8 +786,67 @@ const GLViewport = React.forwardRef(({...props}, ref)=>{
     // The GL render function
     function renderGL(regl, scene, viewBox={x:0, y:0, w:512, h:512})
     {
-        console.log("rendergl", resolution.width, "x", resolution.height)
-        renderScene(regl, scene, viewBox, resolution)
+        // console.log("rendergl", resolution.width, "x", resolution.height)
+        const setupScene = regl({
+            context:{framebufferWidth: resolution.width, framebufferHeight: resolution.height},
+            viewport: {x: 0, y: 0, w: 512, h: 512},
+            vert: `precision mediump float;
+                attribute vec2 position;
+                uniform mat4 projection;
+                uniform mat4 view;
+                uniform mat4 model;
+                void main () {
+                    gl_Position = projection * view * model * vec4(position, 0, 1);
+                }`,
+
+            frag: `precision mediump float;
+                uniform vec4 color;
+                void main () {
+                    gl_FragColor = color;
+                }`,
+            uniforms: {
+                view: mat4.identity([]),
+                projection: mat4.ortho(mat4.identity([]), viewBox.x,viewBox.x+viewBox.w,viewBox.y+viewBox.h,viewBox.y,-1,1) //left, right, bottom, top, near, far
+            }
+        });
+
+        const newViewBox = fit_viewbox_in_resolution(viewBox, resolution);
+        const projection = mat4.identity([]);
+        mat4.ortho(projection, newViewBox.x,newViewBox.x+newViewBox.w,newViewBox.h+newViewBox.y,newViewBox.y,-1,1) //left, right, bottom, top, near, far
+        const view = mat4.identity([]);
+    
+        regl.clear({
+            color: [0, 0, 0, 1],
+            depth: 1
+        })
+    
+        drawPaths(regl, scene.paths, view, projection, resolution);
+    
+        const drawSceneLight = regl({
+            attributes: {
+                position: makeCircle(36)
+            },
+    
+            uniforms: {
+                color: [1,1,0.3, 1.0],
+                model: regl.prop("model"),
+            },
+            primitive: 'triangle fan',
+            count: 36,
+        });
+
+        setupScene({}, ()=>{
+            for(let light of scene.lights){
+                var model = mat4.identity([]);
+                mat4.translate(model, model, [light.x, light.y, 0])
+                mat4.scale(model, model, [10,10, 1])
+                drawSceneLight({model: model})
+            }
+        })
+    
+        for(let shape of scene.shapes){
+            drawShape(regl, shape, view, projection, resolution);
+        }
     }
 
     return (
