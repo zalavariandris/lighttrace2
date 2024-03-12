@@ -1,4 +1,9 @@
+// import {mat4, vec2, vec3} from 'gl-matrix'
 
+// import ReactDOM from "https://cdn.jsdelivr.net/npm/react-dom@18/+esm"
+// import React, {useState} from 'https://cdn.jsdelivr.net/npm/react@18/+esm'
+console.log("React", React.useState)
+console.log("ReactDOM", ReactDOM)
 // Define an epsilon value
 const EPSILON = 1e-6;
 // ANCHOR hello
@@ -323,13 +328,9 @@ class Draggable extends React.Component{
         // event.stopPropagation();
     }
     
-    render(){
-        // Create an SVGPoint for future math
-
-        // const svg = svgRef.current;
+    render()
+    {
         const h = React.createElement;
-
-
         return h('g', { className: 'draggable', onMouseDown: (e) => this.handleMouseDown(e) },
             h('g', null,
                 this.props.children

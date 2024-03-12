@@ -10,3 +10,58 @@ body{
     color: rgb(17, 17, 17);
     font-family: "Operator mono"
 }
+
+svg{
+    /* background-color: #59D5E0; */
+    /* position: fixed;
+    left: 10vw;
+    top:10vh;
+    width: 80vw;
+    height: 80vh;
+    z-index: -1; */
+}
+svg .lightpath{
+    stroke: orange;
+}
+
+svg .lightsource{
+    stroke: #FAA300;
+    fill: #F5DD61;
+    stroke-width: 1;
+}
+
+svg .shape{
+    fill: #F4538A;
+    stroke: rgb(252, 252, 252);
+    stroke-width: 1;
+    /* stroke: black; */
+}
+svg .shape:hover, svg .lightsource:hover{
+    stroke-width: 2;
+}
+
+#info{
+    background-color: white;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+}
+
+#controls{
+    position: fixed;
+    top:0;
+    right: 0;
+    background-color: white;
+}
+
+canvas.viewport, svg.viewport{
+    position: fixed;
+    z-index: -1;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    height: 100vh;
+
+    /* width: 45vw;
+    height: 512px; */
+}

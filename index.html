@@ -10,73 +10,14 @@
 		{
 			"imports": {
 				"three": "https://unpkg.com/three@0.161.0/build/three.module.js",
-				"three/addons/": "https://unpkg.com/three@0.161.0/examples/jsm/"
+				"three/addons/": "https://unpkg.com/three@0.161.0/examples/jsm/",
+				"gl-matrix": "https://cdn.jsdelivr.net/npm/gl-matrix@3.4.3/+esm"
 			}
 		}
 	</script>
 	<script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
 	<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-	<script type="text/javascript" src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/regl/2.1.0/regl.js" integrity="sha512-FgmtfNZApTrLMIs/sEBR+RjqVxVqJM7iloUqYLlp2YFFqn7zyDVJ8FllBZMBMHKc2mAXZQ+lLy2ZizpXmI5PdA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-
-	<style>
-		svg{
-			/* background-color: #59D5E0; */
-			/* position: fixed;
-			left: 10vw;
-			top:10vh;
-			width: 80vw;
-			height: 80vh;
-			z-index: -1; */
-		}
-		svg .lightpath{
-			stroke: orange;
-			opacity: 0.3;
-			display: none;
-		}
-		
-		svg .lightsource{
-			stroke: #FAA300;
-			fill: #F5DD61;
-			stroke-width: 1;
-		}
-		
-		svg .shape{
-			fill: #F4538A;
-			stroke: rgb(252, 252, 252);
-			stroke-width: 1;
-			/* stroke: black; */
-		}
-		svg .shape:hover, svg .lightsource:hover{
-			stroke-width: 2;
-		}
-
-		#info{
-			background-color: white;
-			position: fixed;
-			bottom: 0;
-			left: 0;
-		}
-
-		#controls{
-			position: fixed;
-			top:0;
-			right: 0;
-			background-color: white;
-		}
-
-		canvas.viewport, svg.viewport{
-			position: fixed;
-			z-index: -1;
-			left: 0;
-			top: 0;
-			width: 100vw;
-			height: 100vh;
-
-			/* width: 45vw;
-			height: 512px; */
-		}
-	</style>
 </head>
 
 <body>
@@ -86,8 +27,7 @@
 		</div>
 	</main>
 	<script type="module">
-		import {vec2, glMatrix, mat4} from 'https://cdn.jsdelivr.net/npm/gl-matrix@3.4.3/+esm'
-		window.glMatrix = glMatrix
+		import {mat4, vec2, vec3} from 'gl-matrix'
 		window.mat4 = mat4;
 	</script>
 	<script type="module" src="main.js">
