@@ -98,9 +98,22 @@ class GLViewport extends React.Component
 
     componentDidMount()
     {
+        console.log("canvas size:", this.canvasRef.current.offsetWidth, this.canvasRef.current.offsetHeight)
         // Crate REGL context
         this.reglRef.current = createREGL({
             canvas: this.canvasRef.current,
+            pixelRatio: 2.0,
+            attributes: {
+                // width: 1024, heigh: 1024,
+                alpha: true,
+                depth: true,
+                stencil :false,
+                antialias: true,
+                premultipliedAlpha: true,
+                preserveDrawingBuffer: false,
+                preferLowPowerToHighPerformance: false,
+                failIfMajorPerformanceCaveat: false
+            },
             extensions: ['OES_texture_float', "OES_texture_half_float"]
         });
         console.assert(this.reglRef.current!=undefined, "cant create REGL context")
@@ -121,14 +134,17 @@ class GLViewport extends React.Component
         console.log("renderGL", this.props.scene.paths);
         const lines = makeLinesFromPaths(this.props.scene.paths);
         const [canvaswidth, canvasheight] = [this.canvasRef.current.offsetWidth, this.canvasRef.current.offsetHeight]
-        const reformatViewBox = fitViewboxInSize(this.props.viewBox, {width: canvaswidth, height: canvasheight})
-        console.log("reformatViewBox", reformatViewBox)
-        const projection = makeProjectionFromViewbox(reformatViewBox);
+
+        let viewBox = this.props.viewBox;
+        viewBox = fitViewboxInSize(viewBox, {width: canvaswidth, height: canvasheight})
+        console.log("reformatViewBox", viewBox)
+        const projection = makeProjectionFromViewbox(viewBox);
 
         const draw_lines = regl({
-            // context:{framebufferWidth: resolution.width, framebufferHeight: resolution.height},
-            // viewport: {x: 0, y: 0, w: resolution.width, h: resolution.height},
+            // context:{framebufferWidth: 1024, framebufferHeight: 1024},
+            // viewport: {x: 0, y: 0, w: 512, h: 512},
             // In a draw call, we can pass the shader source code to regl
+            // viewport: {x: 0, y:0, width: canvaswidth, height: canvasheight},
             frag: `
             precision mediump float;
             uniform vec4 color;
@@ -182,7 +198,7 @@ class GLViewport extends React.Component
             this.renderGL(this.reglRef.current);
         }
         const h = React.createElement
-        return h("canvas", {...this.props, ref:this.canvasRef})
+        return h("canvas", {width:1024, height:1024, ...this.props, ref:this.canvasRef})
     }
 
 }
