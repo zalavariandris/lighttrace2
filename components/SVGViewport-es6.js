@@ -17,7 +17,6 @@ class SVGViewport extends React.Component{
     constructor({...props})
     {
         super(props);
-        console.log("this.props", this.props)
         this.svgRef = React.createRef();
         this.isPanning = false;
         this.startPoint = {x:0,y:0};
@@ -135,7 +134,7 @@ class SVGViewport extends React.Component{
     {
         const scene = this.props.scene;
         const viewBox = this.props.viewBox;
-        console.log("render", this.props)
+        
         const h = React.createElement;
         return h('svg', {
             width: this.props.width,
@@ -207,7 +206,9 @@ class SVGViewport extends React.Component{
                         h('path', {
                             d: this.pointsToSvgPath(points),
                             fill: 'none',
-                            className: 'lightpath'
+                            className: 'lightpath',
+                            strokeLinejoin:"round",
+                            strokeLinecap:"round"
                         })
                     )
                 )

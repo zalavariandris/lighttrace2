@@ -9,10 +9,8 @@ import {raytrace} from "./raytrace.js"
 
 const h = React.createElement;
 const App = ()=>{
-
     /* STATE */
     const [maxBounce, setMaxBounce] = React.useState(3);
-
     const [shapes, setShapes] = React.useState([
         new Circle(P(200, 120), 50),
         // new Circle(P(520, 550), 100),
@@ -20,6 +18,25 @@ const App = ()=>{
         new Rectangle(P(700,700), 200,200),
         new LineSegment(P(200, 200), P(300, 130))
     ]);
+
+    /* ANIMATION*/
+    // React.useState(()=>{
+    //     function animate(time)
+    //     {
+    //         requestAnimationFrame(animate);
+    //         setShapes(shapes.map( (shape, i) => {
+    //             if(i==0){
+    //                 const pivot = P(250, 250)
+    //                 const orbit_distance = 100;
+    //                 const t = time*0.003;
+    //                 return new Circle(P(Math.cos(t)*orbit_distance+pivot.x, Math.sin(t)*orbit_distance+pivot.y), shape.radius)
+    //             }else{
+    //                 return shape
+    //             }
+    //         }));
+    //     }
+    //     animate()
+    // },[])
 
     const [viewBox, setViewBox] = React.useState({x:0,y:0,w:512,h:512});
 
@@ -122,7 +139,7 @@ const App = ()=>{
             className:"viewport"
         }),
         h(SVGViewport, {
-            style: {opacity: "0.5"},
+            style: {opacity: "0.2"},
             className:"viewport",
             viewBox: viewBox,
             onViewChange: (value) => setViewBox(value),
