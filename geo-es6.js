@@ -236,27 +236,47 @@ class Circle{
     copy(other){
         return new Circle(this.center.copy(), this.radius)
     }
+
+    toString()
+    {
+        return `Circle O(${this.center.x.toFixed(1)}, ${this.center.y.toFixed(1)}), r${this.radius.toFixed(1)}`
+    }
 }
 
 class Rectangle {
-    constructor(center, width, height) {
+    constructor(center, width, height)
+    {
         this.center = center;
         this.width = width;
         this.height = height;
     }
     
-    copy(other){
+    copy(other)
+    {
         return new Rectangle(this.center.copy(), this.width, this.height)
+    }
+
+    toString()
+    {
+        return `Rectangle O(${this.center.x.toFixed(1)}, ${this.center.y.toFixed(1)}), ${this.width.toFixed(1)}x${this.height.toFixed(1)}`
     }
 }
 
 class LineSegment {
-    constructor(p1, p2) { 
+    constructor(p1, p2)
+    {
         this.p1 = p1;
         this.p2 = p2;
     }
-    copy(other){
+
+    copy(other)
+    {
         return new LineSegment(this.p1.copy(), this.p2.copy())
+    }
+
+    toString()
+    {
+        return `LineSegment P(${this.p1.x.toFixed(1)}, ${this.p1.y.toFixed(1)}), P(${this.p2.x.toFixed(1)}, ${this.p2.y.toFixed(1)})`
     }
 }
 

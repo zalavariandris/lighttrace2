@@ -1,5 +1,5 @@
 import {Point, Vector, Ray, P, V, Circle, LineSegment, Rectangle} from "./geo-es6.js"
-function raytrace(rays, shapes){
+function trace_rays(rays, shapes){
     // find intersections
     let intersections = []
     let secondaries = []
@@ -49,4 +49,4 @@ function raytrace(rays, shapes){
     return [secondaries, intersections];
 }
 
-export {raytrace}
+export {trace_rays}

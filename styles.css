@@ -1,3 +1,8 @@
+@keyframes fadeIn {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+
 canvas{
     width: 512px;
     height: 512px;
@@ -7,6 +12,7 @@ canvas{
 
 body{
     background-color: rgb(24, 24, 24);
+    
     color: rgb(203, 203, 203);
     font-family: "Operator mono"
 }
@@ -22,22 +28,24 @@ svg{
 }
 svg .lightpath{
     stroke: orange;
+    opacity: 0.1;
 }
 
 svg .lightsource{
     stroke: #FAA300;
-    fill: #F5DD61;
-    stroke-width: 1;
+    fill: #f5dc611b;
+    stroke-width: 5;
 }
 
 svg .shape{
-    fill: #F4538A;
-    stroke: rgb(252, 252, 252);
+    fill: rgba(255, 255, 255, 0.01);
+    stroke: rgb(0, 0, 0);
     stroke-width: 1;
     /* stroke: black; */
 }
+
 svg .shape:hover, svg .lightsource:hover{
-    stroke-width: 2;
+    stroke-width: 4;
 }
 
 #info{
@@ -47,18 +55,29 @@ svg .shape:hover, svg .lightsource:hover{
     left: 0;
 }
 
-#controls{
+#inspector
+{
     position: fixed;
-    top:0;
-    right: 0;
-    background-color: white;
+    left: 0;
+    top: 0;
+    user-select: none;
+    pointer-events: none;
 }
+#inspector input
+{
+    pointer-events: auto;
+}
+/* #inspector table{
+    pointer-events: auto;
+} */
+
 
 canvas.viewport, svg.viewport{
     position: fixed;
-    z-index: -1;
     left: 0;
     top: 0;
+    background-color: hsl(221.54deg 3.11% 17.71%);
+    background-color: transparent;
     width: 100vw;
     height: 100vh;
 
