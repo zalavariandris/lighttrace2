@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Skeleton Demo</title>
+
+	<script type="importmap">
+		{
+			"imports": {
+
+			}
+		}
+	</script>
+
+    <style>
+        @keyframes fadeIn {
+            0% { background-color: red; }
+            100% { background-color: transparent; }
+            }
+
+        body{
+            font-size: 16pt;
+        }
+        textarea{
+            font-size: inherit;
+            white-space:pre-wrap;
+        }
+        #main{
+            display: flex;
+            min-height: 64rem;
+            width: 100%;
+            background-color: azure;
+        }
+        #main>textarea, #main>div{
+            flex: 1 1 100%;
+            padding: 0;
+            outline: 1px solid dotted green;
+        }
+        #log{
+
+        }
+        #log.error{
+            background-color: red;
+            color: white;
+        }
+        #log.success{
+            background-color: rgb(0, 179, 0);
+            color: white;
+        }
+
+        #app *{
+            animation: fadeIn 0.2s;
+        }
+    </style>
+
+</head>
+
+<body>
+
+    
+	<main id="main">
+        <textarea id="src" spellcheck="false"></textarea>
+		<div id="app"></div>
+	</main>
+    <div id="log"></div>
+
+    <script>
+        function h(tag, attributes = {}, ...children) {
+            // Check if children is not provided or is an empty array
+            if (!children.length) {
+                return {
+                    tag: tag,
+                    attributes: attributes,
+                    children: []
+                };
+            } else {
+                return {
+                    tag: tag,
+                    attributes: attributes,
+                    children: children
+                };
+            }
+        }
+
+        function render(hs)
+        {
+            const element = document.createElement(hs.tag);
+
+            for (const attr in hs.attributes) {
+                if (hs.attributes.hasOwnProperty(attr)) {
+                    element.setAttribute(attr, hs.attributes[attr]);
+                }
+            }
+
+            hs.children.forEach(child => {
+                if (typeof child === 'string') {
+                    element.appendChild(document.createTextNode(child));
+                } else {
+                    render(child)
+                    element.appendChild(child.element);
+                }
+            });
+
+            hs.element = element;
+        }
+
+        function patch(parent, oldVNode, newVNode)
+        {
+            console.log("patch")
+            console.log(oldVNode)
+            console.log(newVNode)
+            console.log()
+            // If the old virtual node is null, just append the new one
+            if (oldVNode === null) {
+                parent.appendChild(render(newVNode));
+            }
+            // If the old and new virtual nodes have different tags, replace the old one with the new one
+            else if (oldVNode.tag !== newVNode.tag) {
+                parent.replaceChild(render(newVNode), oldVNode.element);
+            }
+            // If the tags are the same, update attributes and children
+            else {
+                // Update attributes
+                for (const attr in newVNode.attributes) {
+                    if (newVNode.attributes.hasOwnProperty(attr)) {
+                        oldVNode.element.setAttribute(attr, newVNode.attributes[attr]);
+                    }
+                }
+
+                // Patch children
+                const oldChildren = oldVNode.children;
+                const newChildren = newVNode.children;
+                const maxLength = Math.max(oldChildren.length, newChildren.length);
+
+                for (let i = 0; i < maxLength; i++) {
+                    patch(oldVNode.element, oldChildren[i], newChildren[i]);
+                }
+
+                // Remove extra children
+                if (oldChildren.length > newChildren.length) {
+                    for (let i = oldChildren.length - 1; i >= newChildren.length; i--) {
+                        oldVNode.element.removeChild(oldChildren[i].element);
+                    }
+                }
+            }
+        }
+
+        // Example usage:
+        const area = document.getElementById("src");
+        const app = document.getElementById('app');
+        const log = document.getElementById("log");
+
+        const html = `h('div', { id: 'container' }, 
+    h('h1', { class: 'title' }, 'Hello, World!'), 
+    h('p', null, 'This is a paragraph.')
+);`
+area.value = html;
+        let hs = eval(html)
+        render(hs);
+
+        app.appendChild(hs.element);
+
+        
+        
+
+        area.addEventListener("input", (e)=>{
+            const html = e.target.value;
+            // try{
+                const new_hs = eval(html)
+                patch(app, hs, new_hs)
+                // render(new_hs)
+                hs.element.replaceWith(new_hs.element)
+                hs = new_hs
+                log.innerText = `compiled`
+                log.className = "success"
+            // }
+            // catch(error)
+            // {
+            //     log.innerText = `${error}`
+            //     log.className = "error"
+            // }
+        })
+
+        // const model = {
+        //     scene: [],
+        //     raytrace: {
+        //         maxBounce: 5
+        //     }
+        // }
+
+        // function copy(obj)
+        // {
+        //     return obj;
+        // }
+
+        // function update(msg, model)
+        // {
+        //     const newModel = copy(model);
+        //     switch(msg.action){
+        //         case "setMaxBounce":
+        //             newModel.maxBounce = msg.value;
+        //             break;
+        //     }
+        //     return newModel;
+        // }
+
+        // function view(model)
+        // {
+        //     return { 
+        //         element: "div", children: [
+        //             {element: "svg", children: [
+                        
+        //             ]},
+        //             {element: "canvas", children: []}
+        //         ]
+        //     }
+        // }
+
+        // class App{
+        //     constructor(model, view, update)
+        //     {
+        //         this.model = model;
+        //         this.view = view;
+        //         this.update = update;
+        //         this.current_view = {}
+        //     }
+
+        //     patch()
+        //     {
+        //         const new_view = this.view();
+
+        //         // update element:
+        //         if(new_view.type != this.current_view.type){
+        //             new_view.element.remove();
+        //             new_view.element.createElement(new_view.type);
+        //         }else{
+                    
+        //         }
+
+
+        //     }
+        // }
+    </script>
+</body>
+</html>

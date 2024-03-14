@@ -430,9 +430,9 @@ class GLViewportO extends React.Component
             attributes: {
                 // width: 1024, heigh: 1024,
                 alpha: true,
-                depth: true,
+                depth: false,
                 stencil :false,
-                antialias: true,
+                antialias: false,
                 premultipliedAlpha: true,
                 preserveDrawingBuffer: false,
                 preferLowPowerToHighPerformance: false,

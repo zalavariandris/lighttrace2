@@ -167,8 +167,8 @@ class Ray{
         // Check if the intersection point is within the line segment and the ray
         if (t1 >= -EPSILON && t2 >= -EPSILON && t2 <= 1 + EPSILON) {
             const intersectionPoint = P(
-            rayOrigin.x + t1 * rayDirection.x,
-            rayOrigin.y + t1 * rayDirection.y,
+                rayOrigin.x + t1 * rayDirection.x,
+                rayOrigin.y + t1 * rayDirection.y,
             );
             
             // TODO EDGE cases
@@ -210,10 +210,10 @@ class Ray{
         const bottomLeft = new Point(left, bottom)
         
         const sides = [
-        new LineSegment(topLeft, topRight),
-        new LineSegment(topRight, bottomRight),
-        new LineSegment(bottomRight, bottomLeft),
-        new LineSegment(bottomLeft, topLeft)
+            new LineSegment(topLeft, topRight),
+            new LineSegment(topRight, bottomRight),
+            new LineSegment(bottomRight, bottomLeft),
+            new LineSegment(bottomLeft, topLeft)
         ];
         
         let intersections = []

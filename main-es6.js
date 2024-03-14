@@ -14,6 +14,7 @@ const SamplingMethod = Object.freeze({
 
 function raytrace(lights, shapes, options={maxBounce:3, sampling:SamplingMethod.Random, lightSamples:50})
 {
+    console.log(options.maxBounce)
     // shoot rays from scene lights
     const uniform_angles = Array.from({length:options.lightSamples},(v,k)=>{
         return k/options.lightSamples*Math.PI*2
