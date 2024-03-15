@@ -1,6 +1,6 @@
 import React, {useState} from "react"
 import Draggable from "./Draggable-es6.js"
-import {Point, Vector, Ray, Circle, LineSegment, Rectangle} from "../geo-es6.js"
+import {Point, Vector, Ray, Circle, LineSegment, Rectangle} from "../geo.js"
 
 
 function viewboxString(viewBox){

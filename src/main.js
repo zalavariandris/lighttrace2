@@ -4,7 +4,7 @@ import React, {useState} from "react"
 import SVGViewport from "./components/SVGViewport-es6.js";
 import GLViewport from "./components/GLViewport-es6.js";
 
-import {Point, Vector, Ray, P, V, Circle, LineSegment, Rectangle} from "./geo-es6.js"
+import {Point, Vector, Ray, P, V, Circle, LineSegment, Rectangle} from "./geo.js"
 import {trace_rays} from "./raytrace.js"
 
 const SamplingMethod = Object.freeze({

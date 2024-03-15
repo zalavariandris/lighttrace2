@@ -9,28 +9,21 @@
 	<script type="importmap">
 		{
 			"imports": {
-				"three": "https://unpkg.com/three@0.161.0/build/three.module.js",
-				"three/addons/": "https://unpkg.com/three@0.161.0/examples/jsm/",
-				"gl-matrix": "https://cdn.jsdelivr.net/npm/gl-matrix@3.4.3/+esm"
+                "react-dom": "https://cdn.jsdelivr.net/npm/react-dom@18.2.0/+esm",
+                "react": "https://cdn.jsdelivr.net/npm/react@18.2.0/+esm",
+                "gl-matrix": "https://cdn.jsdelivr.net/npm/gl-matrix@3.4.3/+esm",
+				"regl": "https://cdn.jsdelivr.net/npm/regl@2.1/+esm"
 			}
 		}
 	</script>
-	<script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-	<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/regl/2.1.0/regl.js" integrity="sha512-FgmtfNZApTrLMIs/sEBR+RjqVxVqJM7iloUqYLlp2YFFqn7zyDVJ8FllBZMBMHKc2mAXZQ+lLy2ZizpXmI5PdA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </head>
 
 <body>
-	<h1>Light Tracer 2D v2.1</h1>
+	<h1>Lighttrace2D - React - ES6</h1>
 	<main id="main">
 		<div id="root">
 		</div>
 	</main>
-	<script type="module">
-		import {mat4, vec2, vec3} from 'gl-matrix'
-		window.mat4 = mat4;
-	</script>
-	<script type="module" src="main.js">
-	</script>
+	<script type="module" src="./src/main.js"></script>
 </body>
 </html>

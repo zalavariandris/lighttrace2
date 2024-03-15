@@ -1,4 +1,4 @@
-import {Point, Vector, Ray, P, V, Circle, LineSegment, Rectangle} from "./geo-es6.js"
+import {Point, Vector, Ray, P, V, Circle, LineSegment, Rectangle} from "./geo.js"
 function trace_rays(rays, shapes){
     // find intersections
     let intersections = []
