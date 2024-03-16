@@ -529,7 +529,6 @@ function GLViewport(props)
     }, [])
 
     React.useEffect(()=>{
-        console.log("effect on ")
         rendererRef.current.reset(reglRef.current);
     },[props.lights, props.shapes, props.viewBox])
 

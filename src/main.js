@@ -5,75 +5,16 @@ import SVGViewport from "./components/SVGViewport-es6.js";
 import GLViewport from "./components/GLViewport-es6.js";
 
 import {Point, Vector, Ray, P, V, Circle, LineSegment, Rectangle} from "./geo.js"
-import {trace_rays} from "./raytrace.js"
-
-const SamplingMethod = Object.freeze({
-    Random: "Random",
-    Uniform: "Uniform"
-})
-
-function raytrace(lights, shapes, options={maxBounce:3, sampling:SamplingMethod.Random, lightSamples:50})
-{
-    console.log(options.maxBounce)
-    // shoot rays from scene lights
-    const uniform_angles = Array.from({length:options.lightSamples},(v,k)=>{
-        return k/options.lightSamples*Math.PI*2
-    });
-    const random_angles = Array.from({length:options.lightSamples},(v,k)=>{
-        return Math.random()*Math.PI*2;
-    });
-    const angles = options.sampling==SamplingMethod.Random ? random_angles : uniform_angles
-    const rays = angles.map((a)=>{
-        return lights.map((light_pos)=>{
-            const x = Math.cos(a);
-            const y = Math.sin(a);
-            const dir = V(x,y);
-            return new Ray(light_pos, dir.normalized(1000))
-        })
-    }).flat(1)
-
-    let paths = rays.map((ray)=>[ray.origin])
-    let current_rays = [...rays];
-    let all_rays = [...current_rays]
-    const path_count = rays.length
-    for(let i=0; i<options.maxBounce; i++){
-        let [secondary, intersections] = trace_rays(current_rays, shapes);
-        
-        // const zipped = current_rays.map((ray, index)=>[rays[ index], secondary[index], paths[index]]);
-        // for(let [ray, reflection, path] of zipped)
-        // {
-            
-        // }
-        
-        for(let ray_index=0; ray_index<path_count; ray_index++)
-        {
-            const ray = current_rays[ray_index];
-            const reflection = secondary[ray_index]
-            const path = paths[ray_index]
-            
-            if(reflection != null){
-                let p = reflection.origin
-                path.push(p)
-            }else if(ray != null){
-                let dir = ray.direction.normalized(1000)
-                let p = new Point(ray.origin.x+dir.x, ray.origin.y+dir.y)
-                path.push(p)
-            }
-        }
-        current_rays = secondary;
-        all_rays = [...all_rays, ...secondary]
-    }
-    all_rays = all_rays.filter((ray)=>ray != null);
-    return paths;
-}
+import {makeRaysFromLights, intersect, raytrace, SamplingMethod} from "./raytrace.js"
+import {sampleMirror, sampleTransparent, sampleDiffuse} from "./raytrace.js"
 
 
 const h = React.createElement;
 const App = ()=>{
     /* STATE */
-    const [maxBounce, setMaxBounce] = React.useState(3);
-    const [lightSamples, setLightSamples] = React.useState(150);
-    const [samplingMethod, setSamplingMethod] = React.useState(SamplingMethod.Random);
+    const [maxBounce, setMaxBounce] = React.useState(1);
+    const [lightSamples, setLightSamples] = React.useState(7);
+    const [samplingMethod, setSamplingMethod] = React.useState(SamplingMethod.Uniform);
     const [showSVGlightpaths, setShowSVGlightpaths] = React.useState(false);
     
     const [shapes, setShapes] = React.useState([
@@ -138,9 +79,9 @@ const App = ()=>{
         setLights(new_lights);
     }
 
-    /* RAYTRACE */  
-
+    const [rays, setRays] = React.useState([])
     const [paths, setPaths] = React.useState([])
+    const [intersections, setIntersections] = React.useState([])
 
     // const pathsRef = React.useRef([])
 
@@ -148,8 +89,19 @@ const App = ()=>{
     function animate()
     {
         animRef.current = requestAnimationFrame(animate)
-        const new_paths = raytrace(lights, shapes, {maxBounce:maxBounce, sampling:samplingMethod, lightSamples:lightSamples});
-        setPaths(new_paths)
+        /* RAYTRACE */  
+        
+        const new_rays = makeRaysFromLights(lights, lightSamples, samplingMethod);
+        setRays(new_rays);
+        const new_intersections = intersect(new_rays, shapes)
+        // console.log(new_intersections);
+        // console.log("intersections", intersections.length)
+        setIntersections(new_intersections)
+        const secondaries = new_intersections.map((intersection, i)=>{
+            
+        })
+        // const [new_paths, new_intersections] = raytrace(lights, shapes, {maxBounce:maxBounce, sampling:samplingMethod, lightSamples:lightSamples});
+        // setPaths(new_paths)
         //  pathsRef.current = raytrace(lights, shapes, maxBounce);
         // console.log("animate")
     }
@@ -159,19 +111,24 @@ const App = ()=>{
     })
     // const paths = pathsRef.current;
     return h("div", null,
-        h(GLViewport,  {
-            paths: paths,
-            lights: lights,
-            shapes: shapes,
-            viewBox: viewBox,
-            className:"viewport"
-        }),
+        // h(GLViewport,  {
+        //     paths: paths,
+        //     lights: lights,
+        //     shapes: shapes,
+        //     viewBox: viewBox,
+        //     className:"viewport"
+        // }),
         h(SVGViewport, {
             // style: {opacity: "0.2"},
             className:"viewport",
             viewBox: viewBox,
             onViewChange: (value) => setViewBox(value),
-            scene: {shapes: shapes, paths:showSVGlightpaths?paths:[], lights:lights}, 
+            scene: {
+                lights: lights, 
+                rays: rays,
+                shapes: shapes, 
+                intersections: intersections, 
+                paths:showSVGlightpaths?paths:[]}, 
             onShapeDrag: (shape, dx, dy)=>moveShape(shape, dx, dy),
             onLightDrag: (light, dx, dy)=>moveLight(light, dx, dy)
         }),
@@ -236,6 +193,13 @@ const App = ()=>{
             ),
             h("section", null,
                 h("h2", null, "Scene info"),
+                h("div", null, `rays: ${rays.length}`),
+                h("div", null, `intersections: ${intersections.length}`),
+                h("ul", null, 
+                    ...intersections.map((intersection)=>{
+                        return h("li", null, `${intersection}`)
+                    })
+                ),
                 h("h3", null, "lights"),
                 h("ul", null,
                     lights.map((light)=>{

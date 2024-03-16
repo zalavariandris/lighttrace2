@@ -11,7 +11,13 @@ class SVGViewport extends React.Component{
     // Set default props
     static defaultProps = {
         viewBox: {x:0, y:0, w:512, h:512},
-        scene: {shapes: [], rays: [], paths: [], lights: []}
+        scene: {
+            lights: [],
+            rays: [],
+            shapes: [], 
+            intersections: [], 
+            paths: [],
+        }
     }
 
     constructor({...props})
@@ -137,18 +143,43 @@ class SVGViewport extends React.Component{
         
         const h = React.createElement;
         return h('svg', {
-            width: this.props.width,
-            height: this.props.height,
-            className: this.props.className,
-            style: this.props.style,
-            ref: this.svgRef,
-            viewBox: viewboxString(viewBox),
-            onMouseDown: (e) => this.onmousedown(e),
-            onWheel: (e) => this.onmousewheel(e),
-            onMouseMove: (e) => this.onmousemove(e),
-            onMouseUp: (e) => this.onmouseup(e),
-            onMouseLeave: (e) => this.onmouseleave(e)
+                width: this.props.width,
+                height: this.props.height,
+                className: this.props.className,
+                style: this.props.style,
+                ref: this.svgRef,
+                viewBox: viewboxString(viewBox),
+                onMouseDown: (e) => this.onmousedown(e),
+                onWheel: (e) => this.onmousewheel(e),
+                onMouseMove: (e) => this.onmousemove(e),
+                onMouseUp: (e) => this.onmouseup(e),
+                onMouseLeave: (e) => this.onmouseleave(e)
             },
+            h('g', { className: 'lights' },
+                scene.lights==undefined?vnull:scene.lights.map(light =>
+                    h(Draggable, { onDrag: (dx, dy) => this.moveLight(light, dx, dy) },
+                        h('circle', {
+                            cx: light.x,
+                            cy: light.y,
+                            r: '10',
+                            className: 'lightsource'
+                        })
+                    )
+                )
+            ),
+            h('g', { className: 'rays'},
+                scene.rays==undefined?null:scene.rays.map(ray =>
+                    h('g', null,
+                        h('line', {
+                            x1: ray.origin.x,
+                            y1: ray.origin.y,
+                            x2: ray.origin.x + ray.direction.x * 1000,
+                            y2: ray.origin.y + ray.direction.y * 1000,
+                            className: 'lightray'
+                        })
+                    )
+                )
+            ),
             h('g', { className: 'circles' },
                 scene.shapes==undefined?null:scene.shapes.filter(shape => shape instanceof Circle).map(shape =>
                     h(Draggable, { onDrag: (dx, dy) => this.moveShape(shape, dx, dy) },
@@ -187,19 +218,6 @@ class SVGViewport extends React.Component{
                     )
                 )
             ),
-            h('g', { className: 'rays', style: { display: "none" } },
-                scene.rays==undefined?null:scene.rays.map(ray =>
-                    h('g', null,
-                        h('line', {
-                            x1: ray.origin.x,
-                            y1: ray.origin.y,
-                            x2: ray.origin.x + ray.direction.x * 1,
-                            y2: ray.origin.y + ray.direction.y * 1,
-                            className: 'lightray'
-                        })
-                    )
-                )
-            ),
             h('g', { className: 'paths' },
                 scene.paths==undefined?null:scene.paths.filter(path => path.length > 1).map(points =>
                     h('g', null,
@@ -213,18 +231,19 @@ class SVGViewport extends React.Component{
                     )
                 )
             ),
-            h('g', { className: 'lights' },
-                scene.lights==undefined?null:scene.lights.map(light =>
-                    h(Draggable, { onDrag: (dx, dy) => this.moveLight(light, dx, dy) },
-                        h('circle', {
-                            cx: light.x,
-                            cy: light.y,
-                            r: '10',
-                            className: 'lightsource'
+            h('g', { className: 'intersections'},
+                scene.intersections==undefined?null:scene.intersections.map(intersection =>
+                    h('g', null,
+                        h('line', {
+                            x1: intersection.origin.x,
+                            y1: intersection.origin.y,
+                            x2: intersection.origin.x + intersection.direction.x * 50,
+                            y2: intersection.origin.y + intersection.direction.y * 50,
+                            className: 'intersection'
                         })
                     )
                 )
-            )
+            ),
         );
     }
 }

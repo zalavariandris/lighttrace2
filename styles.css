@@ -10,8 +10,6 @@ canvas{
     image-rendering: pixelated ;
 }
 
-
-
 body{
     background-color: rgb(24, 24, 24);
     
@@ -28,6 +26,18 @@ svg{
     height: 80vh;
     z-index: -1; */
 }
+
+svg .lightray{
+    stroke: yellow;
+    opacity: 1.0;
+}
+
+svg .intersection{
+    stroke: greenyellow;
+    opacity: 1.0;
+    stroke-width: 1;
+}
+
 svg .lightpath{
     stroke: orange;
     opacity: 0.1;
