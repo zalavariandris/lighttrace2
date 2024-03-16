@@ -81,6 +81,7 @@ function intersect(rays, shapes)
     let intersections = []
     for(let ray of rays)
     {
+        let ray_intersections = []
         if(ray == null){
             secondaries = [...secondaries, ...[null]]
             continue;
@@ -92,15 +93,29 @@ function intersect(rays, shapes)
             
             if(shape instanceof Circle){
                 shape_intersections = [...shape_intersections, ...ray.intersectCircle(shape)];
+                
             } 
             else if(shape instanceof Rectangle){
                 shape_intersections = [...shape_intersections, ...ray.intersectRectangle(shape)];
+                
             } else if(shape instanceof LineSegment){
                 shape_intersections = [...shape_intersections, ...ray.intersectLineSegment(shape)];
-            } 
-            intersections = [...intersections, ...shape_intersections];
+                
+            }
+            
+            ray_intersections = [...ray_intersections, ...shape_intersections];
+            // console.log(ray_intersections)
+        }
+
+        // find closest intersection of the current ray
+        if(ray_intersections.length>1){
+            ray_intersections = [ray_intersections.reduce((a,b)=>{
+                return ray.origin.distanceTo(a.origin) < ray.origin.distanceTo(b.origin) ? a : b
+            })]
         }
         
+        intersections = [...intersections, ...ray_intersections]
+        // intersections = ray_intersections
         // if(intersections.length>0)
         // {
         //     // find closest interseciont
@@ -120,11 +135,12 @@ function intersect(rays, shapes)
         // ]
     }
     
+    // console.log(intersections)
     // intersections
     return intersections;
 }
 
-function trace_rays(rays, shapes)
+function trace_rays(rays, ray_intersections)
 {
     // find intersections
     let intersections = []
@@ -156,7 +172,7 @@ function trace_rays(rays, shapes)
         if(ray_intersections.length>0)
         {
             // find closest interseciont
-            let closest = ray_intersections.reduce((a, b) => primary.origin.distance(a.origin) < primary.origin.distance(b.origin) ? a : b);
+            let closest = ray_intersections.reduce((a, b) => primary.origin.distanceTo2(a.origin) < primary.origin.distanceTo2(b.origin) ? a : b);
             ray_intersections.push(closest)
             
             // reflect ray on intersection
@@ -224,4 +240,4 @@ function raytrace(lights, shapes, options={maxBounce:3, sampling:SamplingMethod.
 }
 
 export {makeRaysFromLights, intersect, raytrace, SamplingMethod}
-export {sampleMirror, sampleTransparent, sampleDiffuse, intersect, raytrace, SamplingMethod}
+export {sampleMirror, sampleTransparent, sampleDiffuse}

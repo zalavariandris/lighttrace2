@@ -29,13 +29,14 @@ svg{
 
 svg .lightray{
     stroke: yellow;
+    stroke-width: 2;
     opacity: 1.0;
 }
 
 svg .intersection{
-    stroke: greenyellow;
+    stroke: rgb(170, 255, 0);
     opacity: 1.0;
-    stroke-width: 1;
+    stroke-width: 8;
 }
 
 svg .lightpath{
@@ -45,7 +46,7 @@ svg .lightpath{
 
 svg .lightsource{
     stroke: #FAA300;
-    fill: #f5dc611b;
+    fill: rgb(232, 125, 10);
     stroke-width: 1;
     stroke-dasharray: 0 2 0;
 }

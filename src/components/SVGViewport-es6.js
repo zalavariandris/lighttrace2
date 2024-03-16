@@ -155,31 +155,6 @@ class SVGViewport extends React.Component{
                 onMouseUp: (e) => this.onmouseup(e),
                 onMouseLeave: (e) => this.onmouseleave(e)
             },
-            h('g', { className: 'lights' },
-                scene.lights==undefined?vnull:scene.lights.map(light =>
-                    h(Draggable, { onDrag: (dx, dy) => this.moveLight(light, dx, dy) },
-                        h('circle', {
-                            cx: light.x,
-                            cy: light.y,
-                            r: '10',
-                            className: 'lightsource'
-                        })
-                    )
-                )
-            ),
-            h('g', { className: 'rays'},
-                scene.rays==undefined?null:scene.rays.map(ray =>
-                    h('g', null,
-                        h('line', {
-                            x1: ray.origin.x,
-                            y1: ray.origin.y,
-                            x2: ray.origin.x + ray.direction.x * 1000,
-                            y2: ray.origin.y + ray.direction.y * 1000,
-                            className: 'lightray'
-                        })
-                    )
-                )
-            ),
             h('g', { className: 'circles' },
                 scene.shapes==undefined?null:scene.shapes.filter(shape => shape instanceof Circle).map(shape =>
                     h(Draggable, { onDrag: (dx, dy) => this.moveShape(shape, dx, dy) },
@@ -187,7 +162,8 @@ class SVGViewport extends React.Component{
                             cx: shape.center.x,
                             cy: shape.center.y,
                             r: shape.radius,
-                            className: 'shape'
+                            className: 'shape',
+                            vectorEffect: "non-scaling-stroke"
                         })
                     )
                 )
@@ -200,7 +176,8 @@ class SVGViewport extends React.Component{
                             y1: shape.p1.y,
                             x2: shape.p2.x,
                             y2: shape.p2.y,
-                            className: 'shape'
+                            className: 'shape',
+                            vectorEffect: "non-scaling-stroke"
                         })
                     )
                 )
@@ -213,11 +190,13 @@ class SVGViewport extends React.Component{
                             y: shape.center.y - shape.height / 2,
                             width: shape.width,
                             height: shape.height,
-                            className: 'shape'
+                            className: 'shape',
+                            vectorEffect: "non-scaling-stroke"
                         })
                     )
                 )
             ),
+
             h('g', { className: 'paths' },
                 scene.paths==undefined?null:scene.paths.filter(path => path.length > 1).map(points =>
                     h('g', null,
@@ -226,24 +205,54 @@ class SVGViewport extends React.Component{
                             fill: 'none',
                             className: 'lightpath',
                             strokeLinejoin:"round",
-                            strokeLinecap:"round"
+                            strokeLinecap:"round",
+                            vectorEffect: "non-scaling-stroke"
+                        })
+                    )
+                )
+            ),
+            h('g', { className: 'rays'},
+                scene.rays==undefined?null:scene.rays.map(ray =>
+                    h('g', null,
+                        h('line', {
+                            x1: ray.origin.x,
+                            y1: ray.origin.y,
+                            x2: ray.origin.x + ray.direction.x * 1000,
+                            y2: ray.origin.y + ray.direction.y * 1000,
+                            className: 'lightray',
+                            vectorEffect: "non-scaling-stroke"
+                        })
+                    )
+                )
+            ),
+
+            h('g', { className: 'lights' },
+                scene.lights==undefined?vnull:scene.lights.map(light =>
+                    h(Draggable, { onDrag: (dx, dy) => this.moveLight(light, dx, dy) },
+                        h('circle', {
+                            cx: light.x,
+                            cy: light.y,
+                            r: '10',
+                            className: 'lightsource',
+                            vectorEffect: "non-scaling-stroke"
                         })
                     )
                 )
             ),
             h('g', { className: 'intersections'},
-                scene.intersections==undefined?null:scene.intersections.map(intersection =>
-                    h('g', null,
-                        h('line', {
-                            x1: intersection.origin.x,
-                            y1: intersection.origin.y,
-                            x2: intersection.origin.x + intersection.direction.x * 50,
-                            y2: intersection.origin.y + intersection.direction.y * 50,
-                            className: 'intersection'
-                        })
-                    )
+            scene.intersections==undefined?null:scene.intersections.map(intersection =>
+                h('g', null,
+                    h('line', {
+                        x1: intersection.origin.x,
+                        y1: intersection.origin.y,
+                        x2: intersection.origin.x + intersection.direction.x * 20,
+                        y2: intersection.origin.y + intersection.direction.y * 20,
+                        className: 'intersection',
+                        vectorEffect: "non-scaling-stroke"
+                    })
                 )
-            ),
+            )
+        ),
         );
     }
 }

@@ -6,10 +6,15 @@ class Point{
     copy(other){
         return new Point(this.x, this.y)
     }
-    distance(p){
+    distanceTo(p){
         const dx = this.x-p.x;
         const dy = this.y-p.y;
         return Math.sqrt(dx * dx + dy * dy);
+    }
+    distanceTo2(p){
+        const dx = this.x-p.x;
+        const dy = this.y-p.y;
+        return dx * dx + dy * dy;
     }
     toString()
     {
@@ -33,6 +38,7 @@ class Vector{
     magnitude() {
         return Math.sqrt(this.x * this.x + this.y * this.y);
     }
+    
     magnitude2() {
         return this.x * this.x + this.y * this.y;
     }
@@ -184,7 +190,7 @@ class Ray{
         return []
     }
 
-    intersectLineSegment(lineSegment, twoSided=true) {
+    intersectLineSegment(lineSegment) {
         const ray = this;
         const rayOrigin = ray.origin;
         const rayDirection = ray.direction.normalized();
@@ -234,7 +240,7 @@ class Ray{
             const V = new Vector(lineSegmentP1.x - lineSegmentP2.x, lineSegmentP1.y - lineSegmentP2.y);
             let N = new Vector(V.y, -V.x).normalized(); // perpendicular to V
 
-            if(twoSided && this.direction.dotProduct(N)>0){
+            if(this.direction.dotProduct(N)>0){
                 N = N.negate()
             }
             
@@ -266,14 +272,10 @@ class Ray{
         
         let intersections = []
         for (const side of sides) {
-            const side_intersections = this.intersectLineSegment(side, false);
+            const side_intersections = this.intersectLineSegment(side);
             intersections = [...intersections, ...side_intersections]
         }
 
-        if(rectangle.contains(this.origin))
-        {
-            intersections = intersections.map((intersection)=>new Ray(intersection.origin, intersection.direction.negate()));
-        }
         return intersections;
     }
 }
