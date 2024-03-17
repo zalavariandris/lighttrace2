@@ -35,33 +35,26 @@ function zip()
 
 function single_raytrace(rays, shapes, {tolerance})
 {
-
     // secondary rays
-    const intersections = intersect(rays, shapes).map((intersection, i)=>{
+    const intersections = intersect(rays, shapes, tolerance).map((intersection, i)=>{
         if(!intersection){
             return null
         }
         const distance = intersection.origin.distanceTo(rays[i].origin)
-        // console.log(distance)
-        if(distance>tolerance){
-            return intersection
-        }
-        else{
-            return null
-        }
+        return intersection
     })
 
     const secondaries = intersections.map((intersection, i)=>{
-        if(intersection==null) return null;
-        const ray = rays[i]
-        const secondary_direction = sampleMirror(ray.direction, intersection.direction);
-        return new Ray(intersection.origin, secondary_direction)
+        if(intersection==null){
+            return null;
+        }else{
+            const ray = rays[i]
+            const secondary_direction = sampleMirror(ray.direction.normalized(1), intersection.direction.normalized(1));
+            return new Ray(intersection.origin, secondary_direction)
+        }
     })
 
-    return {
-        secondaries: secondaries,
-        intersections: intersections
-    }
+    return [secondaries, intersections]
 }
 
 function raytrace2(lights, shapes, {maxBounce, samplingMethod, lightSamples})
@@ -70,16 +63,22 @@ function raytrace2(lights, shapes, {maxBounce, samplingMethod, lightSamples})
     const initial_rays = makeRaysFromLights(lights, lightSamples, samplingMethod);
 
     // raytrace steps
-    
-
-    
     let currentRays = initial_rays;
     const ray_steps = [initial_rays]
     const intersections_steps = []
-    const paths = initial_rays.map(r=>[])
+    const paths = initial_rays.map(r=>[r.origin])
     for(let i=0; i<maxBounce; i++)
     {
-        let {secondaries, intersections} = single_raytrace(currentRays, shapes, {tolerance:1e-6})
+        const [secondaries, intersections] = single_raytrace(currentRays, shapes, {tolerance:1e-6})
+        for(let p=0; p<paths.length; p++)
+        {
+            if(intersections[p]){
+                paths[p].push(intersections[p].origin)
+            }else if(currentRays[p]){
+                const ray = currentRays[p]
+                paths[p].push(P(ray.origin.x+ray.direction.x*1000, ray.origin.y+ray.direction.y*1000))
+            }
+        }
         ray_steps.push(secondaries)
         intersections_steps.push(intersections)
         // allRays = [...allRays, ...secondaries]
@@ -89,44 +88,42 @@ function raytrace2(lights, shapes, {maxBounce, samplingMethod, lightSamples})
 
 
 
-
-
-    // const paths = currentRays.map(ray=>[ray.origin]);
-    // for(let i=0;i<maxBounce; i++)
-    // {
-    //     const ray = 
-    // }
-
     const allRays = ray_steps.flat(1)
     const allIntersections = intersections_steps.flat(1)
     return [
         allRays.filter(r=>r?true:false), 
         allIntersections.filter(i=>i?true:false),
-        []
+        paths
     ]
 }
 
 const h = React.createElement;
 const App = ()=>{
     /* STATE */
-    const [maxBounce, setMaxBounce] = React.useState(3);
-    const [lightSamples, setLightSamples] = React.useState(7);
-    const [samplingMethod, setSamplingMethod] = React.useState(SamplingMethod.Uniform);
-    const [showSVGRays, setShowSVGRays] = React.useState(true);
-    const [showSVGIntersections, setShowSVGIntersections] = React.useState(true);
-    const [showSVGLightpaths, setShowSVGLightpaths] = React.useState(true);
+    const [raytraceOptions, setRaytraceOptions] = React.useState({
+        maxBounce: 9,
+        lightSamples: 7,
+        samplingMethod: SamplingMethod.Uniform
+    })
+
+    const [svgDisplayOptions, setSvgDisplayOptions] = React.useState({
+        rays: true,
+        intersections: true,
+        lightpaths: true
+    })
 
     const [viewBox, setViewBox] = React.useState({
         x:0,y:0,w:512,h:512
     });
     const [lights, setLights] = React.useState([
-        P(190,190)
+        P(430, 185)
     ]);
     const [shapes, setShapes] = React.useState([
         new Circle(P(230, 310), 50),
         // new Circle(P(520, 550), 100),
         // new Circle(P(120, 380), 80),
         new LineSegment(P(400, 250), P(500, 130)),
+        new LineSegment(P(370, 220), P(470, 100)),
         new Rectangle(P(400,400), 100,100)
     ]);
 
@@ -185,7 +182,11 @@ const App = ()=>{
 
     // update_raytrace
     React.useEffect(()=>{
-        const [new_rays, new_intersections, new_paths] = raytrace2(lights, shapes, {maxBounce:maxBounce, samplingMethod: SamplingMethod.Uniform, lightSamples: 7});
+        const [new_rays, new_intersections, new_paths] = raytrace2(lights, shapes, {
+            maxBounce:raytraceOptions.maxBounce, 
+            samplingMethod: raytraceOptions.samplingMethod, 
+            lightSamples: raytraceOptions.lightSamples
+        });
         // set React state
         setRays(new_rays);
         setIntersections(new_intersections)
@@ -227,10 +228,10 @@ const App = ()=>{
             onViewChange: (value) => setViewBox(value),
             scene: {
                 lights: lights, 
-                rays: showSVGRays?rays:[],
+                rays: svgDisplayOptions.rays?rays:[],
                 shapes: shapes, 
-                intersections: showSVGIntersections?intersections:[], 
-                paths:showSVGLightpaths?paths:[]}, 
+                intersections: svgDisplayOptions.intersections?intersections:[], 
+                paths:svgDisplayOptions.lightpaths?paths:[]}, 
             onShapeDrag: (shape, dx, dy)=>moveShape(shape, dx, dy),
             onLightDrag: (light, dx, dy)=>moveLight(light, dx, dy)
         }),
@@ -239,39 +240,39 @@ const App = ()=>{
                 h("h2", null, "Raytrace otions"),
                 h("table", null,
                     h("tr", null, 
-                        h("td", null, "sample per light"),
+                        h("td", null, "light samples"),
                         h("td", null, 
                             h("input", {
                                 type:"range", 
-                                value:lightSamples, 
-                                onInput:(e)=>setLightSamples(e.target.value), 
+                                value:raytraceOptions.lightSamples, 
+                                onInput:(e)=>setRaytraceOptions({...raytraceOptions, ...{lightSamples: e.target.value}}),
                                 min: 1, 
-                                max:5000}, 
+                                max:200}, 
                                 null),
-                            `${lightSamples}`
+                            `${raytraceOptions.lightSamples}`
                         )
                     ),
                     h("tr", null, 
                         h("td", null, "max bounce"),
                         h("td", null, 
-                            h("input", {type:"range", value:maxBounce, onInput:(e)=>setMaxBounce(e.target.value), min: 0, max:16}, null),
-                            `${maxBounce}`
+                            h("input", {type:"range", value:raytraceOptions.maxBounce, onInput:(e)=>setRaytraceOptions({...raytraceOptions, ...{maxBounce: e.target.value}}), min: 0, max:16}, null),
+                            `${raytraceOptions.maxBounce}`
                         )
                     ),
                     h("tr", null,
                         h("td", null, "sampling method"),
                         h("td", null, 
                             h("input", {
-                                checked: samplingMethod == SamplingMethod.Random,
-                                onChange: (e)=>setSamplingMethod(e.target.value),
+                                checked: raytraceOptions.samplingMethod == SamplingMethod.Random,
+                                onChange: (e)=>setRaytraceOptions({...raytraceOptions, ...{samplingMethod: e.target.value}}),
                                 id:SamplingMethod.Random, 
                                 name: "sampling", 
                                 type:"radio", 
                                 value:SamplingMethod.Random}),
                             h("label", {for: SamplingMethod.Random}, SamplingMethod.Random),
                             h("input", {
-                                checked: samplingMethod == SamplingMethod.Uniform,
-                                onChange: (e)=>setSamplingMethod(e.target.value),
+                                checked: raytraceOptions.samplingMethod == SamplingMethod.Uniform,
+                                onChange: (e)=>setRaytraceOptions({...raytraceOptions, ...{samplingMethod: e.target.value}}),
                                 id: SamplingMethod.Uniform,
                                 name: "sampling",
                                 type:"radio",
@@ -287,22 +288,22 @@ const App = ()=>{
                     h("tr", null,
                         h("td", null,"show svg intersections"),
                         h("td", null, h("input", {
-                            checked: showSVGIntersections, 
-                            onChange: (e)=>setShowSVGIntersections(e.target.checked),
+                            checked: svgDisplayOptions.intersections, 
+                            onChange: (e)=>setSvgDisplayOptions({...svgDisplayOptions, ...{intersections: e.target.checked}}),
                             type: "checkbox"}))
                     ),
                     h("tr", null,
                         h("td", null,"show svg rays"),
                         h("td", null, h("input", {
-                            checked: showSVGRays, 
-                            onChange: (e)=>setShowSVGRays(e.target.checked),
+                            checked: svgDisplayOptions.rays, 
+                            onChange: (e)=>setSvgDisplayOptions({...svgDisplayOptions, ...{rays: e.target.checked}}),
                             type: "checkbox"}))
                     ),
                     h("tr", null,
                         h("td", null,"show svg lightpaths"),
                         h("td", null, h("input", {
-                            checked: showSVGLightpaths, 
-                            onChange: (e)=>setShowSVGLightpaths(e.target.checked),
+                            checked: svgDisplayOptions.lightpaths, 
+                            onChange: (e)=>setSvgDisplayOptions({...svgDisplayOptions, ...{lightpaths: e.target.checked}}),
                             type: "checkbox"}))
                     )
                 )

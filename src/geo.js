@@ -80,11 +80,11 @@ class Vector{
         return new Vector(this.x * value, this.y * value);
     }
     
-    normalize(value=1.0) {
-        const magnitude = this.magnitude();
-        this.x = this.x / magnitude * value
-        this.y = this.y / magnitude*value;
-    }
+    // normalize(value=1.0) {
+    //     const magnitude = this.magnitude();
+    //     this.x = this.x / magnitude * value
+    //     this.y = this.y / magnitude*value;
+    // }
     
     normalized(value=1.0) {
         const magnitude = this.magnitude();
@@ -238,7 +238,7 @@ class Ray{
             
             // Calculate the line normal
             const V = new Vector(lineSegmentP1.x - lineSegmentP2.x, lineSegmentP1.y - lineSegmentP2.y);
-            let N = new Vector(V.y, -V.x).normalized(); // perpendicular to V
+            let N = new Vector(V.y, -V.x).normalized(1); // perpendicular to V
 
             if(this.direction.dotProduct(N)>0){
                 N = N.negate()

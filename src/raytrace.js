@@ -75,7 +75,7 @@ function makeRaysFromLights(lights, sampleCount, samplingMethod)
     return rays;
 }
 
-function intersect(rays, shapes)
+function intersect(rays, shapes, THRESHOLD=1)
 {
     /*
     find each ray closest intersection with scene
@@ -104,7 +104,9 @@ function intersect(rays, shapes)
             }else/*other shapes are not supported*/{
                 return null
             }
-        }).flat(1)
+        }).flat(1).filter(intersection=>{
+            return ray.origin.distanceTo(intersection.origin)>THRESHOLD
+        })
 
         // return closest intersection of ray
         return shape_intersections.reduce((a,b)=>{
@@ -115,7 +117,7 @@ function intersect(rays, shapes)
     })
 }
 
-function trace_rays(rays, ray_intersections)
+function trace_rays(rays, shapes)
 {
     // find intersections
     let intersections = []
@@ -139,7 +141,8 @@ function trace_rays(rays, ray_intersections)
                 shape_intersections = [...shape_intersections, ...primary.intersectRectangle(shape)];
             } else if(shape instanceof LineSegment){
                 shape_intersections = [...shape_intersections, ...primary.intersectLineSegment(shape)];
-            } 
+            }
+
             ray_intersections = [...ray_intersections, ...shape_intersections];
             
         }
@@ -147,14 +150,16 @@ function trace_rays(rays, ray_intersections)
         if(ray_intersections.length>0)
         {
             // find closest interseciont
-            let closest = ray_intersections.reduce((a, b) => primary.origin.distanceTo2(a.origin) < primary.origin.distanceTo2(b.origin) ? a : b);
+            let closest = ray_intersections.reduce((a, b) => {
+                return primary.origin.distanceTo2(a.origin) < primary.origin.distanceTo2(b.origin) ? a : b
+            });
             ray_intersections.push(closest)
             
             // reflect ray on intersection
             const reflected_rays = [closest].map((intersection)=>{
-                const secondary_dir = sampleMirror(primary.direction.normalized(), intersection.direction)
+                const secondary_dir = sampleMirror(primary.direction.normalized(1), intersection.direction.normalized(1))
                 // const secondary_dir = primary.direction.reflect(i.direction)
-                return new Ray(intersection.origin, secondary_dir.normalized(100));
+                return new Ray(intersection.origin, secondary_dir.normalized(1));
             });
             
             secondaries = [...secondaries, ...reflected_rays]
