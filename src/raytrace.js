@@ -77,67 +77,42 @@ function makeRaysFromLights(lights, sampleCount, samplingMethod)
 
 function intersect(rays, shapes)
 {
-    // find intersections
+    /*
+    find each ray closest intersection with scene
+    rays: Array[Ray | null]
+    shapes: Array[Circle | Rectangle | LineSegment]
+    returns Array[Ray | null]
+    */
+
+    
     let intersections = []
-    for(let ray of rays)
-    {
-        let ray_intersections = []
-        if(ray == null){
-            secondaries = [...secondaries, ...[null]]
-            continue;
-        }
-        
-        for(let shape of shapes)
-        {
-            let shape_intersections = []
-            
-            if(shape instanceof Circle){
-                shape_intersections = [...shape_intersections, ...ray.intersectCircle(shape)];
-                
-            } 
-            else if(shape instanceof Rectangle){
-                shape_intersections = [...shape_intersections, ...ray.intersectRectangle(shape)];
-                
-            } else if(shape instanceof LineSegment){
-                shape_intersections = [...shape_intersections, ...ray.intersectLineSegment(shape)];
-                
-            }
-            
-            ray_intersections = [...ray_intersections, ...shape_intersections];
-            // console.log(ray_intersections)
+
+    return rays.map((ray)=>{
+        if(ray==null){
+            return null
         }
 
-        // find closest intersection of the current ray
-        if(ray_intersections.length>1){
-            ray_intersections = [ray_intersections.reduce((a,b)=>{
-                return ray.origin.distanceTo(a.origin) < ray.origin.distanceTo(b.origin) ? a : b
-            })]
-        }
-        
-        intersections = [...intersections, ...ray_intersections]
-        // intersections = ray_intersections
-        // if(intersections.length>0)
-        // {
-        //     // find closest interseciont
-        //     let closest = intersections.reduce((a, b) => ray.origin.distance(a.origin) < ray.origin.distance(b.origin) ? a : b);
-        //     intersections.push(closest)
-        // }
-            
-        //     // reflect ray on intersection
-        //     const reflected_rays = [closest].map((intersection)=>{
-        //         const secondary_dir = sampleMirror(ray.direction.normalized(), intersection.direction)
-        //         return new Ray(intersection.origin, secondary_dir.normalized(100));
-        //     });
-            
-        //     secondaries = [...secondaries, ...reflected_rays]
-        // }else[
-        //     secondaries = [...secondaries, ...[null]]
-        // ]
-    }
-    
-    // console.log(intersections)
-    // intersections
-    return intersections;
+        const shape_intersections = shapes.map((shape)=>{
+            if(shape instanceof Circle){
+                return ray.intersectCircle(shape);
+            }
+            else if(shape instanceof Rectangle){
+                return ray.intersectRectangle(shape)
+            }
+            else if(shape instanceof LineSegment){
+                return ray.intersectLineSegment(shape)
+            }else/*other shapes are not supported*/{
+                return null
+            }
+        }).flat(1)
+
+        // return closest intersection of ray
+        return shape_intersections.reduce((a,b)=>{
+            if(a===null) return b;
+            if(b===null) return a;
+            return ray.origin.distanceTo(a.origin) < ray.origin.distanceTo(b.origin) ? a : b
+        }, null)
+    })
 }
 
 function trace_rays(rays, ray_intersections)
