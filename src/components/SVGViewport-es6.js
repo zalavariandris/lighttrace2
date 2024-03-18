@@ -1,7 +1,7 @@
 import React, {useState} from "react"
 import Draggable from "./Draggable-es6.js"
 import {Point, Vector, Ray} from "../geo.js"
-import {Circle, LineSegment, Rectangle} from "../scene.js"
+import {Circle, DirectonalLight, LaserLight, LineSegment, Rectangle} from "../scene.js"
 import {PointLight} from "../scene.js"
 
 
@@ -29,6 +29,7 @@ class SVGViewport extends React.Component{
         this.scale = 1;
     }
 
+    // event handling
     onmousewheel(e)
     {
         let viewBox = this.props.viewBox;
@@ -122,17 +123,51 @@ class SVGViewport extends React.Component{
 
     }
 
+    // utils
     pointsToSvgPath(points) {
         let path = "M" + points.map(p => `${p.x},${p.y}`).join(" L");
         return path;
     }
 
-    moveShape(shape, dx, dy){
-        this.props.onShapeDrag(shape, dx, dy);
+    moveSceneObject(sceneObject, dx, dy){
+        // this.props.onShapeDrag(shape, dx, dy);
+        const newObject = sceneObject.copy()
+        if(newObject instanceof LineSegment){
+            newObject.p1.x+=dx;
+            newObject.p1.y+=dy;
+            newObject.p2.x+=dx;
+            newObject.p2.y+=dy;
+        }else{
+            newObject.center.x+=dx
+            newObject.center.y+=dy;
+        }
+
+        const idx = this.props.scene.indexOf(sceneObject);
+        this.props.onSceneObject(idx, newObject)
     }
 
-    moveLight(light, dx, dy){
-        this.props.onLightDrag(light, dx, dy);
+    rotateLaser(light, e, dx, dy)
+    {
+        
+        function screenToScene(svg, screenpos)
+        {
+            
+            let scenepos = svg.createSVGPoint();
+            scenepos.x = screenpos.x; 
+            scenepos.y = screenpos.y; 
+            return scenepos.matrixTransform(svg.getScreenCTM().inverse());
+        }
+
+        const svg = this.svgRef.current
+        const scenePos = screenToScene(svg, {x: e.offsetX, y: e.offsetY})
+
+
+        const newLight = light.copy()
+        
+        newLight.angle = Math.atan2(scenePos.y-light.center.y, scenePos.x-light.center.x)
+        const idx = this.props.scene.indexOf(light);
+        this.props.onSceneObject(idx, newLight)
+        
     }
 
     render()
@@ -153,9 +188,22 @@ class SVGViewport extends React.Component{
                 onMouseUp: (e) => this.onmouseup(e),
                 onMouseLeave: (e) => this.onmouseleave(e)
             },
+            h('defs', null, 
+                h('marker', {
+                    markerUnits:"strokeWidth",
+                    id:'head',
+                    orient:"auto",
+                    markerWidth:'8',
+                    markerHeight:'8',
+                    refX:'0',
+                    refY:'4'
+                },
+                    h('path', {d:'M0,0 V8 L8,4 Z'})
+                )
+            ),
             h('g', { className: 'circles' },
                 this.props.scene.filter(shape => shape instanceof Circle).map(shape =>
-                    h(Draggable, { onDrag: (dx, dy) => this.moveShape(shape, dx, dy) },
+                    h(Draggable, { onDrag: (e, dx, dy) => this.moveSceneObject(shape, dx, dy) },
                         h('circle', {
                             cx: shape.center.x,
                             cy: shape.center.y,
@@ -168,7 +216,7 @@ class SVGViewport extends React.Component{
             ),
             h('g', { className: 'linesegment' },
                 this.props.scene.filter(shape => shape instanceof LineSegment).map(shape =>
-                    h(Draggable, { onDrag: (dx, dy) => this.moveShape(shape, dx, dy) },
+                    h(Draggable, { onDrag: (e, dx, dy) => this.moveSceneObject(shape, dx, dy) },
                         h('line', {
                             x1: shape.p1.x,
                             y1: shape.p1.y,
@@ -182,7 +230,7 @@ class SVGViewport extends React.Component{
             ),
             h('g', { className: 'rectangles' },
                 this.props.scene.filter(shape => shape instanceof Rectangle).map(shape =>
-                    h(Draggable, { onDrag: (dx, dy) => this.moveShape(shape, dx, dy) },
+                    h(Draggable, { onDrag: (e, dx, dy) => this.moveSceneObject(shape, dx, dy) },
                         h('rect', {
                             x: shape.center.x - shape.width / 2,
                             y: shape.center.y - shape.height / 2,
@@ -225,7 +273,7 @@ class SVGViewport extends React.Component{
 
             h('g', { className: 'lights' },
                 this.props.scene.filter(obj=>obj instanceof PointLight).map(light =>
-                    h(Draggable, { onDrag: (dx, dy) => this.moveLight(light, dx, dy) },
+                    h(Draggable, { onDrag: (e, dx, dy) => this.moveSceneObject(light, dx, dy) },
                         h('circle', {
                             cx: light.center.x,
                             cy: light.center.y,
@@ -233,6 +281,50 @@ class SVGViewport extends React.Component{
                             className: 'lightsource',
                             vectorEffect: "non-scaling-stroke"
                         })
+                    )
+                ),
+                this.props.scene.filter(obj=>obj instanceof LaserLight).map(light =>
+                    h("g", {vectorEffect: "nonScalingSize"},
+                        h(Draggable, { onDrag: (e, dx, dy) => this.moveSceneObject(light, dx, dy) },
+                            h('circle', {
+                                cx: light.center.x,
+                                cy: light.center.y,
+                                r: '3',
+                                className: 'lightsource',
+                                vectorEffect: "non-scaling-stroke"
+                            })
+                        ),
+                        h(Draggable, { onDrag: (e, dx, dy) => this.rotateLaser(light, e, dx, dy) },
+                            h('circle', {
+                                cx: light.center.x+Math.cos(light.angle)*30,
+                                cy: light.center.y+Math.sin(light.angle)*30,
+                                r: '3',
+                                className: 'manip'
+                            })
+                        )
+                    )
+                ),
+                this.props.scene.filter(obj=>obj instanceof DirectonalLight).map(light =>
+                    h("g", {},
+                        h(Draggable, { onDrag: (e, dx, dy) => this.moveSceneObject(light, dx, dy) },
+                            h('rect', {
+                                x: light.center.x-2,
+                                y: light.center.y-10,
+                                width: 2,
+                                height: light.width,
+                                style: {transform: `rotate(${light.angle}rad)`, transformOrigin: `${light.center.x}px ${light.center.y}px`},
+                                className: 'lightsource',
+                                vectorEffect: "non-scaling-stroke"
+                        })
+                        ),
+                        h(Draggable, { onDrag: (e, dx, dy) => this.rotateLaser(light, e, dx, dy) },
+                            h('circle', {
+                                cx: light.center.x+Math.cos(light.angle)*30,
+                                cy: light.center.y+Math.sin(light.angle)*30,
+                                r: '3',
+                                className: 'manip'
+                            })
+                        )
                     )
                 )
             ),
@@ -245,6 +337,7 @@ class SVGViewport extends React.Component{
                             x2: intersection.origin.x + intersection.direction.x * 20,
                             y2: intersection.origin.y + intersection.direction.y * 20,
                             className: 'intersection',
+                            // markerEnd:'url(#head)',
                             vectorEffect: "non-scaling-stroke"
                         })
                     )

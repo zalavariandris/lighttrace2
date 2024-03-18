@@ -34,14 +34,24 @@ svg .lightray{
     stroke-dasharray: 10 10;
 }
 
+svg .manip{
+    fill: yellow;
+    stroke: yellow;
+    opacity: 0.1;
+}
+svg .manip:hover{
+    opacity: 0.3;
+}
+
 svg .intersection{
     stroke: rgb(170, 255, 0);
+    fill: rgb(0, 255, 170);
     opacity: 1.0;
     stroke-width: 3;
 }
 
 svg .lightpath{
-    stroke: orange;
+    stroke: hsla(50, 100%, 50%, 0.5);
     opacity: 1.0        ;
 }
 

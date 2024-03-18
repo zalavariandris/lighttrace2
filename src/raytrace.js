@@ -1,10 +1,7 @@
 import {Point, Vector, Ray, P, V} from "./geo.js"
 import {Circle, LineSegment, Rectangle} from "./scene.js"
-
-const SamplingMethod = Object.freeze({
-    Random: "Random",
-    Uniform: "Uniform"
-})
+import {Light, PointLight, LaserLight} from "./scene.js"
+import {SamplingMethod} from "./scene.js"
 
 function sampleMirror(V, N){
 	return V.subtract(N.multiply(2*V.dotProduct(N)));
@@ -33,7 +30,7 @@ function sampleDiffuse(V, N)
     var cosThetaI = Math.sqrt(1.0 - sinThetaI*sinThetaI);
 
     var V1 = new Vector(cosThetaI, sinThetaI).normalized().rotate(N.angleToXAxis());
-
+    return V1;
     if(c<0)/* collide from outside*/
     {
     	return V1;
@@ -44,33 +41,11 @@ function sampleDiffuse(V, N)
     }
 }
 
-function makeRaysFromLights(lights, sampleCount, samplingMethod)
+function makeRaysFromLights(lights, {sampleCount, samplingMethod})
 {
-    /* Shoot rays from scene lights */
-    function makeUniformAngles(N)
-    {
-        return Array.from({length:N},(v,k)=>{
-            return k/N*Math.PI*2
-        });
-    }
-
-    function makeRandomAngles(N)
-    {
-        return Array.from({length:N},(v,k)=>{
-            return Math.random()*Math.PI*2;
-        });
-    }
-
-    const angles = samplingMethod==SamplingMethod.Random ? makeRandomAngles(sampleCount) : makeUniformAngles(sampleCount)
-    
     // angles to rays
-    const rays = angles.map((a)=>{
-        return lights.map((light)=>{
-            const x = Math.cos(a);
-            const y = Math.sin(a);
-            const dir = V(x,y);
-            return new Ray(light.center, dir.normalized(1))
-        })
+    const rays = lights.map((light)=>{
+        return light.sampleRays({sampleCount, samplingMethod})
     }).flat(1)
     return rays;
 }
@@ -121,7 +96,7 @@ function raytrace_pass(rays, shapes, {THRESHOLD=1e-6})
             return null;
         }else{
             const ray = rays[i]
-            const secondary_direction = sampleMirror(ray.direction.normalized(1), intersection.direction.normalized(1));
+            const secondary_direction = sampleDiffuse(ray.direction.normalized(1), intersection.direction.normalized(1));
             return new Ray(intersection.origin, secondary_direction)
         }
     })
@@ -129,10 +104,10 @@ function raytrace_pass(rays, shapes, {THRESHOLD=1e-6})
     return [secondaries, intersections]
 }
 
-function raytrace(lights, shapes, {maxBounce=3, samplingMethod=SamplingMethod.Uniform, lightSamples=9}={})
+function raytrace(lights, shapes, {maxBounce=3, samplingMethod="Uniform", lightSamples=9}={})
 {
     // initial rays
-    const initial_rays = makeRaysFromLights(lights, lightSamples, samplingMethod);
+    const initial_rays = makeRaysFromLights(lights, {lightSamples, samplingMethod});
 
     // raytrace steps
     let currentRays = initial_rays;

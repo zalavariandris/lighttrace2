@@ -92,11 +92,12 @@ class Circle extends Shape
 
 class Rectangle extends Shape
 {
-    constructor(center, width, height)
+    constructor(center, width, height, angle=0)
     {
         super(center)
         this.width = width;
         this.height = height;
+        this.angle = angle
     }
     
     copy(other)
@@ -240,9 +241,17 @@ class LineSegment extends Shape
     }
 }
 
+const SamplingMethod = Object.freeze({
+    Random: "Random",
+    Uniform: "Uniform"
+})
+
 class Light extends SceneObject
 {
-
+    sampleRays()
+    {
+        return []
+    }
 }
 
 class PointLight extends Light
@@ -260,7 +269,91 @@ class PointLight extends Light
     {
         return `Pointlight(${this.center})`
     }
+
+    sampleRays({sampleCount=9, samplingMethod=SamplingMethod.Uniform}={})
+    {
+        
+        function makeUniformAngles(N)
+        {
+            return Array.from({length:N},(v,k)=>{
+                return k/N*Math.PI*2
+            });
+        }
+
+        function makeRandomAngles(N)
+        {
+            return Array.from({length:N},(v,k)=>{
+                return Math.random()*Math.PI*2;
+            });
+        }
+        const angles = samplingMethod==SamplingMethod.Random ? makeRandomAngles(sampleCount) : makeUniformAngles(sampleCount)
+        return angles.map((a)=>{
+            const x = Math.cos(a);
+            const y = Math.sin(a);
+            const dir = V(x,y);
+            return new Ray(this.center, dir.normalized(1))
+        })
+    }
+}
+
+class LaserLight extends Light
+{
+    constructor(center, angle=0)
+    {
+        super(center);
+        this.angle = angle;
+    }
+
+    copy()
+    {
+        return new LaserLight(this.center.copy(), this.angle)
+    }
+
+    toString()
+    {
+        return `LaserLight(${this.center}, angles)`
+    }
+
+    sampleRays({sampleCount=9, samplingMethod=SamplingMethod.Uniform}={}){
+        const x = Math.cos(this.angle);
+        const y = Math.sin(this.angle);
+        const dir = V(x,y);
+        return Array.from({length: sampleCount}).map((_, i)=>{
+            return new Ray(this.center, dir.normalized(1))
+        })
+    }
+}
+
+class DirectonalLight extends Light
+{
+    constructor(center, width, angle)
+    {
+        super(center)
+        this.width = width;
+        this.angle = angle
+    }
+
+    sampleRays({sampleCount=9, samplingMethod=SamplingMethod.Uniform}={})
+    {
+        const x = Math.cos(this.angle);
+        const y = Math.sin(this.angle);
+        const dir = V(x,y);
+        const offset = V(Math.cos(this.angle+Math.PI/2), Math.sin(this.angle+Math.PI/2))
+        const center = V(this.center.x,this.center.y)
+        return Array.from({length: sampleCount}).map((_, i)=>{
+
+            const origin = center.add(offset.multiply(this.width*i/sampleCount-this.width/2))
+            
+            return new Ray(P(origin.x,origin.y), dir)
+        });
+    }
+
+    copy()
+    {
+        return new DirectonalLight(this.center.copy(), this.width, this.angle)
+    }
 }
 
 export {Shape, Circle, Rectangle, LineSegment}
-export {Light, PointLight}
+export {Light, PointLight, LaserLight, DirectonalLight}
+export {SamplingMethod}

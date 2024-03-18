@@ -61,7 +61,7 @@ class Draggable extends React.Component
                 // x: this.state.x+dx,
                 // y: this.state.y+dy
             })
-            this.props.onDrag(dx, dy);
+            this.props.onDrag(event, dx, dy);
         }
         // event.stopPropagation();
     }
