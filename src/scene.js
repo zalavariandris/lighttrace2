@@ -10,25 +10,31 @@ class SceneObject
     }
 }
 
-class Shape extends SceneObject
+class Geometry extends SceneObject
 {
+    constructor(center, material)
+    {
+        super(center)
+        this.material = material;
+    }
+
     hitTest()
     {
         return null
     }
 }
 
-class Circle extends Shape
+class Circle extends Geometry
 {
-    constructor(center, radius)
+    constructor(center, material, radius)
     {
-        super(center)
+        super(center, material)
         this.radius=radius;
     }
     
     copy(other)
     {
-        return new Circle(this.center.copy(), this.radius)
+        return new Circle(this.center.copy(), this.material.copy(), this.radius)
     }
 
     toString()
@@ -90,11 +96,11 @@ class Circle extends Shape
     }
 }
 
-class Rectangle extends Shape
+class Rectangle extends Geometry
 {
-    constructor(center, width, height, angle=0)
+    constructor(center, material, width, height, angle=0)
     {
-        super(center)
+        super(center, material);
         this.width = width;
         this.height = height;
         this.angle = angle
@@ -102,7 +108,7 @@ class Rectangle extends Shape
     
     copy(other)
     {
-        return new Rectangle(this.center.copy(), this.width, this.height)
+        return new Rectangle(this.center.copy(), this.material.copy(), this.width, this.height)
     }
 
     toString()
@@ -155,11 +161,11 @@ class Rectangle extends Shape
     }
 }
 
-class LineSegment extends Shape
+class LineSegment extends Geometry
 {
-    constructor(p1, p2)
+    constructor(p1, p2, material)
     {
-        super(P(0,0))
+        super(P(0,0), material)
         this.p1 = p1;
         this.p2 = p2;
     }
@@ -171,7 +177,7 @@ class LineSegment extends Shape
 
     copy(other)
     {
-        return new LineSegment(this.p1.copy(), this.p2.copy())
+        return new LineSegment(this.p1.copy(), this.p2.copy(), this.material.copy())
     }
 
     toString()
@@ -354,6 +360,96 @@ class DirectonalLight extends Light
     }
 }
 
-export {Shape, Circle, Rectangle, LineSegment}
+class Material{
+    constructor()
+    {
+    }
+
+    copy()
+    {
+        return new Material()
+    }
+
+    sample(V, N)
+    {
+        return null;
+    }
+}
+
+function sampleMirror(V, N)
+{
+    return V.subtract(N.multiply(2*V.dotProduct(N)));
+}
+
+function sampleTransparent(V, N, ior=1.440)
+{
+    var c = - N.dotProduct(V);
+    if(c>0)/* collide from outside*/
+    {
+        var r  = 1/ior;
+        return V.multiply(r).add( N.multiply(r*c - Math.sqrt( 1-Math.pow(r,2) * (1-Math.pow(c,2) )  )) );
+    }
+    else /* collide from inside*/
+    {
+        var r  = ior/1;
+        return V.multiply(r).add( N.multiply(r*c + Math.sqrt( 1-Math.pow(r,2) * (1-Math.pow(c,2) )  )) );
+    }
+}
+
+function sampleDiffuse(V, N)
+{
+    const spread = 1/1;
+    const angle = Math.random()*Math.PI*spread-Math.PI*spread/2 + Math.atan2(N.y, N.x);
+    
+    return new Vector(Math.cos(angle), Math.sin(angle));
+}
+
+class MirrorMaterial
+{
+    constructor(){}
+
+    copy()
+    {
+        return new MirrorMaterial()
+    }
+
+    sample(V, N)
+    {
+        return sampleMirror(V, N)
+    }
+}
+
+class TransparentMaterial
+{
+    constructor(){}
+
+    copy()
+    {
+        return new TransparentMaterial()
+    }
+
+    sample(V, N)
+    {
+        return sampleTransparent(V, N)
+    }
+}
+
+
+class DiffuseMaterial
+{
+    constructor(){}
+
+    copy(){
+        return new DiffuseMaterial();
+    }
+
+    sample(V, N)
+    {
+        return sampleDiffuse(V, N)
+    }
+}
+
+export {Geometry, Circle, Rectangle, LineSegment}
 export {Light, PointLight, LaserLight, DirectonalLight}
+export {Material, MirrorMaterial, TransparentMaterial, DiffuseMaterial};
 export {SamplingMethod}

@@ -2,7 +2,7 @@ import React from "react"
 
 class Draggable extends React.Component
 {
-    constructor(props)
+    constructor({...props})
     {
         super(props);
         this.state = {
@@ -20,16 +20,19 @@ class Draggable extends React.Component
             prevY: event.clientY
         })
         
-        window.addEventListener("mousemove", (e)=>this.handleMouseMove(e));
-        window.addEventListener("mouseup", (e)=>this.handleMouseUp(e));
+        window.addEventListener("mousemove", (e)=>this.handleMouseMove(e), true);
+        window.addEventListener("mouseup", (e)=>this.handleMouseUp(e), true);
+        // window.addEventListener ('click', this.ignore_click, true ); 
         event.preventDefault(); // prevent text selection when dragging
         event.stopPropagation();
+        return false;
     }
     
     handleMouseUp(event)
     {
         this.setState({"isDragging": false})
-        // event.stopPropagation();
+        event.stopPropagation();
+        event.preventDefault(); // prevent text selection when dragging
     }
     
     handleMouseMove(event)
@@ -69,7 +72,12 @@ class Draggable extends React.Component
     render()
     {
         const h = React.createElement;
-        return h('g', { className: 'draggable', onMouseDown: (e) => this.handleMouseDown(e) },
+        return h('g', { 
+            className: 'draggable',
+
+            onMouseDown: (e) => this.handleMouseDown(e),
+            ...this.props
+        },
             h('g', null,
                 this.props.children
             )

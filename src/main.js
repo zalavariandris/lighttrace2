@@ -5,10 +5,10 @@ import SVGViewport from "./components/SVGViewport-es6.js";
 import GLViewport from "./components/GLViewport-es6.js";
 
 import {Point, Vector, Ray, P, V} from "./geo.js"
-import {Shape, Circle, LineSegment, Rectangle} from "./scene.js"
+import {Geometry, Circle, LineSegment, Rectangle} from "./scene.js"
 import {Light, PointLight, LaserLight, DirectonalLight} from "./scene.js";
 import {makeRaysFromLights, raytrace, SamplingMethod} from "./raytrace.js"
-import {sampleMirror, sampleTransparent, sampleDiffuse} from "./raytrace.js"
+import {Material, MirrorMaterial, TransparentMaterial, DiffuseMaterial} from "./scene.js"
 
 const h = React.createElement;
 
@@ -40,17 +40,21 @@ const App = ()=>{
     });
 
     const [scene, setScene] = React.useState([
-        // new PointLight(P(430, 185)),
+        new PointLight(P(430, 185)),
         new LaserLight(P(150,220), 0),
-        // new DirectonalLight(P(150,180), 20,0),
-        new Circle(P(230, 310), 50),
+        new DirectonalLight(P(150,180), 20,0),
+        new Circle(P(230, 310), new TransparentMaterial(), 50),
         // new Circle(P(520, 550), 100),
         // new Circle(P(120, 380), 80),
-        new LineSegment(P(400, 250), P(500, 130)),
-        new LineSegment(P(370, 220), P(470, 100)),
-        new Rectangle(P(400,400), 100,100)
+        new LineSegment(P(400, 250), P(500, 130), new MirrorMaterial()),
+        new LineSegment(P(370, 220), P(470, 100), new MirrorMaterial()),
+        new Rectangle(P(400,400), new DiffuseMaterial(), 100,100)
     ]);
-    const updateSceneObject = (index, newObject)=>setScene(scene.toSpliced(index, 1, newObject))
+    const updateSceneObject = (oldObject, newObject)=>{
+        console.log("updateSceneObject", newObject)
+        setScene(scene.toSpliced(scene.indexOf(oldObject), 1, newObject))
+    }
+    const [selectionIndices, setSelectionIndices] = React.useState([])
 
     // computed
     const [rays, setRays] = React.useState([])
@@ -61,11 +65,8 @@ const App = ()=>{
     function updateRaytrace()
     {
         const lights = scene.filter(obj=>obj instanceof Light)
-        const shapes = scene.filter(obj=>obj instanceof Shape)
-        const materials = shapes.map(shape=>{
-            return sampleTransparent
-        });
-        const [new_rays, new_intersections, new_paths] = raytrace(lights, [shapes, materials], {
+        const shapes = scene.filter(obj=>obj instanceof Geometry)
+        const [new_rays, new_intersections, new_paths] = raytrace(lights, [shapes, shapes.map(shp=>shp.material)], {
             maxBounce:raytraceOptions.maxBounce, 
             samplingMethod: raytraceOptions.samplingMethod, 
             lightSamples: raytraceOptions.lightSamples
@@ -94,10 +95,12 @@ const App = ()=>{
             viewBox: viewBox,
             onViewChange: (value) => setViewBox(value),
             scene: scene,
+            selectionIndices,
+            onSelection: (newSelection)=>setSelectionIndices(newSelection),
             rays: svgDisplayOptions.rays?rays:[],
             intersections: svgDisplayOptions.intersections?intersections:[], 
             paths:svgDisplayOptions.lightpaths?paths:[], 
-            onSceneObject: (idx, newObject)=>updateSceneObject(idx, newObject)
+            onSceneObject: (oldObject, newObject)=>updateSceneObject(oldObject, newObject)
         }),        
         h("div", {id:"inspector"}, 
             h('label', {for: "showSettingstoggle", style: {fontSize: "32px"}}, "⚙"),

@@ -3,32 +3,7 @@ import {Circle, LineSegment, Rectangle} from "./scene.js"
 import {Light, PointLight, LaserLight} from "./scene.js"
 import {SamplingMethod} from "./scene.js"
 
-function sampleMirror(V, N){
-	return V.subtract(N.multiply(2*V.dotProduct(N)));
-}
 
-function sampleTransparent(V, N, ior=1.440)
-{
-	var c = - N.dotProduct(V);
-	if(c>0)/* collide from outside*/
-    {
-		var r  = 1/ior;
-		return V.multiply(r).add( N.multiply(r*c - Math.sqrt( 1-Math.pow(r,2) * (1-Math.pow(c,2) )  )) );
-	}
-    else /* collide from inside*/
-    {
-		var r  = ior/1;
-		return V.multiply(r).add( N.multiply(r*c + Math.sqrt( 1-Math.pow(r,2) * (1-Math.pow(c,2) )  )) );
-	}
-}
-
-function sampleDiffuse(V, N)
-{
-    const spread = 1/1;
-    const angle = Math.random()*Math.PI*spread-Math.PI*spread/2 + Math.atan2(N.y, N.x);
-    
-    return new Vector(Math.cos(angle), Math.sin(angle));
-}
 
 function makeRaysFromLights(lights, {sampleCount, samplingMethod})
 {
@@ -68,6 +43,15 @@ function makeRaysFromLights(lights, {sampleCount, samplingMethod})
 //     });
 // }
 
+function rayClosestToPoint(point)
+{
+    return (a,b)=>{
+        if(a===null) return b;
+        if(b===null) return a;
+        return a.origin.distanceTo(point) < b.origin.distanceTo(point) ? a : b;
+    };
+}
+
 function raytrace_pass(rays, [shapes, materials], {THRESHOLD=1e-6})
 {
     // intersection
@@ -81,8 +65,6 @@ function raytrace_pass(rays, [shapes, materials], {THRESHOLD=1e-6})
 
         const shape_intersections = shapes.map((shape, shapeIdx)=>{
             const intersections = shape.hitTest(ray).filter(intersection=>ray.origin.distanceTo2(intersection.origin)>THRESHOLD_SQUARED);
-
-            // const secondary = sampleTransparent(ray.direction.normalized(1), intersection.direction.normalized(1))
             return intersections;
         }).flat(1);
 
@@ -111,6 +93,53 @@ function raytrace_pass(rays, [shapes, materials], {THRESHOLD=1e-6})
     return [secondaries, intersections];
 }
 
+function raytrace_pass2(rays, [shapes, materials], {THRESHOLD=1e-6})
+{
+    // intersection
+
+    const THRESHOLD_SQUARED = THRESHOLD**THRESHOLD
+    const intersections = rays.map((ray)=>{
+
+        const compare_distance = (a,b)=>{
+            if(a===null) return b;
+            if(b===null) return a;
+            return ray.origin.distanceTo(a.origin) < ray.origin.distanceTo(b.origin) ? a : b;
+        }
+
+        if(ray==null)
+        {
+            return null;
+        }
+
+        const shape_intersection = shapes.map((shape, shapeIdx)=>{
+            const intersections = shape.hitTest(ray).filter(intersection=>ray.origin.distanceTo2(intersection.origin)>THRESHOLD_SQUARED);
+            const closest_intersection = intersections.reduce(compare_distance, null);
+            if(closest_intersection) {closest_intersection.shapeIdx = shapeIdx;}
+            return closest_intersection;
+        })
+
+        // return closest intersection of ray
+        return shape_intersection.reduce(compare_distance, null);
+    });
+
+    // secondary rays
+    const secondaries = intersections.map((intersection, i)=>{
+        if(intersection==null)
+        {
+            return null;
+        }
+        else
+        {
+            const ray = rays[i];
+            const material = materials[intersection.shapeIdx]
+            const secondary_direction = material.sample(ray.direction.normalized(1), intersection.direction.normalized(1));
+            return new Ray(intersection.origin, secondary_direction);
+        }
+    });
+
+    return [secondaries, intersections];
+}
+
 function raytrace(lights, [shapes, materials], {maxBounce=3, samplingMethod="Uniform", lightSamples=9}={})
 {
     // initial rays
@@ -123,7 +152,7 @@ function raytrace(lights, [shapes, materials], {maxBounce=3, samplingMethod="Uni
     const paths = initial_rays.map(r=>[r.origin]);
     for(let i=0; i<maxBounce; i++)
     {
-        const [secondaries, intersections] = raytrace_pass(currentRays, [shapes, materials], {THRESHOLD:1e-6});
+        const [secondaries, intersections] = raytrace_pass2(currentRays, [shapes, materials], {THRESHOLD:1e-6});
         ray_steps.push(secondaries);
         intersections_steps.push(intersections);
 
@@ -156,4 +185,3 @@ function raytrace(lights, [shapes, materials], {maxBounce=3, samplingMethod="Uni
 }
 
 export {makeRaysFromLights, raytrace, SamplingMethod}
-export {sampleMirror, sampleTransparent, sampleDiffuse}
