@@ -5,8 +5,8 @@ import SVGViewport from "./components/SVGViewport-es6.js";
 import GLViewport from "./components/GLViewport-es6.js";
 
 import {Point, Vector, Ray, P, V} from "./geo.js"
-import {Circle, LineSegment, Rectangle} from "./geo.js"
-import { PointLight } from "./geo.js";
+import {Shape, Circle, LineSegment, Rectangle} from "./scene.js"
+import {Light, PointLight } from "./scene.js";
 import {makeRaysFromLights, raytrace, intersect, SamplingMethod} from "./raytrace.js"
 import {sampleMirror, sampleTransparent, sampleDiffuse} from "./raytrace.js"
 
@@ -69,8 +69,8 @@ const App = ()=>{
     // update_raytrace
     function updateRaytrace()
     {
-        const lights = scene.filter(obj=>obj instanceof PointLight)
-        const shapes = scene.filter(obj=>obj instanceof Circle || obj instanceof Rectangle || obj instanceof LineSegment)
+        const lights = scene.filter(obj=>obj instanceof Light)
+        const shapes = scene.filter(obj=>obj instanceof Shape)
         const [new_rays, new_intersections, new_paths] = raytrace(lights, shapes, {
             maxBounce:raytraceOptions.maxBounce, 
             samplingMethod: raytraceOptions.samplingMethod, 

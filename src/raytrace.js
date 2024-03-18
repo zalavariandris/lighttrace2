@@ -1,5 +1,5 @@
 import {Point, Vector, Ray, P, V} from "./geo.js"
-import {Circle, LineSegment, Rectangle} from "./geo.js"
+import {Circle, LineSegment, Rectangle} from "./scene.js"
 
 const SamplingMethod = Object.freeze({
     Random: "Random",
