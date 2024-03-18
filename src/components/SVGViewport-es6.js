@@ -20,7 +20,7 @@ function GeometryComponent({sceneObject, onManipulate, ...props})
             cx: sceneObject.center.x,
             cy: sceneObject.center.y,
             r: sceneObject.radius,
-            className: ["shape", "selected"].join(" ")
+            className: "shape"
         }))
     }
     if(sceneObject instanceof LineSegment)
@@ -271,8 +271,7 @@ class SVGViewport extends React.Component{
 
     selectObject(obj)
     {
-        const newSelectionIndices = [this.props.scene.indexOf(obj)]
-        this.props.onSelection(newSelectionIndices)
+        this.props.onSelection([obj])
     }
 
     render()
@@ -312,15 +311,14 @@ class SVGViewport extends React.Component{
                     
                     return h(Draggable, {
                         onDrag: (e, dx, dy) => this.moveSceneObject(sceneObject, dx, dy),
-                        sceneObject,
-                        onClick: (e)=>alert(e)
+                        onClick: (e)=>this.selectObject(sceneObject),
+                        className: this.props.selection.indexOf(sceneObject)>=0?"selected":"",
+                        sceneObject
                     },
                         h(GeometryComponent, {
                             sceneObject, 
                             onManipulate:(newGeometry)=>this.manipulateGeometry(sceneObject, newGeometry),
-                            
                         })
-
                     );
                 })
             ),

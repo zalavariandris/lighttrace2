@@ -54,7 +54,7 @@ const App = ()=>{
         console.log("updateSceneObject", newObject)
         setScene(scene.toSpliced(scene.indexOf(oldObject), 1, newObject))
     }
-    const [selectionIndices, setSelectionIndices] = React.useState([])
+    const [selection, setSelection] = React.useState([])
 
     // computed
     const [rays, setRays] = React.useState([])
@@ -95,8 +95,8 @@ const App = ()=>{
             viewBox: viewBox,
             onViewChange: (value) => setViewBox(value),
             scene: scene,
-            selectionIndices,
-            onSelection: (newSelection)=>setSelectionIndices(newSelection),
+            selection,
+            onSelection: (newSelection)=>setSelection(newSelection),
             rays: svgDisplayOptions.rays?rays:[],
             intersections: svgDisplayOptions.intersections?intersections:[], 
             paths:svgDisplayOptions.lightpaths?paths:[], 
@@ -191,14 +191,21 @@ const App = ()=>{
                 ),
                 h("section", null,
                     h("h2", null, "Scene info"),
+                    h("h3", null, "Selection"),
+                    h("ul", null, 
+                        ...selection.map((sceneObject)=>{
+                            return h("li", null, `${sceneObject}`)
+                        })
+                    ),
                     h("div", null, `rays: ${rays.length}`),
                     h("div", null, `intersections: ${intersections.length}`),
+
                     h("ul", null, 
                         ...intersections.map((intersection)=>{
                             return h("li", null, `${intersection}`)
                         })
                     ),
-                    h("h3", null, "scene"),
+                    h("h3", null, "Scene"),
                     h("ul", null,
                         scene.map((obj)=>{
                             return h("li", null, `${obj}`);

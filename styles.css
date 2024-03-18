@@ -54,6 +54,10 @@ svg .intersection{
     stroke-width: 3;
 }
 
+svg .selected .shape, svg .selected .lightsource{
+    fill: hsla(0, 0%, 89%)  !important;
+}
+
 svg .lightpath{
     stroke: hsla(50, 100%, 50%, 0.5);
     opacity: 1.0;
