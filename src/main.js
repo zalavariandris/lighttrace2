@@ -7,7 +7,7 @@ import GLViewport from "./components/GLViewport-es6.js";
 import {Point, Vector, Ray, P, V} from "./geo.js"
 import {Shape, Circle, LineSegment, Rectangle} from "./scene.js"
 import {Light, PointLight, LaserLight, DirectonalLight} from "./scene.js";
-import {makeRaysFromLights, raytrace, intersect, SamplingMethod} from "./raytrace.js"
+import {makeRaysFromLights, raytrace, SamplingMethod} from "./raytrace.js"
 import {sampleMirror, sampleTransparent, sampleDiffuse} from "./raytrace.js"
 
 const h = React.createElement;
@@ -62,7 +62,10 @@ const App = ()=>{
     {
         const lights = scene.filter(obj=>obj instanceof Light)
         const shapes = scene.filter(obj=>obj instanceof Shape)
-        const [new_rays, new_intersections, new_paths] = raytrace(lights, shapes, {
+        const materials = shapes.map(shape=>{
+            return sampleTransparent
+        });
+        const [new_rays, new_intersections, new_paths] = raytrace(lights, [shapes, materials], {
             maxBounce:raytraceOptions.maxBounce, 
             samplingMethod: raytraceOptions.samplingMethod, 
             lightSamples: raytraceOptions.lightSamples
