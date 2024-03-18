@@ -74,8 +74,8 @@ svg .shape:hover, svg .lightsource:hover{
 #inspector
 {
     position: fixed;
-    left: 0;
-    top: 0;
+    left: 1rem;
+    top: 3rem;
     user-select: none;
     pointer-events: none;
 }

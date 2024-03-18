@@ -134,16 +134,48 @@ class Ray{
     copy(other){
         return new Ray(this.origin.copy(), this.direction.copy())
     }
+}
+
+function P(x,y){return new Point(x,y)}
+function V(x,y){return new Vector(x,y)}
+
+class SceneObject{
+    constructor(center){
+        this.center = center;
+    }
+}
+
+class Shape extends SceneObject{
+    hitTest()
+    {
+        return null
+    }
+}
+
+class Circle extends Shape{
+    constructor(center, radius){
+        super(center)
+        this.radius=radius;
+    }
     
-    intersectCircle(circle)
+    copy(other){
+        return new Circle(this.center.copy(), this.radius)
+    }
+
+    toString()
+    {
+        return `Circle O(${this.center.x.toFixed(1)}, ${this.center.y.toFixed(1)}), r${this.radius.toFixed(1)}`
+    }
+
+    hitTest(ray)
     {
         // 
-        const d = new Vector(this.origin.x - circle.center.x, this.origin.y - circle.center.y); // to circle
+        const d = new Vector(ray.origin.x - this.center.x, ray.origin.y - this.center.y); // to circle
 
-        const dotProduct = this.direction.dotProduct(d.normalized());
-        const a = this.direction.dotProduct(this.direction);
-        const b = 2 * this.direction.dotProduct(d);
-        const c = d.dotProduct(d) - circle.radius * circle.radius;
+        const dotProduct = ray.direction.dotProduct(d.normalized());
+        const a = ray.direction.dotProduct(ray.direction);
+        const b = 2 * ray.direction.dotProduct(d);
+        const c = d.dotProduct(d) - this.radius * this.radius;
         const discriminant = b * b - 4 * a * c;
         
         // console.log(discriminant)
@@ -154,9 +186,7 @@ class Ray{
         const t1 = (-b + Math.sqrt(discriminant)) / (2 * a);
         const t2 = (-b - Math.sqrt(discriminant)) / (2 * a);
 
-
-        // const insideCircle = new Vector(this.origin.x-circle.center.x, this.origin.y-circle.center.y).magnitude()<(circle.radius+EPSILON);
-        const outsideCircle = new Vector(this.origin.x-circle.center.x, this.origin.y-circle.center.y).magnitude()>(circle.radius+EPSILON);
+        const outsideCircle = new Vector(ray.origin.x-this.center.x, ray.origin.y-this.center.y).magnitude()>(this.radius+EPSILON);
 
         if(outsideCircle)
         {
@@ -167,8 +197,8 @@ class Ray{
             {
                 return [];
             }
-            const origin = P(this.origin.x + t * this.direction.x, this.origin.y + t * this.direction.y);
-            const direction = V(origin.x - circle.center.x, origin.y - circle.center.y).normalized();
+            const origin = P(ray.origin.x + t * ray.direction.x, ray.origin.y + t * ray.direction.y);
+            const direction = V(origin.x - this.center.x, origin.y - this.center.y).normalized();
             
             return [new Ray(origin, direction.multiply(1))];
         }
@@ -180,22 +210,109 @@ class Ray{
             {
                 return [];
             }
-            const origin = P(this.origin.x + t * this.direction.x, this.origin.y + t * this.direction.y);
+            const origin = P(ray.origin.x + t * ray.direction.x, ray.origin.y + t * ray.direction.y);
             // origin = P(10,10)
 
-            const direction = V(origin.x - circle.center.x, origin.y - circle.center.y).normalized();
+            const direction = V(origin.x - this.center.x, origin.y - this.center.y).normalized();
             
             return [new Ray(origin, direction.multiply(-1))];
         }
         return []
     }
+}
 
-    intersectLineSegment(lineSegment) {
-        const ray = this;
+class Rectangle extends Shape {
+    constructor(center, width, height)
+    {
+        super(center)
+        this.width = width;
+        this.height = height;
+    }
+    
+    copy(other)
+    {
+        return new Rectangle(this.center.copy(), this.width, this.height)
+    }
+
+    toString()
+    {
+        return `Rectangle O(${this.center.x.toFixed(1)}, ${this.center.y.toFixed(1)}), ${this.width.toFixed(1)}x${this.height.toFixed(1)}`
+    }
+
+    contains(point)
+    { 
+        // Calculate half width and half height of the rectangle
+        const halfWidth = this.width / 2;
+        const halfHeight = this.height / 2;
+    
+        // Calculate the bounds of the rectangle
+        const minX = this.center.x - halfWidth;
+        const maxX = this.center.x + halfWidth;
+        const minY = this.center.y - halfHeight;
+        const maxY = this.center.y + halfHeight;
+    
+        // Check if the point is within the bounds of the rectangle
+        return point.x >= minX && point.x <= maxX && point.y >= minY && point.y <= maxY;
+    }
+
+    hitTest(ray)
+    {
+        const top = this.center.y+this.height/2
+        const left = this.center.x-this.width/2
+        const bottom = this.center.y-this.height/2
+        const right = this.center.x+this.width/2
+        
+        const topLeft = new Point(left, top)
+        const bottomRight = new Point(right, bottom)
+        const topRight = new Point(right, top)
+        const bottomLeft = new Point(left, bottom)
+        
+        const sides = [
+            new LineSegment(topLeft, topRight),
+            new LineSegment(topRight, bottomRight),
+            new LineSegment(bottomRight, bottomLeft),
+            new LineSegment(bottomLeft, topLeft)
+        ];
+        
+        let intersections = []
+        for (const side of sides) {
+            const side_intersections = side.hitTest(ray);
+            intersections = [...intersections, ...side_intersections]
+        }
+
+        return intersections;
+    }
+}
+
+class LineSegment extends Shape{
+    constructor(p1, p2)
+    {
+        super(P(0,0))
+        this.p1 = p1;
+        this.p2 = p2;
+    }
+
+    static fromPoints(p1, p2)
+    {
+        
+    }
+
+    copy(other)
+    {
+        return new LineSegment(this.p1.copy(), this.p2.copy())
+    }
+
+    toString()
+    {
+        return `LineSegment P(${this.p1.x.toFixed(1)}, ${this.p1.y.toFixed(1)}), P(${this.p2.x.toFixed(1)}, ${this.p2.y.toFixed(1)})`
+    }
+
+    hitTest(ray)
+    {
         const rayOrigin = ray.origin;
         const rayDirection = ray.direction.normalized();
-        const lineSegmentP1 = lineSegment.p1;
-        const lineSegmentP2 = lineSegment.p2;
+        const lineSegmentP1 = this.p1;
+        const lineSegmentP2 = this.p2;
         
         // Calculate the direction vector of the line segment
         const lineSegmentDirection = new Vector(
@@ -240,7 +357,7 @@ class Ray{
             const V = new Vector(lineSegmentP1.x - lineSegmentP2.x, lineSegmentP1.y - lineSegmentP2.y);
             let N = new Vector(V.y, -V.x).normalized(1); // perpendicular to V
 
-            if(this.direction.dotProduct(N)>0){
+            if(ray.direction.dotProduct(N)>0){
                 N = N.negate()
             }
             
@@ -250,107 +367,29 @@ class Ray{
         // No intersection
         return [];
     }
-    
-    intersectRectangle(rectangle)
-    {
-        const top = rectangle.center.y+rectangle.height/2
-        const left = rectangle.center.x-rectangle.width/2
-        const bottom = rectangle.center.y-rectangle.height/2
-        const right = rectangle.center.x+rectangle.width/2
-        
-        const topLeft = new Point(left, top)
-        const bottomRight = new Point(right, bottom)
-        const topRight = new Point(right, top)
-        const bottomLeft = new Point(left, bottom)
-        
-        const sides = [
-            new LineSegment(topLeft, topRight),
-            new LineSegment(topRight, bottomRight),
-            new LineSegment(bottomRight, bottomLeft),
-            new LineSegment(bottomLeft, topLeft)
-        ];
-        
-        let intersections = []
-        for (const side of sides) {
-            const side_intersections = this.intersectLineSegment(side);
-            intersections = [...intersections, ...side_intersections]
-        }
-
-        return intersections;
-    }
 }
 
-function P(x,y){return new Point(x,y)}
-function V(x,y){return new Vector(x,y)}
+class Light extends SceneObject{
 
-class Circle{
-    constructor(center,radius){
-        this.center = center, this.radius=radius;
+}
+
+class PointLight extends Light{
+    constructor(center){
+        super(center)
     }
-    
-    copy(other){
-        return new Circle(this.center.copy(), this.radius)
+
+    copy()
+    {
+        return new PointLight(this.center.copy())
     }
 
     toString()
     {
-        return `Circle O(${this.center.x.toFixed(1)}, ${this.center.y.toFixed(1)}), r${this.radius.toFixed(1)}`
-    }
-}
-
-class Rectangle {
-    constructor(center, width, height)
-    {
-        this.center = center;
-        this.width = width;
-        this.height = height;
-    }
-    
-    copy(other)
-    {
-        return new Rectangle(this.center.copy(), this.width, this.height)
-    }
-
-    toString()
-    {
-        return `Rectangle O(${this.center.x.toFixed(1)}, ${this.center.y.toFixed(1)}), ${this.width.toFixed(1)}x${this.height.toFixed(1)}`
-    }
-
-    contains(point)
-    { 
-        // Calculate half width and half height of the rectangle
-        const halfWidth = this.width / 2;
-        const halfHeight = this.height / 2;
-    
-        // Calculate the bounds of the rectangle
-        const minX = this.center.x - halfWidth;
-        const maxX = this.center.x + halfWidth;
-        const minY = this.center.y - halfHeight;
-        const maxY = this.center.y + halfHeight;
-    
-        // Check if the point is within the bounds of the rectangle
-        return point.x >= minX && point.x <= maxX && point.y >= minY && point.y <= maxY;
-    }
-}
-
-class LineSegment {
-    constructor(p1, p2)
-    {
-        this.p1 = p1;
-        this.p2 = p2;
-    }
-
-    copy(other)
-    {
-        return new LineSegment(this.p1.copy(), this.p2.copy())
-    }
-
-    toString()
-    {
-        return `LineSegment P(${this.p1.x.toFixed(1)}, ${this.p1.y.toFixed(1)}), P(${this.p2.x.toFixed(1)}, ${this.p2.y.toFixed(1)})`
+        return `Pointlight(${this.center})`
     }
 }
 
 export {Point, Vector, Ray}
 export {P, V}
 export {Circle, Rectangle, LineSegment}
+export {PointLight}

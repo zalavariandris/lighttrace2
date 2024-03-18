@@ -65,17 +65,17 @@ function makeRaysFromLights(lights, sampleCount, samplingMethod)
     
     // angles to rays
     const rays = angles.map((a)=>{
-        return lights.map((light_pos)=>{
+        return lights.map((light)=>{
             const x = Math.cos(a);
             const y = Math.sin(a);
             const dir = V(x,y);
-            return new Ray(light_pos, dir.normalized(1))
+            return new Ray(light.center, dir.normalized(1))
         })
     }).flat(1)
     return rays;
 }
 
-function intersect(rays, shapes, THRESHOLD=1)
+function intersect(rays, shapes, {THRESHOLD=1.0}={})
 {
     /*
     find each ray closest intersection with scene
@@ -83,8 +83,6 @@ function intersect(rays, shapes, THRESHOLD=1)
     shapes: Array[Circle | Rectangle | LineSegment]
     returns Array[Ray | null]
     */
-
-    
     let intersections = []
 
     return rays.map((ray)=>{
@@ -93,17 +91,7 @@ function intersect(rays, shapes, THRESHOLD=1)
         }
 
         const shape_intersections = shapes.map((shape)=>{
-            if(shape instanceof Circle){
-                return ray.intersectCircle(shape);
-            }
-            else if(shape instanceof Rectangle){
-                return ray.intersectRectangle(shape)
-            }
-            else if(shape instanceof LineSegment){
-                return ray.intersectLineSegment(shape)
-            }else/*other shapes are not supported*/{
-                return null
-            }
+            return shape.hitTest(ray)
         }).flat(1).filter(intersection=>{
             return ray.origin.distanceTo(intersection.origin)>THRESHOLD
         })
@@ -117,106 +105,66 @@ function intersect(rays, shapes, THRESHOLD=1)
     })
 }
 
-function trace_rays(rays, shapes)
+function raytrace_pass(rays, shapes, {THRESHOLD=1e-6})
 {
-    // find intersections
-    let intersections = []
-    let secondaries = []
-    for(let primary of rays)
-    {
-        if(primary == null){
-            secondaries = [...secondaries, ...[null]]
-            continue;
+    // secondary rays
+    const intersections = intersect(rays, shapes, {THRESHOLD:THRESHOLD}).map((intersection, i)=>{
+        if(!intersection){
+            return null
         }
-        
-        let ray_intersections = [];
-        for(let shape of shapes)
-        {
-            let shape_intersections = []
-            
-            if(shape instanceof Circle){
-                shape_intersections = [...shape_intersections, ...primary.intersectCircle(shape)];
-            } 
-            else if(shape instanceof Rectangle){
-                shape_intersections = [...shape_intersections, ...primary.intersectRectangle(shape)];
-            } else if(shape instanceof LineSegment){
-                shape_intersections = [...shape_intersections, ...primary.intersectLineSegment(shape)];
-            }
+        const distance = intersection.origin.distanceTo(rays[i].origin)
+        return intersection
+    })
 
-            ray_intersections = [...ray_intersections, ...shape_intersections];
-            
+    const secondaries = intersections.map((intersection, i)=>{
+        if(intersection==null){
+            return null;
+        }else{
+            const ray = rays[i]
+            const secondary_direction = sampleMirror(ray.direction.normalized(1), intersection.direction.normalized(1));
+            return new Ray(intersection.origin, secondary_direction)
         }
-        
-        if(ray_intersections.length>0)
-        {
-            // find closest interseciont
-            let closest = ray_intersections.reduce((a, b) => {
-                return primary.origin.distanceTo2(a.origin) < primary.origin.distanceTo2(b.origin) ? a : b
-            });
-            ray_intersections.push(closest)
-            
-            // reflect ray on intersection
-            const reflected_rays = [closest].map((intersection)=>{
-                const secondary_dir = sampleMirror(primary.direction.normalized(1), intersection.direction.normalized(1))
-                // const secondary_dir = primary.direction.reflect(i.direction)
-                return new Ray(intersection.origin, secondary_dir.normalized(1));
-            });
-            
-            secondaries = [...secondaries, ...reflected_rays]
-        }else[
-            secondaries = [...secondaries, ...[null]]
-        ]
-    }
-    
-    // intersections
-    return [secondaries, intersections];
+    })
+
+    return [secondaries, intersections]
 }
 
-function raytrace(lights, shapes, options={maxBounce:3, sampling:SamplingMethod.Random, lightSamples:50})
+function raytrace(lights, shapes, {maxBounce=3, samplingMethod=SamplingMethod.Uniform, lightSamples=9}={})
 {
-    const rays = makeRaysFromLights(lights, options.lightSamples, options.sampling);
+    // initial rays
+    const initial_rays = makeRaysFromLights(lights, lightSamples, samplingMethod);
 
-    //
-    let paths = rays.map((ray)=>[ray.origin])
-    let all_intersections = []
-    let current_rays = [...rays];
-    let all_rays = [...current_rays]
-    const path_count = rays.length
-
-    // const intersection = intersect(current_rays, shapes)
-    // const reflections = intersections.map((intersection, i)=>{
-    //     const ray = current_rays[i]
-    //     return ray.reflection(intersection)
-    // });
-
-    for(let i=0; i<options.maxBounce; i++)
+    // raytrace steps
+    let currentRays = initial_rays;
+    const ray_steps = [initial_rays]
+    const intersections_steps = []
+    const paths = initial_rays.map(r=>[r.origin])
+    for(let i=0; i<maxBounce; i++)
     {
-        let [secondary, intersections] = trace_rays(current_rays, shapes);
-        
-        for(let ray_index=0; ray_index<path_count; ray_index++)
+        const [secondaries, intersections] = raytrace_pass(currentRays, shapes, {THRESHOLD:1e-6})
+        for(let p=0; p<paths.length; p++)
         {
-            const ray = current_rays[ray_index];
-            const reflection = secondary[ray_index]
-            const path = paths[ray_index]
-            
-            if(reflection != null)
-            {
-                let p = reflection.origin
-                path.push(p)
-            }
-            else if(ray != null)
-            {
-                let dir = ray.direction.normalized(1000)
-                let p = new Point(ray.origin.x+dir.x, ray.origin.y+dir.y)
-                path.push(p)
+            if(intersections[p]){
+                paths[p].push(intersections[p].origin)
+            }else if(currentRays[p]){
+                const ray = currentRays[p]
+                paths[p].push(P(ray.origin.x+ray.direction.x*1000, ray.origin.y+ray.direction.y*1000))
             }
         }
-        current_rays = secondary;
-        all_rays = [...all_rays, ...secondary]
-        all_intersections = [...all_intersections, intersections]
+        ray_steps.push(secondaries)
+        intersections_steps.push(intersections)
+        // allRays = [...allRays, ...secondaries]
+        // allIntersections = [...allIntersections, ...intersections]
+        currentRays = secondaries;
     }
-    all_rays = all_rays.filter((ray)=>ray != null);
-    return [paths, all_intersections];
+
+    const allRays = ray_steps.flat(1)
+    const allIntersections = intersections_steps.flat(1)
+    return [
+        allRays.filter(r=>r?true:false), 
+        allIntersections.filter(i=>i?true:false),
+        paths
+    ]
 }
 
 export {makeRaysFromLights, intersect, raytrace, SamplingMethod}

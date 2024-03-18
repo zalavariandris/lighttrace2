@@ -1,6 +1,8 @@
 import React, {useState} from "react"
 import Draggable from "./Draggable-es6.js"
-import {Point, Vector, Ray, Circle, LineSegment, Rectangle} from "../geo.js"
+import {Point, Vector, Ray} from "../geo.js"
+import {Circle, LineSegment, Rectangle} from "../geo.js"
+import {PointLight} from "../geo.js"
 
 
 function viewboxString(viewBox){
@@ -11,13 +13,10 @@ class SVGViewport extends React.Component{
     // Set default props
     static defaultProps = {
         viewBox: {x:0, y:0, w:512, h:512},
-        scene: {
-            lights: [],
-            rays: [],
-            shapes: [], 
-            intersections: [], 
-            paths: [],
-        }
+        scene: [],
+        rays: [],
+        intersections: [], 
+        paths: []
     }
 
     constructor({...props})
@@ -138,7 +137,6 @@ class SVGViewport extends React.Component{
 
     render()
     {
-        const scene = this.props.scene;
         const viewBox = this.props.viewBox;
         
         const h = React.createElement;
@@ -156,7 +154,7 @@ class SVGViewport extends React.Component{
                 onMouseLeave: (e) => this.onmouseleave(e)
             },
             h('g', { className: 'circles' },
-                scene.shapes==undefined?null:scene.shapes.filter(shape => shape instanceof Circle).map(shape =>
+                this.props.scene.filter(shape => shape instanceof Circle).map(shape =>
                     h(Draggable, { onDrag: (dx, dy) => this.moveShape(shape, dx, dy) },
                         h('circle', {
                             cx: shape.center.x,
@@ -169,7 +167,7 @@ class SVGViewport extends React.Component{
                 )
             ),
             h('g', { className: 'linesegment' },
-                scene.shapes==undefined?null:scene.shapes.filter(shape => shape instanceof LineSegment).map(shape =>
+                this.props.scene.filter(shape => shape instanceof LineSegment).map(shape =>
                     h(Draggable, { onDrag: (dx, dy) => this.moveShape(shape, dx, dy) },
                         h('line', {
                             x1: shape.p1.x,
@@ -183,7 +181,7 @@ class SVGViewport extends React.Component{
                 )
             ),
             h('g', { className: 'rectangles' },
-                scene.shapes==undefined?null:scene.shapes.filter(shape => shape instanceof Rectangle).map(shape =>
+                this.props.scene.filter(shape => shape instanceof Rectangle).map(shape =>
                     h(Draggable, { onDrag: (dx, dy) => this.moveShape(shape, dx, dy) },
                         h('rect', {
                             x: shape.center.x - shape.width / 2,
@@ -196,9 +194,8 @@ class SVGViewport extends React.Component{
                     )
                 )
             ),
-
             h('g', { className: 'paths' },
-                scene.paths==undefined?null:scene.paths.filter(path => path.length > 1).map(points =>
+                this.props.paths.filter(path => path.length > 1).map(points =>
                     h('g', null,
                         h('path', {
                             d: this.pointsToSvgPath(points),
@@ -212,7 +209,7 @@ class SVGViewport extends React.Component{
                 )
             ),
             h('g', { className: 'rays'},
-                scene.rays==undefined?null:scene.rays.map(ray =>
+                this.props.rays==undefined?null:this.props.rays.map(ray =>
                     h('g', null,
                         h('line', {
                             x1: ray.origin.x,
@@ -227,11 +224,11 @@ class SVGViewport extends React.Component{
             ),
 
             h('g', { className: 'lights' },
-                scene.lights==undefined?vnull:scene.lights.map(light =>
+                this.props.scene.filter(obj=>obj instanceof PointLight).map(light =>
                     h(Draggable, { onDrag: (dx, dy) => this.moveLight(light, dx, dy) },
                         h('circle', {
-                            cx: light.x,
-                            cy: light.y,
+                            cx: light.center.x,
+                            cy: light.center.y,
                             r: '10',
                             className: 'lightsource',
                             vectorEffect: "non-scaling-stroke"
@@ -240,19 +237,19 @@ class SVGViewport extends React.Component{
                 )
             ),
             h('g', { className: 'intersections'},
-            scene.intersections==undefined?null:scene.intersections.map(intersection =>
-                h('g', null,
-                    h('line', {
-                        x1: intersection.origin.x,
-                        y1: intersection.origin.y,
-                        x2: intersection.origin.x + intersection.direction.x * 20,
-                        y2: intersection.origin.y + intersection.direction.y * 20,
-                        className: 'intersection',
-                        vectorEffect: "non-scaling-stroke"
-                    })
+                this.props.intersections==undefined?null:this.props.intersections.map(intersection =>
+                    h('g', null,
+                        h('line', {
+                            x1: intersection.origin.x,
+                            y1: intersection.origin.y,
+                            x2: intersection.origin.x + intersection.direction.x * 20,
+                            y2: intersection.origin.y + intersection.direction.y * 20,
+                            className: 'intersection',
+                            vectorEffect: "non-scaling-stroke"
+                        })
+                    )
                 )
-            )
-        ),
+            ),
         );
     }
 }
