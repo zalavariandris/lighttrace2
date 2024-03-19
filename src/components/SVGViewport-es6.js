@@ -1,6 +1,6 @@
 import React, {useState} from "react"
 import {Point, Vector, Ray} from "../geo.js"
-import {Circle, DirectonalLight, LaserLight, LineSegment, Rectangle} from "../scene.js"
+import {Circle, DirectonalLight, LaserLight, LineSegment, Rectangle, Lens} from "../scene.js"
 import {PointLight} from "../scene.js"
 
 
@@ -113,7 +113,7 @@ function cursorPoint(svg, {x, y}){
     return {x:scenePoint.x, y:scenePoint.y};
 }
 
-function PointManip({x, y, onChange=(radians)=>{}}={}){
+function PointManip({x, y, onChange=(x, y)=>{}}={}){
     const [mouseScenePos, setMouseScenePos] = React.useState({x: x, y: y});
     const [startPos, setStartPos] = React.useState({x: x, y: y});
 
@@ -329,6 +329,64 @@ function SceneItem({
         )
     }
 
+    else if(sceneObject instanceof Lens)
+    {
+        const makeLensPath = (width, height, leftRadius, rightRadius)=>{
+            return `M ${-width/2} ${-height/2} `+
+            `a ${Math.abs(leftRadius)} ${Math.abs(leftRadius)} 0 0 ${leftRadius<0?1:0} 0 ${height} `+
+            `L ${width/2} ${height/2} `+
+            `a ${Math.abs(rightRadius)} ${Math.abs(rightRadius)} 0 0 ${rightRadius<0?1:0} 0 ${-height}`
+        }
+
+        const onSizeManip = (loc)=>
+        {
+            const newLens = sceneObject.copy()
+            newLens.width = Math.max(0, (loc.x - sceneObject.center.x)*2)
+            newLens.height = Math.max((loc.y - sceneObject.center.y)*2)
+            onChange(sceneObject, newLens)
+        }
+
+        const onRightLensManip = (loc)=>{
+            const newLens = sceneObject.copy()
+            // newLens.leftRadius = loc.x - sceneObject.center.x+sceneObject.width/2
+            onChange(sceneObject, newLens)
+        }
+
+        return h(Draggable, {
+            className: isSelected ? 'selected sceneItem': 'sceneItem',
+            onDrag: (e, dx, dy)=>moveSceneObject(sceneObject, dx, dy),
+            onClick: (e)=>onSelect(sceneObject)
+        },
+            h('rect', {
+                x: sceneObject.center.x - sceneObject.width / 2,
+                y: sceneObject.center.y - sceneObject.height / 2,
+                width: sceneObject.width,
+                height: sceneObject.height,
+                vectorEffect: "non-scaling-stroke",
+                fill: "transparent"
+            }),
+            h('path', {
+                d: makeLensPath(sceneObject.width, sceneObject.height, sceneObject.height*1, sceneObject.height*1),
+                style: {
+                    transform: `translate(${sceneObject.center.x}px, ${sceneObject.center.y}px)`,
+                    fill: "white",
+                    opacity: 0.1,
+                    className: "handle shape",
+                }
+            }),
+            h(PointManip, {
+                x: sceneObject.center.x+sceneObject.width/2,
+                y: sceneObject.center.y+sceneObject.height/2,
+                onChange: ({x, y})=>onSizeManip({x, y})
+            }),
+            h(PointManip, {
+                x: sceneObject.center.x+sceneObject.width,
+                y: sceneObject.center.y,
+                onChange: ({x, y})=>onRightLensManip({x, y})
+            })
+        )
+    }
+
     else if(sceneObject instanceof LineSegment)
     {
         const setP1 = (x, y)=>{
@@ -420,7 +478,7 @@ function SceneItem({
             h('circle', {
                 cx: sceneObject.center.x,
                 cy: sceneObject.center.y,
-                r: 6,
+                r: 2,
                 vectorEffect: "non-scaling-stroke",
                 className: "shape"
             }),

@@ -24,6 +24,26 @@ class Geometry extends SceneObject
     }
 }
 
+class Lens extends Geometry
+{
+    constructor(center, material, width, height)
+    {
+        super(center, material)
+        this.width = width
+        this.height = height
+    }
+
+    copy()
+    {
+        return new Lens(this.center.copy(), this.material.copy(), this.width, this.height)
+    }
+
+    hitTest(ray)
+    {
+        return []
+    }
+}
+
 class Circle extends Geometry
 {
     constructor(center, material, radius)
@@ -449,7 +469,7 @@ class DiffuseMaterial
     }
 }
 
-export {Geometry, Circle, Rectangle, LineSegment}
+export {Geometry, Circle, Rectangle, LineSegment, Lens}
 export {Light, PointLight, LaserLight, DirectonalLight}
 export {Material, MirrorMaterial, TransparentMaterial, DiffuseMaterial};
 export {SamplingMethod}
