@@ -48,13 +48,18 @@ const App = ()=>{
         // new Circle(P(120, 380), 80),
         new LineSegment(P(400, 250), P(500, 130), new MirrorMaterial()),
         new LineSegment(P(370, 220), P(470, 100), new MirrorMaterial()),
-        new Rectangle(P(400,400), new DiffuseMaterial(), 100,100)
+        new Rectangle(P(400,400), new TransparentMaterial(), 100,100)
     ]);
-    const updateSceneObject = (oldObject, newObject)=>{
-        console.log("updateSceneObject", newObject)
-        setScene(scene.toSpliced(scene.indexOf(oldObject), 1, newObject))
-    }
     const [selection, setSelection] = React.useState([])
+    const updateSceneObject = (oldObject, newObject)=>{
+        const sceneIdx = scene.indexOf(oldObject)
+        const newScene = scene.toSpliced(sceneIdx, 1, newObject)
+        const newSelection = selection.map(oldObject=>newScene[scene.indexOf(oldObject)])
+
+        setScene(newScene)
+        setSelection(newSelection)
+    }
+    
 
     // computed
     const [rays, setRays] = React.useState([])
@@ -95,7 +100,7 @@ const App = ()=>{
             viewBox: viewBox,
             onViewChange: (value) => setViewBox(value),
             scene: scene,
-            selection,
+            selection:selection,
             onSelection: (newSelection)=>setSelection(newSelection),
             rays: svgDisplayOptions.rays?rays:[],
             intersections: svgDisplayOptions.intersections?intersections:[], 
@@ -191,10 +196,10 @@ const App = ()=>{
                 ),
                 h("section", null,
                     h("h2", null, "Scene info"),
-                    h("h3", null, "Selection"),
+                    h("h3", null, "Objects"),
                     h("ul", null, 
-                        ...selection.map((sceneObject)=>{
-                            return h("li", null, `${sceneObject}`)
+                        ...scene.map((sceneObject)=>{
+                            return h("li", {style: {fontStyle: selection.indexOf(sceneObject)>=0?"italic":"normal"}}, `${sceneObject} ${selection.indexOf(sceneObject)}`)
                         })
                     ),
                     h("div", null, `rays: ${rays.length}`),

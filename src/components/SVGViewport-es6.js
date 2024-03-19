@@ -1,5 +1,4 @@
 import React, {useState} from "react"
-import Draggable from "./Draggable-es6.js"
 import {Point, Vector, Ray} from "../geo.js"
 import {Circle, DirectonalLight, LaserLight, LineSegment, Rectangle} from "../scene.js"
 import {PointLight} from "../scene.js"
@@ -10,6 +9,102 @@ function viewboxString(viewBox){
 }
 const h = React.createElement;
 
+class Draggable extends React.Component
+{
+    constructor({...props})
+    {
+        super(props);
+        this.isDragging= false;
+        this.prevX= 0;
+        this.prevY= 0;
+
+        this.ref = React.createRef()
+    }
+    
+    handleMouseDown(event)
+    {
+        this.isDragging = false,
+        this.prevX = event.clientX,
+        this.prevY = event.clientY
+
+        this.handleMouseMove = (event)=>{
+            if(!this.isDragging)
+            {
+                console.log("add click ignore")
+                window.addEventListener("click", (e)=>{
+                    e.preventDefault();
+                    e.stopPropagation();
+                }, {capture: true, once: true});
+            }
+            this.isDragging = true;
+            let svg = event.target.closest("SVG")
+            function mapScreenToScene({x, y})
+            {
+                let mousepos = svg.createSVGPoint();
+                mousepos.x = x; 
+                mousepos.y = y; 
+                const scenePos = mousepos.matrixTransform(svg.getScreenCTM().inverse());
+                return scenePos
+            }
+
+
+                let mousepos = svg.createSVGPoint();
+                mousepos.x = event.clientX; 
+                mousepos.y = event.clientY; 
+                mousepos = mousepos.matrixTransform(svg.getScreenCTM().inverse());
+    
+                let prevmousepos = svg.createSVGPoint();
+                prevmousepos.x = this.prevX;
+                prevmousepos.y = this.prevY;
+                prevmousepos = prevmousepos.matrixTransform(svg.getScreenCTM().inverse());
+    
+                const dx = mousepos.x-prevmousepos.x;
+                const dy = mousepos.y-prevmousepos.y;
+                
+
+                this.prevX=event.clientX,
+                this.prevY=event.clientY
+                this.props.onDrag(event, dx, dy);
+
+            this.prevX = event.clientX
+            this.prevY = event.clientY
+        }
+
+        this.handleMouseUp = (event)=>{
+            event.stopPropagation();
+            event.preventDefault(); // prevent text selection when dragging
+    
+            window.removeEventListener("mousemove", this.handleMouseMove)
+            window.removeEventListener("mouseup", this.handleMouseUp)
+
+
+            this.isDragging = false;
+        }
+
+        window.addEventListener("mousemove", this.handleMouseMove, false);
+        window.addEventListener("mouseup", this.handleMouseUp, false);
+        
+        // window.addEventListener("click", this.handleMouseClick, true);
+        // window.addEventListener ('click', this.ignore_click, true ); 
+        event.preventDefault(); // prevent text selection when dragging
+        event.stopPropagation();
+        return false;
+    }
+
+    render()
+    {
+        return h('g', { 
+            // className: 'draggable',
+            ref: this.ref,
+            onMouseDown: (e) => this.handleMouseDown(e),
+            ...this.props
+        },
+            h('g', null,
+                this.props.children
+            )
+        );
+    }  
+}
 
 function GeometryComponent({sceneObject, onManipulate, ...props})
 {
@@ -127,31 +222,27 @@ function GeometryComponent({sceneObject, onManipulate, ...props})
     return h("g", {...props}, ...children)
 }
 
-class SVGViewport extends React.Component{
-    // Set default props
-    static defaultProps = {
-        viewBox: {x:0, y:0, w:512, h:512},
-        scene: [],
-        rays: [],
-        intersections: [], 
-        paths: []
-    }
-
-    constructor({...props})
-    {
-        super(props);
-        this.svgRef = React.createRef();
-        this.isPanning = false;
-        this.startPoint = {x:0,y:0};
-        this.endPoint = {x:0,y:0};
-        this.scale = 1;
-    }
+function SVGViewport({
+    viewBox={x:0, y:0, w:512, h:512}, 
+    onViewChange=()=>{},
+    scene=[],
+    onSceneObject=()=>{},
+    rays=[], 
+    intersections=[], 
+    paths=[], 
+    selection=[],
+    onSelection=()=>{},
+    ...props
+}={})
+{
+    const svgRef = React.useRef()
+    const isPanning = React.useRef(false)
+    const prevMouse = React.useRef({x:0,y:0});
 
     // event handling
-    onmousewheel(e)
+    const onmousewheel = (e)=>
     {
-        let viewBox = this.props.viewBox;
-        const clientSize = {w: this.svgRef.current.clientWidth, h: this.svgRef.current.clientHeight}
+        const clientSize = {w: svgRef.current.clientWidth, h: svgRef.current.clientHeight}
         var w = viewBox.w;
         var h = viewBox.h;
         var mx = e.clientX;//mouse x  
@@ -167,89 +258,60 @@ class SVGViewport extends React.Component{
             h:viewBox.h-dh
         }
 
-        this.props.onViewChange(viewBox)
-        this.scale = clientSize.w/viewBox.w
-
-
-        this.props.onViewChange(newViewBox)
+        onViewChange(newViewBox)
     }
 
-    onmousedown(e)
+    const onmousedown = (e)=>
     {
-        this.isPanning = true,
-        this.startPoint = {x:e.clientX,y:e.clientY},
-        this.endPoint = {x:e.clientX,y:e.clientY}
-
+        isPanning.current = true,
         e.preventDefault();
     }
 
-    onmousemove(e)
+    const onmousemove = (e)=>
     {
-        if (this.isPanning)
+        if (isPanning.current)
         {
-            const viewBox = this.props.viewBox;
-            const clientSize = {w: this.svgRef.current.clientWidth, h: this.svgRef.current.clientHeight}
-            let scale = clientSize.w/viewBox.w;
+            const clientSize = {w: svgRef.current.clientWidth, h: svgRef.current.clientHeight}
+            let current_scale = clientSize.w/viewBox.w;
             
-            var dx = (this.startPoint.x - e.clientX)/this.scale;
-            var dy = (this.startPoint.y - e.clientY)/this.scale;
+            var dx = -e.movementX/current_scale;
+            var dy = -e.movementY/current_scale;
             
             var newViewBox = {
-                x:viewBox.x+dx,
-                y:viewBox.y+dy,
-                w:viewBox.w,
-                h:viewBox.h};
-
-
-            this.endPoint = {x:e.clientX,y:e.clientY},
-            this.startPoint = {x:e.clientX,y:e.clientY}
-
-
-            this.props.onViewChange(newViewBox)
-        }
-    }
-
-    onmouseup(e)
-    {
-        if (this.isPanning)
-        {
-            const viewBox = this.props.viewBox;
-            const clientSize = {w: this.svgRef.current.clientWidth, h: this.svgRef.current.clientHeight}
-            let scale = clientSize.w/viewBox.w;
-            
-            var dx = (this.startPoint.x - this.endPoint.x)/this.scale;
-            var dy = (this.startPoint.y - this.endPoint.y)/this.scale;
-            const newViewBox = {
                 x:viewBox.x+dx,
                 y:viewBox.y+dy,
                 w:viewBox.w,
                 h:viewBox.h
             };
 
-
-            this.endPoint = {x:e.clientX,y:e.clientY},
-            this.isPanning = false
-
-
-            this.props.onViewChange(newViewBox)
+            onViewChange(newViewBox)
         }
     }
 
-    onmouseleave(e)
+    const onmouseup = (e)=>
     {
-        this.isPanning = false
+        if (isPanning.current)
+        {
+            isPanning.current = false
+        }
+    }
 
+    const onmouseleave = (e)=>
+    {
+        isPanning.current = false
     }
 
     // utils
-    pointsToSvgPath(points) {
+    const pointsToSvgPath = (points)=> {
         let path = "M" + points.map(p => `${p.x},${p.y}`).join(" L");
         return path;
     }
 
-    moveSceneObject(sceneObject, dx, dy){
+    // actions
+    const moveSceneObject = (oldObject, dx, dy)=>{
         // this.props.onShapeDrag(shape, dx, dy);
-        const newObject = sceneObject.copy()
+        const newObject = oldObject.copy()
+
         if(newObject instanceof LineSegment){
             newObject.p1.x+=dx;
             newObject.p1.y+=dy;
@@ -260,114 +322,336 @@ class SVGViewport extends React.Component{
             newObject.center.y+=dy;
         }
 
-        this.props.onSceneObject(sceneObject, newObject)
+        onSceneObject(oldObject, newObject)
     }
 
-    manipulateGeometry(sceneObject, newGeometry)
-    {
-        console.log("manipulateGeometry", newGeometry)
-        this.props.onSceneObject(sceneObject, newGeometry)
+    const manipulateGeometry = (oldObject, newGeometry)=>{
+        onSceneObject(oldObject, newGeometry)
     }
 
-    selectObject(obj)
-    {
-        this.props.onSelection([obj])
-    }
-
-    render()
-    {
-        const viewBox = this.props.viewBox;
-        
-        
-        return h('svg', {
-                width: this.props.width,
-                height: this.props.height,
-                className: this.props.className,
-                style: this.props.style,
-                ref: this.svgRef,
-                viewBox: viewboxString(viewBox),
-                onMouseDown: (e) => this.onmousedown(e),
-                onWheel: (e) => this.onmousewheel(e),
-                onMouseMove: (e) => this.onmousemove(e),
-                onMouseUp: (e) => this.onmouseup(e),
-                onMouseLeave: (e) => this.onmouseleave(e)
+    return h('svg', {
+            width: props.width,
+            height: props.height,
+            className: props.className,
+            style: props.style,
+            ref: svgRef,
+            viewBox: viewboxString(viewBox),
+            onMouseDown: (e) => onmousedown(e),
+            onWheel: (e) => onmousewheel(e),
+            onMouseMove: (e) => onmousemove(e),
+            onMouseUp: (e) => onmouseup(e),
+            onMouseLeave: (e) => onmouseleave(e)
+        },
+        h('defs', null, 
+            h('marker', {
+                markerUnits:"strokeWidth",
+                id:'head',
+                orient:"auto",
+                markerWidth:'8',
+                markerHeight:'8',
+                refX:'0',
+                refY:'4'
             },
-            h('defs', null, 
-                h('marker', {
-                    markerUnits:"strokeWidth",
-                    id:'head',
-                    orient:"auto",
-                    markerWidth:'8',
-                    markerHeight:'8',
-                    refX:'0',
-                    refY:'4'
+                h('path', {d:'M0,0 V8 L8,4 Z'})
+            )
+        ),
+        h('g', {className: "scene"},
+            scene.map((sceneObject, idx)=>{
+                // return h('g', {}, )
+                
+                return h(Draggable, {
+                    onDrag: (e, dx, dy) => moveSceneObject(sceneObject, dx, dy),
+                    onClick: (e)=>onSelection([sceneObject]),
+                    className: selection.indexOf(sceneObject)>=0?"selected":"",
+                    sceneObject
                 },
-                    h('path', {d:'M0,0 V8 L8,4 Z'})
+                    h(GeometryComponent, {
+                        sceneObject, 
+                        onManipulate:(newGeometry)=>manipulateGeometry(sceneObject, newGeometry),
+                    })
+                );
+            })
+        ),
+        h('g', { className: 'paths' },
+            paths.filter(path => path.length > 1).map(points =>
+                h('g', null,
+                    h('path', {
+                        d: pointsToSvgPath(points),
+                        fill: 'none',
+                        className: 'lightpath',
+                        strokeLinejoin:"round",
+                        strokeLinecap:"round",
+                        vectorEffect: "non-scaling-stroke"
+                    })
                 )
-            ),
-            h('g', {className: "scene"},
-                this.props.scene.map((sceneObject, idx)=>{
-                    // return h('g', {}, )
-                    
-                    return h(Draggable, {
-                        onDrag: (e, dx, dy) => this.moveSceneObject(sceneObject, dx, dy),
-                        onClick: (e)=>this.selectObject(sceneObject),
-                        className: this.props.selection.indexOf(sceneObject)>=0?"selected":"",
-                        sceneObject
-                    },
-                        h(GeometryComponent, {
-                            sceneObject, 
-                            onManipulate:(newGeometry)=>this.manipulateGeometry(sceneObject, newGeometry),
-                        })
-                    );
-                })
-            ),
-            h('g', { className: 'paths' },
-                this.props.paths.filter(path => path.length > 1).map(points =>
-                    h('g', null,
-                        h('path', {
-                            d: this.pointsToSvgPath(points),
-                            fill: 'none',
-                            className: 'lightpath',
-                            strokeLinejoin:"round",
-                            strokeLinecap:"round",
-                            vectorEffect: "non-scaling-stroke"
-                        })
-                    )
+            )
+        ),
+        h('g', { className: 'rays'},
+            rays==undefined?null:rays.map(ray =>
+                h('g', null,
+                    h('line', {
+                        x1: ray.origin.x,
+                        y1: ray.origin.y,
+                        x2: ray.origin.x + ray.direction.x * 1000,
+                        y2: ray.origin.y + ray.direction.y * 1000,
+                        className: 'lightray',
+                        vectorEffect: "non-scaling-stroke"
+                    })
                 )
-            ),
-            h('g', { className: 'rays'},
-                this.props.rays==undefined?null:this.props.rays.map(ray =>
-                    h('g', null,
-                        h('line', {
-                            x1: ray.origin.x,
-                            y1: ray.origin.y,
-                            x2: ray.origin.x + ray.direction.x * 1000,
-                            y2: ray.origin.y + ray.direction.y * 1000,
-                            className: 'lightray',
-                            vectorEffect: "non-scaling-stroke"
-                        })
-                    )
-                )
-            ),
+            )
+        ),
 
-            h('g', { className: 'intersections'},
-                this.props.intersections==undefined?null:this.props.intersections.map(intersection =>
-                    h('g', null,
-                        h('line', {
-                            x1: intersection.origin.x,
-                            y1: intersection.origin.y,
-                            x2: intersection.origin.x + intersection.direction.x * 20,
-                            y2: intersection.origin.y + intersection.direction.y * 20,
-                            className: 'intersection',
-                            // markerEnd:'url(#head)',
-                            vectorEffect: "non-scaling-stroke"
-                        })
-                    )
+        h('g', { className: 'intersections'},
+            intersections==undefined?null:intersections.map(intersection =>
+                h('g', null,
+                    h('line', {
+                        x1: intersection.origin.x,
+                        y1: intersection.origin.y,
+                        x2: intersection.origin.x + intersection.direction.x * 20,
+                        y2: intersection.origin.y + intersection.direction.y * 20,
+                        className: 'intersection',
+                        // markerEnd:'url(#head)',
+                        vectorEffect: "non-scaling-stroke"
+                    })
                 )
-            ),
-        );
-    }
+            )
+        ),
+    );
 }
+
+// class SVGViewportOld extends React.Component{
+//     // Set default props
+//     static defaultProps = {
+//         viewBox: {x:0, y:0, w:512, h:512},
+//         scene: [],
+//         rays: [],
+//         intersections: [], 
+//         paths: []
+//     }
+
+//     constructor({...props})
+//     {
+//         super(props);
+//         this.svgRef = React.createRef();
+//         this.isPanning = false;
+//         this.startPoint = {x:0,y:0};
+//         this.endPoint = {x:0,y:0};
+//         this.scale = 1;
+//     }
+
+//     // event handling
+//     onmousewheel(e)
+//     {
+//         let viewBox = this.props.viewBox;
+//         const clientSize = {w: this.svgRef.current.clientWidth, h: this.svgRef.current.clientHeight}
+//         var w = viewBox.w;
+//         var h = viewBox.h;
+//         var mx = e.clientX;//mouse x  
+//         var my = e.clientY;
+//         var dw = w*e.deltaY*0.01*-0.05;
+//         var dh = h*e.deltaY*0.01*-0.05;
+//         var dx = dw*mx/clientSize.w;
+//         var dy = dh*my/clientSize.h;
+//         const newViewBox = {
+//             x:viewBox.x+dx,
+//             y:viewBox.y+dy,
+//             w:viewBox.w-dw,
+//             h:viewBox.h-dh
+//         }
+
+//         this.props.onViewChange(viewBox)
+//         this.scale = clientSize.w/viewBox.w
+
+
+//         this.props.onViewChange(newViewBox)
+//     }
+
+//     onmousedown(e)
+//     {
+//         this.isPanning = true,
+//         this.startPoint = {x:e.clientX,y:e.clientY},
+//         this.endPoint = {x:e.clientX,y:e.clientY}
+
+//         e.preventDefault();
+//     }
+
+//     onmousemove(e)
+//     {
+//         if (this.isPanning)
+//         {
+//             const viewBox = this.props.viewBox;
+//             const clientSize = {w: this.svgRef.current.clientWidth, h: this.svgRef.current.clientHeight}
+//             let scale = clientSize.w/viewBox.w;
+            
+//             var dx = (this.startPoint.x - e.clientX)/this.scale;
+//             var dy = (this.startPoint.y - e.clientY)/this.scale;
+            
+//             var newViewBox = {
+//                 x:viewBox.x+dx,
+//                 y:viewBox.y+dy,
+//                 w:viewBox.w,
+//                 h:viewBox.h};
+
+
+//             this.endPoint = {x:e.clientX,y:e.clientY},
+//             this.startPoint = {x:e.clientX,y:e.clientY}
+//             this.props.onViewChange(newViewBox)
+//         }
+//     }
+
+//     onmouseup(e)
+//     {
+//         if (this.isPanning)
+//         {
+//             const viewBox = this.props.viewBox;
+//             const clientSize = {w: this.svgRef.current.clientWidth, h: this.svgRef.current.clientHeight}
+//             let scale = clientSize.w/viewBox.w;
+            
+//             var dx = (this.startPoint.x - this.endPoint.x)/this.scale;
+//             var dy = (this.startPoint.y - this.endPoint.y)/this.scale;
+//             const newViewBox = {
+//                 x:viewBox.x+dx,
+//                 y:viewBox.y+dy,
+//                 w:viewBox.w,
+//                 h:viewBox.h
+//             };
+
+
+//             this.endPoint = {x:e.clientX,y:e.clientY},
+//             this.isPanning = false
+
+
+//             this.props.onViewChange(newViewBox)
+//         }
+//     }
+
+//     onmouseleave(e)
+//     {
+//         this.isPanning = false
+//     }
+
+//     // utils
+//     pointsToSvgPath(points) {
+//         let path = "M" + points.map(p => `${p.x},${p.y}`).join(" L");
+//         return path;
+//     }
+
+//     // actions
+//     moveSceneObject(sceneObject, dx, dy){
+//         // this.props.onShapeDrag(shape, dx, dy);
+//         const newObject = sceneObject.copy()
+//         if(newObject instanceof LineSegment){
+//             newObject.p1.x+=dx;
+//             newObject.p1.y+=dy;
+//             newObject.p2.x+=dx;
+//             newObject.p2.y+=dy;
+//         }else{
+//             newObject.center.x+=dx
+//             newObject.center.y+=dy;
+//         }
+
+//         this.props.onSceneObject(sceneObject, newObject)
+//     }
+
+//     manipulateGeometry(sceneObject, newGeometry)
+//     {
+//         this.props.onSceneObject(sceneObject, newGeometry)
+//     }
+
+//     render()
+//     {
+//         const viewBox = this.props.viewBox;
+        
+        
+//         return h('svg', {
+//                 width: this.props.width,
+//                 height: this.props.height,
+//                 className: this.props.className,
+//                 style: this.props.style,
+//                 ref: this.svgRef,
+//                 viewBox: viewboxString(viewBox),
+//                 onMouseDown: (e) => this.onmousedown(e),
+//                 onWheel: (e) => this.onmousewheel(e),
+//                 onMouseMove: (e) => this.onmousemove(e),
+//                 onMouseUp: (e) => this.onmouseup(e),
+//                 onMouseLeave: (e) => this.onmouseleave(e)
+//             },
+//             h('defs', null, 
+//                 h('marker', {
+//                     markerUnits:"strokeWidth",
+//                     id:'head',
+//                     orient:"auto",
+//                     markerWidth:'8',
+//                     markerHeight:'8',
+//                     refX:'0',
+//                     refY:'4'
+//                 },
+//                     h('path', {d:'M0,0 V8 L8,4 Z'})
+//                 )
+//             ),
+//             h('g', {className: "scene"},
+//                 this.props.scene.map((sceneObject, idx)=>{
+//                     // return h('g', {}, )
+                    
+//                     return h(Draggable, {
+//                         onDrag: (e, dx, dy) => this.moveSceneObject(sceneObject, dx, dy),
+//                         onClick: (e)=>this.props.onSelection([sceneObject]),
+//                         className: this.props.selection.indexOf(sceneObject)>=0?"selected":"",
+//                         sceneObject
+//                     },
+//                         h(GeometryComponent, {
+//                             sceneObject, 
+//                             onManipulate:(newGeometry)=>this.manipulateGeometry(sceneObject, newGeometry),
+//                         })
+//                     );
+//                 })
+//             ),
+//             h('g', { className: 'paths' },
+//                 this.props.paths.filter(path => path.length > 1).map(points =>
+//                     h('g', null,
+//                         h('path', {
+//                             d: this.pointsToSvgPath(points),
+//                             fill: 'none',
+//                             className: 'lightpath',
+//                             strokeLinejoin:"round",
+//                             strokeLinecap:"round",
+//                             vectorEffect: "non-scaling-stroke"
+//                         })
+//                     )
+//                 )
+//             ),
+//             h('g', { className: 'rays'},
+//                 this.props.rays==undefined?null:this.props.rays.map(ray =>
+//                     h('g', null,
+//                         h('line', {
+//                             x1: ray.origin.x,
+//                             y1: ray.origin.y,
+//                             x2: ray.origin.x + ray.direction.x * 1000,
+//                             y2: ray.origin.y + ray.direction.y * 1000,
+//                             className: 'lightray',
+//                             vectorEffect: "non-scaling-stroke"
+//                         })
+//                     )
+//                 )
+//             ),
+
+//             h('g', { className: 'intersections'},
+//                 this.props.intersections==undefined?null:this.props.intersections.map(intersection =>
+//                     h('g', null,
+//                         h('line', {
+//                             x1: intersection.origin.x,
+//                             y1: intersection.origin.y,
+//                             x2: intersection.origin.x + intersection.direction.x * 20,
+//                             y2: intersection.origin.y + intersection.direction.y * 20,
+//                             className: 'intersection',
+//                             // markerEnd:'url(#head)',
+//                             vectorEffect: "non-scaling-stroke"
+//                         })
+//                     )
+//                 )
+//             ),
+//         );
+//     }
+// }
 
 export default SVGViewport;
