@@ -94,7 +94,6 @@ class Draggable extends React.Component
     render()
     {
         return h('g', { 
-            // className: 'draggable',
             ref: this.ref,
             onMouseDown: (e) => this.handleMouseDown(e),
             ...this.props
@@ -114,23 +113,163 @@ function cursorPoint(svg, {x, y}){
     return {x:scenePoint.x, y:scenePoint.y};
 }
 
-function PointManip({x, y, onChange=({x, y})=>{}, ...props})
-{
-    const ref = React.useRef();
+function PointManip({x, y, onChange=(radians)=>{}}={}){
+    const [mouseScenePos, setMouseScenePos] = React.useState({x: x, y: y});
+    const [startPos, setStartPos] = React.useState({x: x, y: y});
 
-    return h(Draggable, {
-        ref: ref,
-        onDrag:(e, dx, dy)=>onChange({x:x+dx, y:y+dy}),
-        fill:'yellow', strokeWidth:4,
-        style: {
-            transform: `scale(var(--zoom))`,
-            transformOrigin: `${x}px ${y}px`
-        },
-        ...props
-    }, 
-        h('circle', {cx:x, cy:y, r:5, })
+    const handleMouseDown = (e)=>{
+        // const svg = e.target.closest("SVG");
+        // mouseScenePos.current = {x: scene_x, scene_y}
+        e.stopPropagation();
+        e.preventDefault();
+
+        setStartPos({x:x, y:y});
+
+        const handleMouseMove = (e)=>{
+            var svg  = e.target.closest("SVG");
+            let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
+
+            const angle = Math.atan2(loc.y-y, loc.x-x)
+            // console.log(angle)
+            // const newLight = sceneObject.copy()
+            // newLight.angle = angle;
+            // onChange(sceneObject, newLight)
+
+            setMouseScenePos({x: loc.x, y:loc.y});
+            onChange({x:loc.x, y:loc.y})
+        }
+
+        const handleMouseUp = (e)=>{
+            var svg  = e.target.closest("SVG");
+            let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
+            setStartPos({x:loc.x, y:loc.y});
+            window.removeEventListener("mousemove", handleMouseMove);
+            console.log("mouse up", {x:loc.x, y:loc.y})
+        }
+
+        window.addEventListener("mousemove", handleMouseMove);
+        window.addEventListener("mouseup", (e)=>handleMouseUp(e), {once: true});
+    }
+
+    return h('g', {className: "manip point"}, 
+        h("circle", {
+            className:"handle",
+            cx: x, 
+            cy: y,
+            r:3,
+            onMouseDown: handleMouseDown
+        }),
+        h("line", {
+            className:"guide",
+            x1: startPos.x, 
+            y1: startPos.y,
+            x2: mouseScenePos.x, 
+            y2: mouseScenePos.y
+        })
     )
 }
+
+function AngleManip({x, y, radians=0, length=30, onChange=(radians)=>{}, ...props}={}){
+    const [mouseScenePos, setMouseScenePos] = React.useState({x: x, y: y});
+    const [startPos, setStartPos] = React.useState({x:x, y:y});
+    const [startRadians, setStartRadians] = React.useState(radians);
+    const [active, setActive] = React.useState(false);
+
+    function getCirclePath(points, radius, clockWise) {
+        return ['L', points[0].x, points[0].y,
+                'A', radius, radius, 0, 0, clockWise, points[1].x, points[1].y,
+                'A', radius, radius, 0, 0, clockWise, points[2].x, points[2].y,
+                'A', radius, radius, 0, 0, clockWise, points[3].x, points[3].y
+               ].join(' ');
+      }
+
+    function getLocationFromAngle(degree, radius, center) {
+        var radian = degree * Math.PI / 180;
+        return {
+          x : Math.cos(radian) * radius + center.x,
+          y : Math.sin(radian) * radius + center.y
+        }
+      }
+
+    function getPathArc(center, start, end, radius) {
+        if (end == start) end += 360;
+        var degree = end - start;
+        // degree = degree < 0 ? (degree + 360) : degree;
+        var points = [];
+        points.push( getLocationFromAngle(start, radius, center) );
+        points.push( getLocationFromAngle(start+degree/3, radius, center) );
+        points.push( getLocationFromAngle(start+degree*2/3, radius, center) );
+        points.push( getLocationFromAngle(end, radius, center) );
+        return getCirclePath(points, radius, degree < 0 ? 0:1);
+      }
+
+    const handleMouseDown = (e)=>{
+        // const svg = e.target.closest("SVG");
+        // mouseScenePos.current = {x: scene_x, scene_y}
+        e.stopPropagation();
+        e.preventDefault();
+        setStartRadians(radians);
+        setActive(true)
+        var svg  = e.target.closest("SVG");
+        let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
+        setMouseScenePos({x: loc.x, y:loc.y});
+
+        const handleMouseMove = (e)=>{
+            var svg  = e.target.closest("SVG");
+            let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
+
+            const newRadians = Math.atan2(loc.y-y, loc.x-x)
+            // console.log(angle)
+            // const newLight = sceneObject.copy()
+            // newLight.angle = angle;
+            // onChange(sceneObject, newLight)
+
+            setMouseScenePos({x: loc.x, y:loc.y});
+            onChange(newRadians)
+        }
+
+        const handleMouseUp = (e)=>{
+            window.removeEventListener("mousemove", handleMouseMove);
+            console.log("mouse up")
+            setActive(false)
+        }
+
+        window.addEventListener("mousemove", handleMouseMove);
+        window.addEventListener("mouseup", (e)=>handleMouseUp(e), {once: true});
+    }
+
+
+    const r=40;
+    const dx = x-mouseScenePos.x;
+    const dy = y-mouseScenePos.y;
+    const mouseDistance = Math.sqrt(dx**2 + dy**2);
+    return h('g', {className: "manip point"}, 
+        (active&&Math.abs(startRadians-radians)>1e-6)?h('path', {
+            className:"guide",
+            d:`M${x} ${y} ` + getPathArc({x:x, y:y}, startRadians*180/Math.PI+0, radians*180/Math.PI+0, mouseDistance)
+        }):"",
+        h("circle", {
+            cx: x+Math.cos(radians)*(active?mouseDistance:length), 
+            cy: y+Math.sin(radians)*(active?mouseDistance:length),
+            r:3,
+            className:"handle",
+            onMouseDown: handleMouseDown
+        }),
+        active?h("line", {
+            className:"guide",
+            x1: x, 
+            y1: y,
+            x2: mouseScenePos.x, 
+            y2: mouseScenePos.y,
+        }):"",
+        active?h("text", {
+            className:"guide",
+            x: x, 
+            y: y,
+        }, `${(radians*180/Math.PI).toFixed(0)}`):""
+    )
+}
+
 
 function SceneItem({
     sceneObject, 
@@ -160,26 +299,22 @@ function SceneItem({
     if(sceneObject instanceof Circle)
     {
         return h(Draggable, {
-            className: "shape " + (isSelected ? 'selected': ''),
+            className: isSelected ? 'selected sceneItem': 'sceneItem',
             onDrag: (e, dx, dy)=>moveSceneObject(sceneObject, dx, dy),
             onClick: (e)=>onSelect(sceneObject)
         },
             h("circle", {
                 cx: sceneObject.center.x,
                 cy: sceneObject.center.y,
-                r: sceneObject.radius
-            }),
-            h('text', {
-                x: sceneObject.center.x,
-                y: sceneObject.center.y,
-                stroke: "1px",
-            }, `${sceneObject.constructor.name}`)
+                r: sceneObject.radius,
+                className: "handle shape"
+            })
         )
     }
     if(sceneObject instanceof Rectangle)
     {
         return h(Draggable, {
-            className: "shape " + (isSelected ? 'selected': ''),
+            className: isSelected ? 'selected sceneItem': 'sceneItem',
             onDrag: (e, dx, dy)=>moveSceneObject(sceneObject, dx, dy),
             onClick: (e)=>onSelect(sceneObject)
         },
@@ -189,6 +324,7 @@ function SceneItem({
                 width: sceneObject.width,
                 height: sceneObject.height,
                 vectorEffect: "non-scaling-stroke",
+                className: "handle shape"
             })
         )
     }
@@ -206,7 +342,7 @@ function SceneItem({
             onChange(sceneObject, newSceneObject)
         }
         return h('g', {
-                className: "shape " + (isSelected ? 'selected': ''),
+                className: isSelected ? 'selected sceneItem': 'sceneItem',
             }, 
             h('line', {
                 x1: sceneObject.p1.x,
@@ -230,6 +366,36 @@ function SceneItem({
         )
     }
 
+    else if(sceneObject instanceof PointLight)
+    {
+        const ref = React.useRef(null)
+        const setPos = (x, y)=>{
+            const newLight = sceneObject.copy()
+            newLight.center.x = x;
+            newLight.center.y = y;
+            onChange(sceneObject, newLight)
+        }
+
+        return h('g', {
+            className: isSelected ? 'selected sceneItem light point': 'sceneItem light point',
+            ref:ref
+        }, 
+            h('circle', {
+                cx: sceneObject.center.x,
+                cy: sceneObject.center.y,
+                r: 6,
+                vectorEffect: "non-scaling-stroke",
+                className: "shape"
+            }),
+            h(PointManip, {
+                x: sceneObject.center.x,
+                y: sceneObject.center.y,
+                onChange: ({x, y})=>setPos(x, y),
+            })
+            
+        )
+    }
+
     else if(sceneObject instanceof LaserLight)
     {
         const ref = React.useRef(null)
@@ -242,189 +408,86 @@ function SceneItem({
 
         const [mouseScenePos, setMouseScenePos] = React.useState({x:0, y:0});
 
-        const handleMouseDown = (e)=>{
-            // const svg = e.target.closest("SVG");
-            // mouseScenePos.current = {x: scene_x, scene_y}
-            e.stopPropagation();
-            e.preventDefault();
-
-            const prevAngle = sceneObject.angle;
-
-            const handleMouseMove = (e)=>{
-                var svg  = e.target.closest("SVG");
-                let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
-
-                const angle = Math.atan2(loc.y-sceneObject.center.y, loc.x-sceneObject.center.x)
-                console.log(angle)
-                const newLight = sceneObject.copy()
-                newLight.angle = angle;
-                onChange(sceneObject, newLight)
-
-                setMouseScenePos({x: loc.x, y:loc.y});
-            }
-
-            const handleMouseUp = (e)=>{
-                window.removeEventListener("mousemove", handleMouseMove);
-                console.log("mouse up")
-            }
-
-            window.addEventListener("mousemove", handleMouseMove);
-            window.addEventListener("mouseup", (e)=>handleMouseUp(e), {once: true});
+        const setRadians = (newRadians)=>{
+            const newSceneObject = sceneObject.copy()
+            newSceneObject.angle = newRadians;
+            onChange(sceneObject, newSceneObject)
         }
 
-
-        return h('g', {ref:ref, className: "shape"}, 
+        return h('g', {
+            className: isSelected ? 'selected sceneItem light laser': 'sceneItem light point',
+            ref:ref}, 
             h('circle', {
                 cx: sceneObject.center.x,
                 cy: sceneObject.center.y,
-                r: 3,
+                r: 6,
                 vectorEffect: "non-scaling-stroke",
+                className: "shape"
             }),
             h(PointManip, {
                 x: sceneObject.center.x,
                 y: sceneObject.center.y,
                 onChange: ({x, y})=>setPos(x, y),
             }),
-            h('g', null, 
-                h("circle", {
-                    cx: sceneObject.center.x+Math.cos(sceneObject.angle)*30, 
-                    cy: sceneObject.center.y+Math.sin(sceneObject.angle)*30,
-                    r:3,
-                    fill: "green",
-                    onMouseDown: handleMouseDown
-                }),
-                h("line", {
-                    x1: sceneObject.center.x, 
-                    y1: sceneObject.center.y,
-                    x2: mouseScenePos.x, 
-                    y2: mouseScenePos.y,
-                    strokeWidth: 1,
-                    strokeDasharray: "0 10 0"
-                })
-            )
+            h(AngleManip, {
+                x:sceneObject.center.x, 
+                y:sceneObject.center.y,
+                radians: sceneObject.angle,
+                onChange: (newRadians)=>setRadians(newRadians)
+            })
             
         )
     }
 
-    return h("text", {x: sceneObject.center.x, y: sceneObject.center.y, fontSize:12}, `${sceneObject.constructor.name}`)
-
-}
-
-function GeometryComponent({sceneObject, onManipulate, ...props})
-{
-    const children = []
-    if(sceneObject instanceof Circle)
+    else if(sceneObject instanceof DirectonalLight)
     {
-        children.push(h('circle', {
-            cx: sceneObject.center.x,
-            cy: sceneObject.center.y,
-            r: sceneObject.radius,
-            className: "shape"
-        }))
-    }
-    if(sceneObject instanceof LineSegment)
-    {
-        children.push(h('line', {
-            x1: sceneObject.p1.x,
-            y1: sceneObject.p1.y,
-            x2: sceneObject.p2.x,
-            y2: sceneObject.p2.y,
-            className: 'shape',
-            vectorEffect: "non-scaling-stroke",
-            // onMouseDown: ()=>this.selectObject(shape)
-        }))
-    }
-    if(sceneObject instanceof Rectangle)
-    {
-        children.push(h('rect', {
-            x: sceneObject.center.x - sceneObject.width / 2,
-            y: sceneObject.center.y - sceneObject.height / 2,
-            width: sceneObject.width,
-            height: sceneObject.height,
-            className: 'shape',
-            vectorEffect: "non-scaling-stroke",
-        }))
-    }
-    if(sceneObject instanceof LaserLight)
-    {
-        children.push(h('circle', {
-            cx: sceneObject.center.x,
-            cy: sceneObject.center.y,
-            r: '3',
-            className: 'lightsource',
-            vectorEffect: "non-scaling-stroke",
-        }))
-
-        function rotateLaser(light, e, dx, dy)
-        {
-            const svg = e.target.closest("SVG")
-            function screenToScene(svg, screenpos)
-            {
-                
-                let scenepos = svg.createSVGPoint();
-                scenepos.x = screenpos.x; 
-                scenepos.y = screenpos.y; 
-                return scenepos.matrixTransform(svg.getScreenCTM().inverse());
-            }
-    
-            // const svg = this.svgRef.current
-            const scenePos = screenToScene(svg, {x: e.offsetX, y: e.offsetY})
-    
-    
-            const newLight = light.copy()
-            
-            newLight.angle = Math.atan2(scenePos.y-light.center.y, scenePos.x-light.center.x)
-            console.log("rotate laser", newLight)
-            onManipulate(newLight)
+        const ref = React.useRef(null)
+        const setPos = (x, y)=>{
+            const newLight = sceneObject.copy()
+            newLight.center.x = x;
+            newLight.center.y = y;
+            onChange(sceneObject, newLight)
         }
 
-        children.push(h(Draggable, { onDrag: (e, dx, dy) => rotateLaser(sceneObject, e, dx, dy), ...props },
-                h('circle', {
-                    cx: sceneObject.center.x+Math.cos(sceneObject.angle)*30,
-                    cy: sceneObject.center.y+Math.sin(sceneObject.angle)*30,
-                    r: '3',
-                    className: 'manip'
-                })
-            )
+        const [mouseScenePos, setMouseScenePos] = React.useState({x:0, y:0});
+
+        const setRadians = (newRadians)=>{
+            const newSceneObject = sceneObject.copy()
+            newSceneObject.angle = newRadians;
+            onChange(sceneObject, newSceneObject)
+        }
+
+        return h('g', {
+            className: isSelected ? 'selected sceneItem light directional': 'sceneItem light directional',
+            ref:ref}, 
+            h('rect', {
+                x: sceneObject.center.x-6,
+                y: sceneObject.center.y-sceneObject.width/2,
+                width: 6,
+                height: sceneObject.width,
+                vectorEffect: "non-scaling-stroke",
+                className: "shape",
+                style: {transform: `rotate(${sceneObject.angle*180/Math.PI}deg)`, transformOrigin: `${sceneObject.center.x}px ${sceneObject.center.y}px`}
+            }),
+            h(PointManip, {
+                x: sceneObject.center.x,
+                y: sceneObject.center.y,
+                onChange: ({x, y})=>setPos(x, y),
+            }),
+            h(AngleManip, {
+                x:sceneObject.center.x, 
+                y:sceneObject.center.y,
+                radians: sceneObject.angle,
+                onChange: (newRadians)=>setRadians(newRadians)
+            })
+            
         )
     }
 
-    if(sceneObject instanceof PointLight)
-    {
-        children.push(h('circle', {
-            cx: sceneObject.center.x,
-            cy: sceneObject.center.y,
-            r: '10',
-            className: 'lightsource',
-            vectorEffect: "non-scaling-stroke",
-        }))
-    }
+    return h("text", {className: "shape", x: sceneObject.center.x, y: sceneObject.center.y, fontSize:12}, `${sceneObject.constructor.name}`)
 
-    if(sceneObject instanceof DirectonalLight)
-    {
-        children.push(h('rect', {
-            x: sceneObject.center.x-2,
-            y: sceneObject.center.y-10,
-            width: 2,
-            height: sceneObject.width,
-            style: {transform: `rotate(${sceneObject.angle}rad)`, transformOrigin: `${sceneObject.center.x}px ${sceneObject.center.y}px`},
-            className: 'lightsource',
-            vectorEffect: "non-scaling-stroke",
-            
-        }))
-
-        // children.push(h(Draggable, { onDrag: (e, dx, dy) => rotateLaser(sceneObject, e, dx, dy) },
-        //     h('circle', {
-        //         cx: sceneObject.center.x+Math.cos(sceneObject.angle)*30,
-        //         cy: sceneObject.center.y+Math.sin(sceneObject.angle)*30,
-        //         r: '3',
-        //         className: 'manip'
-        //     })
-        // ))
-    }
-    
-    return h("g", {...props}, ...children)
 }
+
 
 function SVGViewport({
     viewBox={x:0, y:0, w:512, h:512}, 
@@ -436,7 +499,6 @@ function SVGViewport({
     paths=[], 
     selection=[],
     onSelection=()=>{},
-    
     ...props
 }={})
 {
@@ -514,6 +576,8 @@ function SVGViewport({
     {
         isPanning.current = false
     }
+
+
 
     // utils
     const pointsToSvgPath = (points)=> {

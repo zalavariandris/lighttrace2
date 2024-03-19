@@ -28,23 +28,17 @@ svg{
 }
 
 svg *{
-    animation: fadeIn 0.3s ease-in-out;
+    /* animation: fadeIn 0.3s ease-in-out; */
 }
 
+
+
+/* SVGViewport */
 svg .lightray{
     stroke: yellow;
     stroke-width: 1;
     opacity: 1.0;
     stroke-dasharray: 10 10;
-}
-
-svg .manip{
-    fill: yellow;
-    stroke: yellow;
-    opacity: 0.1;
-}
-svg .manip:hover{
-    opacity: 0.3;
 }
 
 svg .intersection{
@@ -54,40 +48,68 @@ svg .intersection{
     stroke-width: 3;
 }
 
-svg .selected{
-    fill: hsla(0, 0%, 89%)  !important;
-}
+
 
 svg .lightpath{
-    stroke: hsla(50, 100%, 50%, 0.5);
+    stroke: hsla(39, 100%, 50%, 0.5);
     opacity: 1.0;
 }
 
-svg .lightsource{
+svg .light .shape{
     stroke: #FAA300;
-    fill: rgb(232, 125, 10);
-    stroke-width: 5;
-    stroke-dasharray: 8 8;
+    fill: hsl(52, 100%, 50%);
+    stroke-width: 2px;
 }
 
 svg .shape{
-    fill: rgba(255, 255, 255, 0.01);
+    fill: transparent;
     stroke: hsl(0, 0%, 38%);
-    stroke-width: 3;
+    stroke-width: 1;
     /* stroke-dasharray: 8 8; */
     /* stroke: black; */
 }
 
-svg .shape text{
-    fill: white;
+/* MANIPUATORS */
+.sceneItem:not(:hover) .manip .handle{
+    opacity: 0.0;
+    transition: opacity 1.3s ease-in;
+}
+
+.manip .handle{
+    fill: hsla(60, 100%, 50%, 0.1);
+}
+.manip .handle:hover{
+    fill: hsla(60, 100%, 50%, 0.3);
+}
+
+.manip .guide{
+    fill: hsla(0, 0%, 50%, 0.03);
+    
+}
+.manip line.guide{
+    stroke: white;
+    stroke-width: 1;
+    stroke-dasharray: 1 8;
+}
+
+.manip .shape.handle{
+    fill:transparent
+}
+.manip .shape.handle:hover{
+    stroke: white;
+}
+text.shape{
     stroke: none;
+    fill:white;
+    font-size: 6px;
 }
 
-svg .shape:hover, svg .lightsource:hover{
-    stroke: hsl(0, 0%, 84%);
-    stroke-width: 5;
+.selected .shape{
+    fill: hsla(0, 0%, 89%)  !important;
 }
 
+
+/**/
 #info{
     background-color: white;
     position: fixed;
