@@ -54,7 +54,7 @@ svg .intersection{
     stroke-width: 3;
 }
 
-svg .selected .shape, svg .selected .lightsource{
+svg .selected{
     fill: hsla(0, 0%, 89%)  !important;
 }
 
@@ -76,6 +76,11 @@ svg .shape{
     stroke-width: 3;
     /* stroke-dasharray: 8 8; */
     /* stroke: black; */
+}
+
+svg .shape text{
+    fill: white;
+    stroke: none;
 }
 
 svg .shape:hover, svg .lightsource:hover{

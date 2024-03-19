@@ -48,7 +48,7 @@ const App = ()=>{
         // new Circle(P(120, 380), 80),
         new LineSegment(P(400, 250), P(500, 130), new MirrorMaterial()),
         new LineSegment(P(370, 220), P(470, 100), new MirrorMaterial()),
-        new Rectangle(P(400,400), new TransparentMaterial(), 100,100)
+        new Rectangle(P(400,400), new MirrorMaterial(), 100,100)
     ]);
     const [selection, setSelection] = React.useState([])
     const updateSceneObject = (oldObject, newObject)=>{
