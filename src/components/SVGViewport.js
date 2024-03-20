@@ -8,6 +8,7 @@ import AngleManip from "./AngleManip.js"
 import CircleItem from "./CircleItem.js"
 import RectangleItem from "./RectangleItem.js"
 import LensItem from "./LensItem.js"
+import DirectionalLightItem from "./DirectionalLightItem.js"
 
 function viewboxString(viewBox){
     return viewBox.x+" "+viewBox.y+" "+viewBox.w+" "+viewBox.h;
@@ -119,23 +120,6 @@ function SceneItem({
     ...props
 })
 {
-    const moveSceneObject = (oldObject, dx, dy)=>{
-        // this.props.onShapeDrag(shape, dx, dy);
-        const newObject = oldObject.copy()
-
-        if(newObject instanceof LineSegment){
-            newObject.p1.x+=dx;
-            newObject.p1.y+=dy;
-            newObject.p2.x+=dx;
-            newObject.p2.y+=dy;
-        }else{
-            newObject.center.x+=dx
-            newObject.center.y+=dy;
-        }
-
-        onChange(oldObject, newObject)
-    }
-
     if(sceneObject instanceof Circle)
     {
         return h(CircleItem, {
@@ -271,53 +255,15 @@ function SceneItem({
 
     else if(sceneObject instanceof DirectonalLight)
     {
-        const ref = React.useRef(null)
-        const setPos = (x, y)=>{
-            const newLight = sceneObject.copy()
-            newLight.center.x = x;
-            newLight.center.y = y;
-            onChange(sceneObject, newLight)
-        }
-
-        const [mouseScenePos, setMouseScenePos] = React.useState({x:0, y:0});
-
-        const setRadians = (newRadians)=>{
-            const newSceneObject = sceneObject.copy()
-            newSceneObject.angle = newRadians;
-            onChange(sceneObject, newSceneObject)
-        }
-
-        return h('g', {
-            className: isSelected ? 'selected sceneItem light directional': 'sceneItem light directional',
-            ref:ref}, 
-            h('rect', {
-                x: sceneObject.center.x-6,
-                y: sceneObject.center.y-sceneObject.width/2,
-                width: 6,
-                height: sceneObject.width,
-                vectorEffect: "non-scaling-stroke",
-                className: "shape",
-                style: {transform: `rotate(${sceneObject.angle*180/Math.PI}deg)`, transformOrigin: `${sceneObject.center.x}px ${sceneObject.center.y}px`}
-            }),
-            h(PointManip, {
-                x: sceneObject.center.x,
-                y: sceneObject.center.y,
-                onChange: (x, y)=>setPos(x, y),
-            }),
-            h(AngleManip, {
-                x:sceneObject.center.x, 
-                y:sceneObject.center.y,
-                radians: sceneObject.angle,
-                onChange: (newRadians)=>setRadians(newRadians)
-            })
-            
-        )
+        return DirectionalLightItem({
+            light: sceneObject,
+            onChange: onChange
+        });
     }
 
     return h("text", {className: "shape", x: sceneObject.center.x, y: sceneObject.center.y, fontSize:12}, `${sceneObject.constructor.name}`)
 
 }
-
 
 function SVGViewport({
     viewBox={x:0, y:0, w:512, h:512}, 

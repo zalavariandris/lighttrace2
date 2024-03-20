@@ -21,7 +21,7 @@ const Form = (params)=>{
 const App = ()=>{
     /* STATE */
     const [raytraceTick, setRaytraceTick] = React.useState(0)
-    const [showSettings, setShowSettings] = React.useState(true)
+    const [showSettings, setShowSettings] = React.useState(false)
     const [raytraceOptions, setRaytraceOptions] = React.useState({
         maxBounce: 9,
         lightSamples: 7,
@@ -31,7 +31,7 @@ const App = ()=>{
 
     const [svgDisplayOptions, setSvgDisplayOptions] = React.useState({
         rays: false,
-        intersections: false,
+        intersections: true,
         lightpaths: true
     })
     const updateSvgDisplayOptions = options=> setSvgDisplayOptions({...svgDisplayOptions, ...options})
@@ -41,16 +41,16 @@ const App = ()=>{
     });
 
     const [scene, setScene] = React.useState([
-        new PointLight(P(430, 185)),
-        new LaserLight(P(150,220), 0),
+        // new PointLight(P(230, 125)),
+        // new LaserLight(P(150,220), 0),
         new DirectonalLight(P(150,180), 20,0),
-        new Lens(P(300, 100),  new TransparentMaterial(), 20, 100, 100, 100), 
-        new Circle(P(230, 310), new TransparentMaterial(), 50),
+        new Lens(P(250, 350),  new TransparentMaterial(), 20, 100, 100, 100), 
+        // new Circle(P(230, 310), new TransparentMaterial(), 50),
         // new Circle(P(520, 550), 100),
         // new Circle(P(120, 380), 80),
-        new LineSegment(P(400, 250), P(500, 130), new MirrorMaterial()),
-        new LineSegment(P(370, 220), P(470, 100), new MirrorMaterial()),
-        new Rectangle(P(400,400), new MirrorMaterial(), 100,100)
+        // new LineSegment(P(400, 250), P(500, 130), new MirrorMaterial()),
+        // new LineSegment(P(370, 220), P(470, 100), new MirrorMaterial()),
+        // new Rectangle(P(400,400), new MirrorMaterial(), 100,100)
     ]);
     const [selection, setSelection] = React.useState([])
     const updateSceneObject = (oldObject, newObject)=>{
@@ -75,23 +75,25 @@ const App = ()=>{
     const intersections = newIntersections;
     const paths = newPaths;
 
-    // step rayrace on animation frame
+    /* step rayrace on animation frame */
+    const [animate, setAnimate] = React.useState(false)
     const [count, setCount] = React.useState(0);
     const requestRef = React.useRef();
-    const previousTimeRef = React.useRef();
 
-    // const animate = time => {
-    //     // if (previousTimeRef.current != undefined) {
-    //     setCount(prevCount => prevCount + 1);
-    //     // }
-    //     // previousTimeRef.current = time;
-    //     requestRef.current = requestAnimationFrame(animate);
-    //   }
+    const onAnimationTick = time => {
+        // if (previousTimeRef.current != undefined) {
+        setCount(prevCount => prevCount + 1);
+        // }
+        // previousTimeRef.current = time;
+        requestRef.current = requestAnimationFrame(onAnimationTick);
+      }
       
-    //   React.useEffect(() => {
-    //     requestRef.current = requestAnimationFrame(animate);
-    //     return () => cancelAnimationFrame(requestRef.current);
-    //   }, []); // Make sure the effect runs only once
+      React.useEffect(() => {
+        if(animate){
+            requestRef.current = requestAnimationFrame(onAnimationTick);
+            return () => cancelAnimationFrame(requestRef.current);
+        }
+      }, [animate]); // Make sure the effect runs only once
 
     return h("div", null,
         // h(GLViewport,  {
@@ -101,7 +103,6 @@ const App = ()=>{
         //     viewBox: viewBox,
         //     className:"viewport"
         // }),
-        h("span", null, `tick: ${count}`),
         h(SVGViewport, {
             // style: {opacity: "0.2"},
             className:"viewport",
@@ -116,13 +117,25 @@ const App = ()=>{
             onSceneObject: (oldObject, newObject)=>updateSceneObject(oldObject, newObject)
         }),        
         h("div", {id:"inspector"}, 
-            h('label', {for: "showSettingstoggle", style: {fontSize: "32px"}}, "⚙"),
-            h('input', {
-                id:"showSettingsToggle",
-                type: "checkbox", 
-                checked: showSettings, 
-                onChange:()=>setShowSettings(!showSettings)
-            }),
+            h('div', null, 
+                h('label', {for: "animate"}, 'tick'),
+                h('input', {
+                    name: "animate",
+                    type: 'checkbox', 
+                    checked:animate, 
+                    onChange:(e)=>setAnimate(e.target.checked)
+                }),
+                h('span', null, `${count}`)
+            ),
+            h('div', null,
+                h('label', {for: "showSettingstoggle", style: {fontSize: "32px"}}, "⚙"),
+                h('input', {
+                    id:"showSettingsToggle",
+                    type: "checkbox", 
+                    checked: showSettings, 
+                    onChange:()=>setShowSettings(!showSettings)
+                })
+            ),
             h('div', {style: {display: showSettings?"block":"none"}}, 
                 h("section", null,
                     h("h2", null, "Raytrace otions"),
@@ -215,7 +228,10 @@ const App = ()=>{
                     h("h3", null, "Objects"),
                     h("ul", null, 
                         ...scene.map((sceneObject)=>{
-                            return h("li", {style: {fontStyle: selection.indexOf(sceneObject)>=0?"italic":"normal"}}, `${sceneObject} ${selection.indexOf(sceneObject)}`)
+                            return h("li", {
+                                    style: {fontStyle: selection.indexOf(sceneObject)>=0?"italic":"normal"}}, 
+                                    `${sceneObject}`
+                                )
                         })
                     ),
                     h("div", null, `rays: ${rays.length}`),

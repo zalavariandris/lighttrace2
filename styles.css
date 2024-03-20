@@ -82,14 +82,18 @@ svg .shape{
     fill: hsla(60, 100%, 50%, 0.3);
 }
 
-.manip .guide{
+.guide{
     fill: hsla(0, 0%, 50%, 0.03);
-    
-}
-.manip line.guide{
     stroke: white;
     stroke-width: 1;
     stroke-dasharray: 1 8;
+    pointer-events: none;
+}
+line.guide{
+    stroke: white;
+    stroke-width: 1;
+    stroke-dasharray: 1 8;
+    
 }
 
 .manip .shape.handle{
@@ -121,7 +125,7 @@ text.shape{
 {
     position: fixed;
     left: 1rem;
-    top: 3rem;
+    top: 100px;
     user-select: none;
     pointer-events: none;
 }

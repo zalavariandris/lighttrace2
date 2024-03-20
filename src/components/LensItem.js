@@ -85,6 +85,11 @@ function LensItem({
         return Math.sign(lens.rightRadius)*(lensCircle.radius - lensCircle.center.x)
     }
 
+    const top = new Point(0, lens.center.y+lens.height/2)
+    const bottom =  new Point(0, lens.center.y-lens.height/2)
+    const rightCircle = Circle.fromRadiusAndTwoPoints(Math.abs(lens.rightRadius), top, bottom)
+    const leftCircle = Circle.fromRadiusAndTwoPoints(Math.abs(lens.leftRadius), top, bottom)
+
     return h("g", {
         className: 'sceneItem lens',
     },
@@ -124,6 +129,18 @@ function LensItem({
             x: lens.center.x+lens.width/2+getRightLensWidth(),
             y: lens.center.y,
             onChange: (x, y)=>onRightLensManip(x, y)
+        }),
+        h('circle', {
+            className: "guide",
+            cx: lens.center.x+leftCircle.center.x-lens.width/2, 
+            cy: lens.center.y, 
+            r:leftCircle.radius,
+        }),
+        h('circle', {
+            className: "guide",
+            cx: lens.center.x-rightCircle.center.x+lens.width/2, 
+            cy: lens.center.y, 
+            r:rightCircle.radius
         })
         
     )

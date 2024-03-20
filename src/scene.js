@@ -24,31 +24,6 @@ class Geometry extends SceneObject
     }
 }
 
-class Lens extends Geometry
-{
-    constructor(center, material, width, height, leftRadius, rightRadius)
-    {
-        super(center, material)
-        this.width = width
-        this.height = height
-        this.leftRadius = leftRadius
-        this.rightRadius = rightRadius
-    }
-
-    copy()
-    {
-        return new Lens(this.center.copy(), this.material.copy(), this.width, this.height, this.leftRadius, this.rightRadius)
-    }
-
-    hitTest(ray)
-    {
-        return []
-    }
-
-    toString(){
-        return `Lens(${this.width}x${this.height} left: ${this.leftRadius}, right: ${this.rightRadius})`
-    }
-}
 
 class Circle extends Geometry
 {
@@ -83,19 +58,22 @@ class Circle extends Geometry
         return new Circle(new Point(x, y), null, Math.hypot(x - Sx, y - Sy))
       }
 
-      static fromRadiusAndTwoPoints(r, A, B) {
+      static fromRadiusAndTwoPoints(r, A, B, flip=false) {
             const [Ax, Ay] = [A.x, A.y];
             const [Bx, By] = [B.x, B.y];
 
             const d = Math.sqrt((Ax - Bx)*(Ax - Bx)+ (Ay - By)*(Ay - By))
-            const h = Math.sqrt(r**2 - (d/2.0)**2)
+            const h = (flip?-1:1)*Math.sqrt(r**2 - (d/2.0)**2)
 
             const alpha = Math.acos(1.0*h/r)
-            const Cx = Math.cos(alpha)*r;
-            const Cy = Math.sin(alpha)*r
+            let Cx = Math.cos(alpha)*r;
+            let Cy = Math.sin(alpha)*r;
+
+            Cx+=Bx;
+            Cy+=By;
 
             // Create a new Circle instance using the intersection point as the center
-            return new Circle(new Point(Cx, Cy), null, r);
+            return new Circle(new Point(Cx, Cy), null, Math.abs(r));
     }
     
     copy(other)
@@ -159,6 +137,52 @@ class Circle extends Geometry
             return [new Ray(origin, direction.multiply(-1))];
         }
         return []
+    }
+}
+
+
+class Lens extends Geometry
+{
+    constructor(center, material, width, height, leftRadius, rightRadius)
+    {
+        super(center, material)
+        this.width = width
+        this.height = height
+        this.leftRadius = leftRadius
+        this.rightRadius = rightRadius
+    }
+
+    copy()
+    {
+        return new Lens(this.center.copy(), this.material.copy(), this.width, this.height, this.leftRadius, this.rightRadius)
+    }
+
+    hitTest(ray)
+    {
+        const topRight = new Point(this.center.x+this.width/2, this.center.y+this.height/2)
+        const bottomRight =  new Point(this.center.x+this.width/2, this.center.y-this.height/2)
+        const rightCircle = Circle.fromRadiusAndTwoPoints(Math.abs(this.rightRadius), topRight, bottomRight, true)
+        
+        const topLeft = new Point(this.center.x-this.width/2, this.center.y+this.height/2)
+        const bottomLeft =  new Point(this.center.x-this.width/2, this.center.y-this.height/2)
+        const leftCircle = Circle.fromRadiusAndTwoPoints(Math.abs(this.leftRadius), topLeft, bottomLeft, false)
+
+        const hits = [...leftCircle.hitTest(ray), ...rightCircle.hitTest(ray)]
+
+        const top = this.center.y+this.height/2
+        const bottom = this.center.y-this.height/2
+        const left = leftCircle.center.x-leftCircle.radius;
+        const right = rightCircle.center.x+rightCircle.radius;
+
+        return hits.filter((intersection)=>{
+            const Ix = intersection.origin.x;
+            const Iy = intersection.origin.y;
+            return right+1>Ix && left-1 < Ix && Iy>bottom-1 && Iy<top+1;
+        });
+    }
+
+    toString(){
+        return `Lens(${this.width}x${this.height} left: ${this.leftRadius}, right: ${this.rightRadius})`
     }
 }
 
@@ -342,7 +366,7 @@ class PointLight extends Light
         return `Pointlight(${this.center})`
     }
 
-    sampleRays({sampleCount=9, samplingMethod=SamplingMethod.Uniform}={})
+    sampleRays({sampleCount, samplingMethod=SamplingMethod.Uniform}={})
     {
         
         function makeUniformAngles(N)
@@ -383,7 +407,7 @@ class LaserLight extends Light
 
     toString()
     {
-        return `LaserLight(${this.center}, angles)`
+        return `LaserLight(${this.center}, ${this.angle})`
     }
 
     sampleRays({sampleCount=9, samplingMethod=SamplingMethod.Uniform}={}){
@@ -414,7 +438,10 @@ class DirectonalLight extends Light
         const center = V(this.center.x,this.center.y)
         return Array.from({length: sampleCount}).map((_, i)=>{
 
-            const origin = center.add(offset.multiply(this.width*i/sampleCount-this.width/2))
+            const randomRayOffset = this.width*Math.random()-this.width/2
+            const uniformRayOffset = this.width*(i)/(sampleCount-1)-this.width/2
+
+            const origin = center.add(offset.multiply(samplingMethod==SamplingMethod.Random?randomRayOffset:uniformRayOffset))
             
             return new Ray(P(origin.x,origin.y), dir)
         });
@@ -423,6 +450,11 @@ class DirectonalLight extends Light
     copy()
     {
         return new DirectonalLight(this.center.copy(), this.width, this.angle)
+    }
+
+    toString()
+    {
+        return `DirectonalLight(${this.center}, ${this.angle})`
     }
 }
 

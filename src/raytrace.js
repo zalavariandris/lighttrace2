@@ -143,7 +143,7 @@ function raytrace_pass2(rays, [shapes, materials], {THRESHOLD=1e-6})
 function raytrace(lights, [shapes, materials], {maxBounce=3, samplingMethod="Uniform", lightSamples=9}={})
 {
     // initial rays
-    const initial_rays = makeRaysFromLights(lights, {lightSamples, samplingMethod});
+    const initial_rays = makeRaysFromLights(lights, {sampleCount: lightSamples, samplingMethod:samplingMethod});
 
     // raytrace steps
     let currentRays = initial_rays;
