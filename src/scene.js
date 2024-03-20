@@ -26,21 +26,27 @@ class Geometry extends SceneObject
 
 class Lens extends Geometry
 {
-    constructor(center, material, width, height)
+    constructor(center, material, width, height, leftRadius, rightRadius)
     {
         super(center, material)
         this.width = width
         this.height = height
+        this.leftRadius = leftRadius
+        this.rightRadius = rightRadius
     }
 
     copy()
     {
-        return new Lens(this.center.copy(), this.material.copy(), this.width, this.height)
+        return new Lens(this.center.copy(), this.material.copy(), this.width, this.height, this.leftRadius, this.rightRadius)
     }
 
     hitTest(ray)
     {
         return []
+    }
+
+    toString(){
+        return `Lens(${this.width}x${this.height} left: ${this.leftRadius}, right: ${this.rightRadius})`
     }
 }
 
@@ -50,6 +56,46 @@ class Circle extends Geometry
     {
         super(center, material)
         this.radius=radius;
+    }
+
+    static fromThreePoints(S, M, E) {
+
+        var Sx = S.x;
+        var Sy = S.y;
+        var Mx = M.x;
+        var My = M.y;
+        var Ex = E.x;
+        var Ey = E.y;
+      
+        var a = Sx * (My - Ey) - Sy * (Mx - Ex) + Mx * Ey - Ex * My;
+      
+        var b = (Sx * Sx + Sy * Sy) * (Ey - My) 
+              + (Mx * Mx + My * My) * (Sy - Ey)
+              + (Ex * Ex + Ey * Ey) * (My - Sy);
+       
+        var c = (Sx * Sx + Sy * Sy) * (Mx - Ex) 
+              + (Mx * Mx + My * My) * (Ex - Sx) 
+              + (Ex * Ex + Ey * Ey) * (Sx - Mx);
+       
+        var x = -b / (2 * a);
+        var y = -c / (2 * a);
+      
+        return new Circle(new Point(x, y), null, Math.hypot(x - Sx, y - Sy))
+      }
+
+      static fromRadiusAndTwoPoints(r, A, B) {
+            const [Ax, Ay] = [A.x, A.y];
+            const [Bx, By] = [B.x, B.y];
+
+            const d = Math.sqrt((Ax - Bx)*(Ax - Bx)+ (Ay - By)*(Ay - By))
+            const h = Math.sqrt(r**2 - (d/2.0)**2)
+
+            const alpha = Math.acos(1.0*h/r)
+            const Cx = Math.cos(alpha)*r;
+            const Cy = Math.sin(alpha)*r
+
+            // Create a new Circle instance using the intersection point as the center
+            return new Circle(new Point(Cx, Cy), null, r);
     }
     
     copy(other)

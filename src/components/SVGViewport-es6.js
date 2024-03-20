@@ -348,8 +348,54 @@ function SceneItem({
 
         const onRightLensManip = (loc)=>{
             const newLens = sceneObject.copy()
-            // newLens.leftRadius = loc.x - sceneObject.center.x+sceneObject.width/2
+
+            const topRight = new Point(0, sceneObject.height/2)
+
+            let V = new Vector(loc.x-(sceneObject.center.x+sceneObject.width/2), loc.y-(sceneObject.center.y))
+            if(V.magnitude()>sceneObject.height/2){
+                V = V.normalized(sceneObject.height/2)
+                console.log(V)
+            }
+            const middle = new Point(V.x, V.y );
+            const bottomRight = new Point(0, -sceneObject.height/2)
+            const lensCircle = Circle.fromThreePoints(topRight, middle, bottomRight)
+
+            newLens.rightRadius = Math.sign(V.x)*lensCircle.radius
             onChange(sceneObject, newLens)
+        }
+
+        const onLeftLensManip = (loc)=>{
+            const newLens = sceneObject.copy()
+
+            const topRight = new Point(0, sceneObject.height/2)
+
+            let V = new Vector(+loc.x-(sceneObject.center.x-sceneObject.width/2), loc.y-(sceneObject.center.y))
+            if(V.magnitude()>sceneObject.height/2){
+                V = V.normalized(sceneObject.height/2)
+                console.log(V)
+            }
+            const middle = new Point(V.x, V.y );
+            const bottomRight = new Point(0, -sceneObject.height/2)
+            const lensCircle = Circle.fromThreePoints(topRight, middle, bottomRight)
+
+            newLens.leftRadius = -Math.sign(V.x)*lensCircle.radius
+            onChange(sceneObject, newLens)
+        }
+
+        const getLeftLensWidth = (sceneObject)=>{
+            const topLeft = new Point(sceneObject.center.x-sceneObject.width/2, sceneObject.center.y+sceneObject.height/2)
+            const bottomLeft =  new Point(sceneObject.center.x-sceneObject.width/2, sceneObject.center.y-sceneObject.height/2)
+            const lensCircle = Circle.fromRadiusAndTwoPoints(Math.abs(sceneObject.leftRadius), topLeft, bottomLeft)
+            // console.log("lensCircle", lensCircle.center.x, lensCircle.radius)
+            return Math.sign(sceneObject.leftRadius)*(lensCircle.radius - lensCircle.center.x)
+        }
+
+        const getRightLensWidth = (sceneObject)=>{
+            const topLeft = new Point(sceneObject.center.x+sceneObject.width/2, sceneObject.center.y+sceneObject.height/2)
+            const bottomLeft =  new Point(sceneObject.center.x+sceneObject.width/2, sceneObject.center.y-sceneObject.height/2)
+            const lensCircle = Circle.fromRadiusAndTwoPoints(Math.abs(sceneObject.rightRadius), topLeft, bottomLeft)
+            // console.log("lensCircle", lensCircle.center.x, lensCircle.radius)
+            return Math.sign(sceneObject.rightRadius)*(lensCircle.radius - lensCircle.center.x)
         }
 
         return h(Draggable, {
@@ -366,7 +412,7 @@ function SceneItem({
                 fill: "transparent"
             }),
             h('path', {
-                d: makeLensPath(sceneObject.width, sceneObject.height, sceneObject.height*1, sceneObject.height*1),
+                d: makeLensPath(sceneObject.width, sceneObject.height, sceneObject.leftRadius, sceneObject.rightRadius),
                 style: {
                     transform: `translate(${sceneObject.center.x}px, ${sceneObject.center.y}px)`,
                     fill: "white",
@@ -380,10 +426,16 @@ function SceneItem({
                 onChange: ({x, y})=>onSizeManip({x, y})
             }),
             h(PointManip, {
-                x: sceneObject.center.x+sceneObject.width,
+                x: sceneObject.center.x-sceneObject.width/2-getLeftLensWidth(sceneObject),
+                y: sceneObject.center.y,
+                onChange: ({x, y})=>onLeftLensManip({x, y})
+            }),
+            h(PointManip, {
+                x: sceneObject.center.x+sceneObject.width/2+getRightLensWidth(sceneObject),
                 y: sceneObject.center.y,
                 onChange: ({x, y})=>onRightLensManip({x, y})
             })
+            
         )
     }
 

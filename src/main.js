@@ -43,7 +43,7 @@ const App = ()=>{
         new PointLight(P(430, 185)),
         new LaserLight(P(150,220), 0),
         new DirectonalLight(P(150,180), 20,0),
-        new Lens(P(300, 100),  new TransparentMaterial(), 20, 100), 
+        new Lens(P(300, 100),  new TransparentMaterial(), 20, 100, 100, 100), 
         new Circle(P(230, 310), new TransparentMaterial(), 50),
         // new Circle(P(520, 550), 100),
         // new Circle(P(120, 380), 80),
