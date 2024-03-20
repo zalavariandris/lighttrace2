@@ -1,7 +1,7 @@
-import {Point, Vector, Ray} from "./geo.js"
+import {Point, Vector} from "./geo.js"
 import {P, V} from "./geo.js"
 
-import {Lightay} from "./raytrace.js"
+import {Lightray, HitPoint} from "./raytrace.js"
 
 const EPSILON=1e-6;
 
@@ -122,7 +122,7 @@ class Circle extends Geometry
             const origin = P(ray.origin.x + t * ray.direction.x, ray.origin.y + t * ray.direction.y);
             const direction = V(origin.x - this.center.x, origin.y - this.center.y).normalized();
             
-            return [new Ray(origin, direction.multiply(1))];
+            return [new HitPoint(origin, direction.multiply(1))];
         }
         else
         {
@@ -137,7 +137,7 @@ class Circle extends Geometry
 
             const direction = V(origin.x - this.center.x, origin.y - this.center.y).normalized();
             
-            return [new Ray(origin, direction.multiply(-1))];
+            return [new HitPoint(origin, direction.multiply(-1))];
         }
         return []
     }
@@ -177,9 +177,9 @@ class Lens extends Geometry
         const left = leftCircle.center.x-leftCircle.radius;
         const right = rightCircle.center.x+rightCircle.radius;
 
-        return hits.filter((intersection)=>{
-            const Ix = intersection.origin.x;
-            const Iy = intersection.origin.y;
+        return hits.filter((hitPoint)=>{
+            const Ix = hitPoint.origin.x;
+            const Iy = hitPoint.origin.y;
             return right+1>Ix && left-1 < Ix && Iy>bottom-1 && Iy<top+1;
         });
     }
@@ -244,13 +244,13 @@ class Rectangle extends Geometry
             new LineSegment(bottomLeft, topLeft)
         ];
         
-        let intersections = []
+        let hits = []
         for (const side of sides) {
-            const side_intersections = side.hitTest(ray);
-            intersections = [...intersections, ...side_intersections]
+            const side_hits = side.hitTest(ray);
+            hits = [...hits, ...side_hits]
         }
 
-        return intersections;
+        return hits;
     }
 }
 
@@ -332,7 +332,7 @@ class LineSegment extends Geometry
                 N = N.negate()
             }
             
-            return [new Ray(intersectionPoint, N)];
+            return [new HitPoint(intersectionPoint, N)];
         }
         
         // No intersection
@@ -390,7 +390,7 @@ class PointLight extends Light
             const x = Math.cos(a);
             const y = Math.sin(a);
             const dir = V(x,y);
-            return new Ray(this.center, dir.normalized(1))
+            return new Lightray(this.center, dir.normalized(1))
         })
     }
 }
@@ -418,7 +418,7 @@ class LaserLight extends Light
         const y = Math.sin(this.angle);
         const dir = V(x,y);
         return Array.from({length: sampleCount}).map((_, i)=>{
-            return new Ray(this.center, dir.normalized(1))
+            return new Lightray(this.center, dir.normalized(1))
         })
     }
 }
@@ -446,7 +446,7 @@ class DirectonalLight extends Light
 
             const origin = center.add(offset.multiply(samplingMethod==SamplingMethod.Random?randomRayOffset:uniformRayOffset))
             
-            return new Ray(P(origin.x,origin.y), dir)
+            return new Lightray(P(origin.x,origin.y), dir)
         });
     }
 

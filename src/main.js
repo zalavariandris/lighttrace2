@@ -20,7 +20,6 @@ const Form = (params)=>{
 
 const App = ()=>{
     /* STATE */
-    const [raytraceTick, setRaytraceTick] = React.useState(0)
     const [showSettings, setShowSettings] = React.useState(false)
     const [raytraceOptions, setRaytraceOptions] = React.useState({
         maxBounce: 9,
@@ -43,8 +42,8 @@ const App = ()=>{
     const [scene, setScene] = React.useState([
         // new PointLight(P(230, 125)),
         // new LaserLight(P(150,220), 0),
-        new DirectonalLight(P(150,180), 20,0),
-        new Lens(P(250, 350),  new TransparentMaterial(), 20, 100, 100, 100), 
+        new DirectonalLight(P(50,180), 20,0),
+        new Lens(P(250, 180),  new TransparentMaterial(), 20, 100, 100, 100), 
         // new Circle(P(230, 310), new TransparentMaterial(), 50),
         // new Circle(P(520, 550), 100),
         // new Circle(P(120, 380), 80),

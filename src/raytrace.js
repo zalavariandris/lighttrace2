@@ -9,10 +9,10 @@ const Side = Object.freeze({
     Inside: "Inside"
 })
 
-class Intersection{
-    constructor(point, normal, shape, side){
-        this.point = point;
-        this.normal = normal;
+class HitPoint{
+    constructor(origin, direction, shape=null, side=Side.Outside){
+        this.origin = origin;
+        this.direction = direction;
         this.shape = shape;
         this.side = side;
     }
@@ -126,3 +126,4 @@ function raytrace(lights, [shapes, materials], {maxBounce=3, samplingMethod="Uni
 }
 
 export {makeRaysFromLights, raytrace, SamplingMethod}
+export {Lightray, HitPoint}
