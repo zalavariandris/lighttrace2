@@ -31,6 +31,7 @@ class Vector{
     {
         return `Vector(${this.x.toFixed(1)}, ${this.y.toFixed(1)})`
     }
+
     copy(other)
     {
         return new Point(this.x, this.y)
@@ -107,7 +108,8 @@ class Ray{
     {
         console.assert(origin instanceof Point, `origin must be a Point, got: ${origin}`)
         console.assert(direction instanceof Vector, `direction must be a vector, got: ${direction}`)
-        this.origin=origin; this.direction=direction;
+        this.origin=origin;
+        this.direction=direction;
     }
 
     toString()

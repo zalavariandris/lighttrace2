@@ -1,9 +1,31 @@
-import {Point, Vector, Ray, P, V} from "./geo.js"
+import {Point, Vector, P, V} from "./geo.js"
+import {Ray} from "./geo.js"
 import {Circle, LineSegment, Rectangle} from "./scene.js"
 import {Light, PointLight, LaserLight} from "./scene.js"
 import {SamplingMethod} from "./scene.js"
 
+const Side = Object.freeze({
+    Outside: "Outside",
+    Inside: "Inside"
+})
 
+class Intersection{
+    constructor(point, normal, shape, side){
+        this.point = point;
+        this.normal = normal;
+        this.shape = shape;
+        this.side = side;
+    }
+}
+
+class Lightray{
+    constructor(origin, direction, ior=1.0, wavelength=550){
+        this.origin = origin;
+        this.direction = direction;
+        this.ior = ior;
+        this.wavelength = wavelength;
+    }
+}
 
 function makeRaysFromLights(lights, {sampleCount, samplingMethod})
 {
@@ -12,46 +34,6 @@ function makeRaysFromLights(lights, {sampleCount, samplingMethod})
         return light.sampleRays({sampleCount, samplingMethod});
     }).flat(1);
 }
-
-// function intersect(rays, shapes, {THRESHOLD=1.0}={})
-// {
-//     /*
-//     find each ray closest intersection with scene
-//     rays: Array[Ray | null]
-//     shapes: Array[Circle | Rectangle | LineSegment]
-//     returns Array[Ray | null]
-//     */
-
-//     return rays.map((ray)=>{
-//         if(ray==null)
-//         {
-//             return null;
-//         }
-
-//         const shape_intersections = shapes.map((shape)=>{
-//             return shape.hitTest(ray)
-//         }).flat(1).filter(intersection=>{
-//             return ray.origin.distanceTo(intersection.origin)>THRESHOLD;
-//         });
-
-//         // return closest intersection of ray
-//         return shape_intersections.reduce((a,b)=>{
-//             if(a===null) return b;
-//             if(b===null) return a;
-//             return ray.origin.distanceTo(a.origin) < ray.origin.distanceTo(b.origin) ? a : b;
-//         }, null);
-//     });
-// }
-
-function rayClosestToPoint(point)
-{
-    return (a,b)=>{
-        if(a===null) return b;
-        if(b===null) return a;
-        return a.origin.distanceTo(point) < b.origin.distanceTo(point) ? a : b;
-    };
-}
-
 function raytrace_pass(rays, [shapes, materials], {THRESHOLD=1e-6})
 {
     // intersection
@@ -63,52 +45,10 @@ function raytrace_pass(rays, [shapes, materials], {THRESHOLD=1e-6})
             return null;
         }
 
-        const shape_intersections = shapes.map((shape, shapeIdx)=>{
-            const intersections = shape.hitTest(ray).filter(intersection=>ray.origin.distanceTo2(intersection.origin)>THRESHOLD_SQUARED);
-            return intersections;
-        }).flat(1);
-
-        // return closest intersection of ray
-        return shape_intersections.reduce((a,b)=>{
-            if(a===null) return b;
-            if(b===null) return a;
-            return ray.origin.distanceTo(a.origin) < ray.origin.distanceTo(b.origin) ? a : b;
-        }, null);
-    });
-
-    // secondary rays
-    const secondaries = intersections.map((intersection, i)=>{
-        if(intersection==null)
-        {
-            return null;
-        }
-        else
-        {
-            const ray = rays[i];
-            const secondary_direction = sampleMirror(ray.direction.normalized(1), intersection.direction.normalized(1));
-            return new Ray(intersection.origin, secondary_direction);
-        }
-    });
-
-    return [secondaries, intersections];
-}
-
-function raytrace_pass2(rays, [shapes, materials], {THRESHOLD=1e-6})
-{
-    // intersection
-
-    const THRESHOLD_SQUARED = THRESHOLD**THRESHOLD
-    const intersections = rays.map((ray)=>{
-
         const compare_distance = (a,b)=>{
             if(a===null) return b;
             if(b===null) return a;
             return ray.origin.distanceTo(a.origin) < ray.origin.distanceTo(b.origin) ? a : b;
-        }
-
-        if(ray==null)
-        {
-            return null;
         }
 
         const shape_intersection = shapes.map((shape, shapeIdx)=>{
@@ -119,6 +59,7 @@ function raytrace_pass2(rays, [shapes, materials], {THRESHOLD=1e-6})
         })
 
         // return closest intersection of ray
+
         return shape_intersection.reduce(compare_distance, null);
     });
 
@@ -132,7 +73,7 @@ function raytrace_pass2(rays, [shapes, materials], {THRESHOLD=1e-6})
         {
             const ray = rays[i];
             const material = materials[intersection.shapeIdx]
-            const secondary_direction = material.sample(ray.direction.normalized(1), intersection.direction.normalized(1));
+            const secondary_direction = material.sample(ray.direction.normalized(1), intersection.direction.normalized(1), ray.ior || 1.0);
             return new Ray(intersection.origin, secondary_direction);
         }
     });
@@ -152,7 +93,7 @@ function raytrace(lights, [shapes, materials], {maxBounce=3, samplingMethod="Uni
     const paths = initial_rays.map(r=>[r.origin]);
     for(let i=0; i<maxBounce; i++)
     {
-        const [secondaries, intersections] = raytrace_pass2(currentRays, [shapes, materials], {THRESHOLD:1e-6});
+        const [secondaries, intersections] = raytrace_pass(currentRays, [shapes, materials], {THRESHOLD:1e-6});
         ray_steps.push(secondaries);
         intersections_steps.push(intersections);
 
