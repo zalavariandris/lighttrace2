@@ -86,7 +86,8 @@ function AngleManip({x, y, radians=0, length=30, onChange=(radians)=>{}, ...prop
     return h('g', {className: "manip point"}, 
         (active&&Math.abs(startRadians-radians)>1e-6)?h('path', {
             className:"guide",
-            d:`M${x} ${y} ` + getPathArc({x:x, y:y}, startRadians*180/Math.PI+0, radians*180/Math.PI+0, mouseDistance)
+            d:`M${x} ${y} ` + getPathArc({x:x, y:y}, startRadians*180/Math.PI+0, radians*180/Math.PI+0, mouseDistance),
+            vectorEffect: "non-scaling-stroke"
         }):"",
         h("circle", {
             cx: x+Math.cos(radians)*(active?mouseDistance:length), 
@@ -100,13 +101,9 @@ function AngleManip({x, y, radians=0, length=30, onChange=(radians)=>{}, ...prop
             x1: x, 
             y1: y,
             x2: mouseScenePos.x, 
-            y2: mouseScenePos.y,
-        }):"",
-        active?h("text", {
-            className:"guide",
-            x: x, 
-            y: y,
-        }, `${(radians*180/Math.PI).toFixed(0)}`):""
+            y2: mouseScenePos.y
+        }):null
+        
     )
 }
 

@@ -403,80 +403,13 @@ class GLRenderer{
     }
 }
 
-class GLViewportO extends React.Component
-{
-    // Set default props
-    static defaultProps = {
-        viewBox: {x:0, y:0, w:512, h:512},
-        scene: {shapes: [], rays: [], paths: [], lights: []}
-    }
 
-    constructor(props)
-    {
-        super(props);
-        this.canvasRef = React.createRef();
-        this.reglRef = React.createRef();
-        this.rendererRef = React.createRef();
-    }
-
-    componentDidMount()
-    {
-        console.log("mount GLViewport")
-        console.log("canvas size:", this.canvasRef.current.offsetWidth, this.canvasRef.current.offsetHeight)
-        // Crate REGL context
-        this.reglRef.current = createREGL({
-            canvas: this.canvasRef.current,
-            // pixelRatio: 2.0,
-            attributes: {
-                // width: 1024, heigh: 1024,
-                alpha: true,
-                depth: false,
-                stencil :false,
-                antialias: false,
-                premultipliedAlpha: true,
-                preserveDrawingBuffer: false,
-                preferLowPowerToHighPerformance: false,
-                failIfMajorPerformanceCaveat: false
-            },
-            extensions: ['OES_texture_float', "OES_texture_half_float"]
-        });
-        console.assert(this.reglRef.current!=undefined, "cant create REGL context")
-
-        // INITIAL
-        this.rendererRef.current = new GLRenderer(this.reglRef.current);
-        this.rendererRef.current.renderGL(this.reglRef.current, this.props.scene.paths, this.props.viewBox, this.canvasRef.current.offsetWidth, this.canvasRef.current.offsetHeight);
-
-        // render on resize
-        this.resizeHandler = (event)=>{
-            const [canvaswidth, canvasheight] = [this.canvasRef.current.offsetWidth, this.canvasRef.current.offsetHeight]
-            this.canvasRef.current.width=canvaswidth;
-            this.canvasRef.current.height=canvasheight;
-
-            
-            this.rendererRef.current.renderGL(this.reglRef.current, this.props.scene.paths, this.props.viewBox, this.canvasRef.current.offsetWidth, this.canvasRef.current.offsetHeight);
-        }
-        window.addEventListener("resize", this.resizeHandler)
-    }
-
-    componentWillUnmount()
-    {
-        window.removeEventListener("resize", this.resizeHandler)
-    }
-
-    render()
-    {
-        if(this.reglRef.current && this.rendererRef.current)
-        {
-            this.rendererRef.current.renderGL(this.reglRef.current, this.props.scene.paths, this.props.viewBox, this.canvasRef.current.offsetWidth, this.canvasRef.current.offsetHeight);
-
-        }
-        const h = React.createElement
-        return h("canvas", {...this.props, ref:this.canvasRef})
-    }
-
-}
-
-function GLViewport(props)
+function GLViewport({
+    viewBox,
+    scene,
+    paths,
+    ...props
+})
 {
     const canvasRef = React.useRef(null);
     const reglRef = React.useRef(null);
@@ -508,7 +441,7 @@ function GLViewport(props)
 
         // INITIAL
         rendererRef.current = new GLRenderer(reglRef.current);
-        rendererRef.current.renderGL(reglRef.current, props.paths, props.viewBox, canvasRef.current.offsetWidth, canvasRef.current.offsetHeight);
+        rendererRef.current.renderGL(reglRef.current, paths, viewBox, canvasRef.current.offsetWidth, canvasRef.current.offsetHeight);
         
         const [canvaswidth, canvasheight] = [canvasRef.current.offsetWidth, canvasRef.current.offsetHeight]
         canvasRef.current.width=canvaswidth;
@@ -518,7 +451,7 @@ function GLViewport(props)
             const [canvaswidth, canvasheight] = [canvasRef.current.offsetWidth, canvasRef.current.offsetHeight]
             canvasRef.current.width=canvaswidth;
             canvasRef.current.height=canvasheight;
-            rendererRef.current.renderGL(reglRef.current, props.paths, props.viewBox, canvasRef.current.offsetWidth, canvasRef.current.offsetHeight);
+            rendererRef.current.renderGL(reglRef.current, paths, viewBox, canvasRef.current.offsetWidth, canvasRef.current.offsetHeight);
         }
         
         if(resizeHandlerRef.current){
@@ -530,11 +463,11 @@ function GLViewport(props)
 
     React.useEffect(()=>{
         rendererRef.current.reset(reglRef.current);
-    },[props.lights, props.shapes, props.viewBox])
+    },[scene, viewBox])
 
     if(reglRef.current && rendererRef.current)
     {
-        rendererRef.current.renderGL(reglRef.current, props.paths, props.viewBox, canvasRef.current.offsetWidth, canvasRef.current.offsetHeight);
+        rendererRef.current.renderGL(reglRef.current, paths, viewBox, canvasRef.current.offsetWidth, canvasRef.current.offsetHeight);
     }
     const h = React.createElement
     return h("canvas", {...props, ref:canvasRef})

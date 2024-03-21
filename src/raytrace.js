@@ -72,7 +72,7 @@ function raytrace_pass(rays, [shapes, materials], {THRESHOLD=1e-6})
         const compareDistance = (A,B)=>{
             if(A===null) return B;
             if(B===null) return A;
-            return A.position.distanceTo(ray.origin) < A.position.distanceTo(ray.origin) ? A : B;
+            return A.position.distanceTo(ray.origin) < B.position.distanceTo(ray.origin) ? A : B;
         }
 
         const raySceneHitPoints = shapes.map((shape, shapeIdx)=>{

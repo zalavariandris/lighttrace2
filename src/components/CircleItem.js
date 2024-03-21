@@ -1,7 +1,7 @@
 import React, {useState} from "react"
 import {Point, Vector, Ray} from "../geo.js"
 import PointManip from "./PointManip.js";
-
+import Manipulator from "./Manipulator.js";
 
 const h = React.createElement;
 
@@ -18,23 +18,20 @@ function CircleItem({
         onChange(circle, newCircle)
     }
 
-    const setRadius = (oldObject, newRadius)=>{
+    const grabOffset = React.useRef();
 
-    }
-
-    return h("g", {
-            className: 'sceneItem circle',
+    return h(Manipulator, {
+            className: 'sceneItem shape circle',
+            onMouseDown: (e)=>console.log("native event still works!"),
+            onDragStart: (e)=>grabOffset.current = {x: e.sceneX-circle.center.x, y: e.sceneY-circle.center.y},
+            onDrag: (e)=>setPos(e.sceneX-grabOffset.current.x, e.sceneY-grabOffset.current.y),
+            showGuide: false
         },
         h("circle", {
             cx: circle.center.x,
             cy: circle.center.y,
             r: circle.radius,
             className: "handle shape"
-        }),
-        h(PointManip, {
-            x: circle.center.x,
-            y: circle.center.y,
-            onChange: (x, y)=>setPos(x, y)
         })
     )
 }

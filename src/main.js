@@ -72,14 +72,14 @@ const App = ()=>{
     const [raytraceOptions, setRaytraceOptions] = React.useState({
         maxBounce: 9,
         lightSamples: 7,
-        samplingMethod: SamplingMethod.Uniform
+        samplingMethod: SamplingMethod.Random
     })
     const updateRaytraceOptions = options=>setRaytraceOptions({...raytraceOptions, ...options})
 
     const [svgDisplayOptions, setSvgDisplayOptions] = React.useState({
-        rays: true,
-        hitPoints: true,
-        lightPaths: true
+        rays: false,
+        hitPoints: false,
+        lightPaths: false
     })
     const updateSvgDisplayOptions = options=> setSvgDisplayOptions({...svgDisplayOptions, ...options})
 
@@ -91,14 +91,15 @@ const App = ()=>{
         new PointLight(P(230, 125)),
         new LaserLight(P(150,220), 0),
         new DirectonalLight(P(50,180), 20,0),
-        new Circle(P(230, 310), new TransparentMaterial(), 50),
-        new Lens(P(250, 180),  new TransparentMaterial(), 20, 100, 100, 100), 
-        new Circle(P(520, 550), new TransparentMaterial(), 100),
-        new Circle(P(120, 380), new TransparentMaterial(), 80),
+        new Circle(P(250, 310), new MirrorMaterial(), 50),
+        new Rectangle(P(250,500), new MirrorMaterial(), 600,100),
         new LineSegment(P(400, 250), P(500, 130), new MirrorMaterial()),
         new LineSegment(P(370, 220), P(470, 100), new MirrorMaterial()),
-        new Rectangle(P(400,400), new MirrorMaterial(), 100,100)
+        new Lens(P(250, 180),  new TransparentMaterial(), 20, 100, 100, 100),
+        // new Circle(P(520, 550), new TransparentMaterial(), 100),
+        // new Circle(P(120, 380), new TransparentMaterial(), 80),
     ]);
+
     const [selection, setSelection] = React.useState([])
     const updateSceneObject = (oldObject, newObject)=>{
         const sceneIdx = scene.indexOf(oldObject)
@@ -124,7 +125,7 @@ const App = ()=>{
     const lightPaths = newPaths;
 
     /* step rayrace on animation frame */
-    const [animate, setAnimate] = React.useState(false)
+    const [animate, setAnimate] = React.useState(true)
     const [count, setCount] = React.useState(0);
     const requestRef = React.useRef();
 
@@ -144,13 +145,15 @@ const App = ()=>{
       }, [animate]); // Make sure the effect runs only once
 
     return h("div", null,
-        // h(GLViewport,  {
-        //     paths: lightPaths,
-        //     lights: lights,
-        //     shapes: shapes,
-        //     viewBox: viewBox,
-        //     className:"viewport"
-        // }),
+        h(GLViewport,  {
+            className:"viewport",
+            viewBox: viewBox,
+            scene: scene,
+            paths: lightPaths
+            // paths: lightPaths,
+            // lights: lights,
+            // shapes: shapes,
+        }),
         h(SVGViewport, {
             // style: {opacity: "0.2"},
             className:"viewport",
@@ -260,7 +263,7 @@ const App = ()=>{
                                     onChange: (e)=>updateSvgDisplayOptions({rays: e.target.checked}),
                                     type: "checkbox"
                                 }),
-                                "show svg rays"
+                                "show rays"
                             ),
                             h("label", null,
                                 h("input", {
@@ -269,7 +272,7 @@ const App = ()=>{
                                     onChange: (e)=>updateSvgDisplayOptions({hitPoints: e.target.checked}),
                                     type: "checkbox"
                                 }),
-                                "show svg rays"
+                                "show hitpoints"
                             ),
                             h("label", null,
                                 h("input", {
@@ -278,7 +281,7 @@ const App = ()=>{
                                     onChange: (e)=>updateSvgDisplayOptions({lightPaths: e.target.checked}),
                                     type: "checkbox"
                                 }),
-                                "show svg rays"
+                                "show rays"
                             )
                         )
                     )

@@ -2,46 +2,42 @@ import React, {useState} from "react"
 import {Point, Vector, Ray} from "../geo.js"
 import PointManip from "./PointManip.js";
 import AngleManip from "./AngleManip.js";
-import {Circle, DirectonalLight, LaserLight, LineSegment, Rectangle, Lens} from "../scene.js"
 import Manipulator from "./Manipulator.js";
 
 const h = React.createElement;
 
-function DirectionalLightItem({
+function PointLightItem({
     light,
     onChange,
     ...props
 })
 {
     const grabOffset = React.useRef();
-    const setPos = (x, y)=>{
+    const setPos = (Px, Py)=>{
         const newLight = light.copy()
-        newLight.center.x = x;
-        newLight.center.y = y;
+        newLight.center.x = Px;
+        newLight.center.y = Py;
         onChange(light, newLight)
     }
 
     const setRadians = (newRadians)=>{
-        const newSceneObject = light.copy()
-        newSceneObject.angle = newRadians;
-        onChange(light, newSceneObject)
+        const newLight = light.copy()
+        newLight.angle = newRadians;
+        onChange(light, newLight)
     }
 
     return h(Manipulator, {
-        className: 'sceneItem light directional',
+        className: "sceneItem light point",
         onDragStart: (e)=>grabOffset.current = {x: e.sceneX-light.center.x, y: e.sceneY-light.center.y},
         onDrag: (e)=>setPos(e.sceneX-grabOffset.current.x, e.sceneY-grabOffset.current.y),
         ...props
-
     }, 
-        h('rect', {
-            x: light.center.x-6,
-            y: light.center.y-light.width/2,
-            width: 6,
-            height: light.width,
+        h('circle', {
+            cx: light.center.x,
+            cy: light.center.y,
+            r: 6,
             vectorEffect: "non-scaling-stroke",
-            className: "shape",
-            style: {transform: `rotate(${light.angle*180/Math.PI}deg)`, transformOrigin: `${light.center.x}px ${light.center.y}px`}
+            className: "shape"
         }),
         h(AngleManip, {
             x:light.center.x, 
@@ -53,4 +49,4 @@ function DirectionalLightItem({
     )
 }
 
-export default DirectionalLightItem;
+export default PointLightItem

@@ -2,7 +2,7 @@ import React, {useState} from "react"
 import {Point, Vector, Ray} from "../geo.js"
 import PointManip from "./PointManip.js";
 import {Circle, DirectonalLight, LaserLight, LineSegment, Rectangle, Lens} from "../scene.js"
-
+import Manipulator from "./Manipulator.js";
 const h = React.createElement;
 
 
@@ -15,9 +15,11 @@ const makeLensPath = (width, height, leftRadius, rightRadius)=>{
 
 function LensItem({
     lens,
-    onChange
+    onChange,
+    ...props
 })
 {
+    const grabOffset = React.useRef();
     const setPos = (x, y)=>{
         const newLens = lens.copy()
         newLens.center.x = x
@@ -70,16 +72,16 @@ function LensItem({
     }
     
     const getLeftLensWidth = ()=>{
-        const topLeft = new Point(lens.center.x-lens.width/2, lens.center.y+lens.height/2)
-        const bottomLeft =  new Point(lens.center.x-lens.width/2, lens.center.y-lens.height/2)
+        const topLeft = new Point(0, lens.center.y+lens.height/2)
+        const bottomLeft =  new Point(0, lens.center.y-lens.height/2)
         const lensCircle = Circle.fromRadiusAndTwoPoints(Math.abs(lens.leftRadius), topLeft, bottomLeft)
         // console.log("lensCircle", lensCircle.center.x, lensCircle.radius)
         return Math.sign(lens.leftRadius)*(lensCircle.radius - lensCircle.center.x)
     }
     
     const getRightLensWidth = ()=>{
-        const topLeft = new Point(lens.center.x+lens.width/2, lens.center.y+lens.height/2)
-        const bottomLeft =  new Point(lens.center.x+lens.width/2, lens.center.y-lens.height/2)
+        const topLeft = new Point(0, lens.center.y+lens.height/2)
+        const bottomLeft =  new Point(0, lens.center.y-lens.height/2)
         const lensCircle = Circle.fromRadiusAndTwoPoints(Math.abs(lens.rightRadius), topLeft, bottomLeft)
         // console.log("lensCircle", lensCircle.center.x, lensCircle.radius)
         return Math.sign(lens.rightRadius)*(lensCircle.radius - lensCircle.center.x)
@@ -90,8 +92,11 @@ function LensItem({
     const rightCircle = Circle.fromRadiusAndTwoPoints(Math.abs(lens.rightRadius), top, bottom)
     const leftCircle = Circle.fromRadiusAndTwoPoints(Math.abs(lens.leftRadius), top, bottom)
 
-    return h("g", {
-        className: 'sceneItem lens',
+    return h(Manipulator, {
+        className: 'sceneItem shape lens',
+        onDragStart: (e)=>grabOffset.current = {x: e.sceneX-lens.center.x, y: e.sceneY-lens.center.y},
+        onDrag: (e)=>setPos(e.sceneX-grabOffset.current.x, e.sceneY-grabOffset.current.y),
+        ...props
     },
         h('rect', {
             x: lens.center.x - lens.width / 2,
@@ -109,11 +114,6 @@ function LensItem({
                 opacity: 0.1,
                 className: "handle shape",
             }
-        }),
-        h(PointManip, {
-            x: lens.center.x,
-            y: lens.center.y,
-            onChange: (x, y)=>setPos(x, y)
         }),
         h(PointManip, {
             x: lens.center.x+lens.width/2,
@@ -135,12 +135,14 @@ function LensItem({
             cx: lens.center.x+leftCircle.center.x-lens.width/2, 
             cy: lens.center.y, 
             r:leftCircle.radius,
+            vectorEffect: "non-scaling-stroke",
         }),
         h('circle', {
             className: "guide",
             cx: lens.center.x-rightCircle.center.x+lens.width/2, 
             cy: lens.center.y, 
-            r:rightCircle.radius
+            r:rightCircle.radius,
+            vectorEffect: "non-scaling-stroke",
         })
         
     )

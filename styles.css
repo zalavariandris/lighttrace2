@@ -118,21 +118,25 @@ svg .shape{
     fill: hsla(60, 100%, 50%, 0.1);
 }
 .manip .handle:hover{
-    fill: hsla(60, 100%, 50%, 0.3);
+    fill: hsla(60, 0%, 50%, 0.3);
 }
 
 .guide{
-    fill: hsla(0, 0%, 50%, 0.03);
-    stroke: white;
+    fill: hsla(0, 0%, 50%, 0.001);
+    stroke: hsla(0, 0%, 50%, 0.5);
     stroke-width: 1;
-    stroke-dasharray: 1 8;
+    stroke-dasharray: 8 8;
     pointer-events: none;
 }
+
 line.guide{
-    stroke: white;
     stroke-width: 1;
     stroke-dasharray: 1 8;
-    
+}
+text.guide{
+    stroke: none;
+    fill: hsla(0, 0%, 50%, 0.5);
+    font-size: 8px;
 }
 
 .manip .shape.handle{
@@ -141,6 +145,7 @@ line.guide{
 .manip .shape.handle:hover{
     stroke: white;
 }
+
 text.shape{
     stroke: none;
     fill:white;

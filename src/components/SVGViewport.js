@@ -9,108 +9,14 @@ import CircleItem from "./CircleItem.js"
 import RectangleItem from "./RectangleItem.js"
 import LensItem from "./LensItem.js"
 import DirectionalLightItem from "./DirectionalLightItem.js"
+import PointLightItem from "./PointLightItem.js"
+import LaserLightItem from "./LaserLightItem.js"
+import LineSegmentItem from "./LineSegmentItem.js"
 
 function viewboxString(viewBox){
     return viewBox.x+" "+viewBox.y+" "+viewBox.w+" "+viewBox.h;
 }
 const h = React.createElement;
-
-class Draggable extends React.Component
-{
-    constructor({...props})
-    {
-        super(props);
-        this.isDragging= false;
-        this.prevX= 0;
-        this.prevY= 0;
-
-        this.ref = React.createRef()
-    }
-    
-    handleMouseDown(event)
-    {
-        this.isDragging = false,
-        this.prevX = event.clientX,
-        this.prevY = event.clientY
-
-        this.handleMouseMove = (event)=>{
-            if(!this.isDragging)
-            {
-                console.log("add click ignore")
-                window.addEventListener("click", (e)=>{
-                    e.preventDefault();
-                    e.stopPropagation();
-                }, {capture: true, once: true});
-            }
-            this.isDragging = true;
-            let svg = event.target.closest("SVG")
-            function mapScreenToScene({x, y})
-            {
-                let mousepos = svg.createSVGPoint();
-                mousepos.x = x; 
-                mousepos.y = y; 
-                const scenePos = mousepos.matrixTransform(svg.getScreenCTM().inverse());
-                return scenePos
-            }
-
-
-                let mousepos = svg.createSVGPoint();
-                mousepos.x = event.clientX; 
-                mousepos.y = event.clientY; 
-                mousepos = mousepos.matrixTransform(svg.getScreenCTM().inverse());
-    
-                let prevmousepos = svg.createSVGPoint();
-                prevmousepos.x = this.prevX;
-                prevmousepos.y = this.prevY;
-                prevmousepos = prevmousepos.matrixTransform(svg.getScreenCTM().inverse());
-    
-                const dx = mousepos.x-prevmousepos.x;
-                const dy = mousepos.y-prevmousepos.y;
-                
-
-                this.prevX=event.clientX,
-                this.prevY=event.clientY
-                this.props.onDrag(event, dx, dy);
-
-            this.prevX = event.clientX
-            this.prevY = event.clientY
-        }
-
-        this.handleMouseUp = (event)=>{
-            event.stopPropagation();
-            event.preventDefault(); // prevent text selection when dragging
-    
-            window.removeEventListener("mousemove", this.handleMouseMove)
-            window.removeEventListener("mouseup", this.handleMouseUp)
-
-
-            this.isDragging = false;
-        }
-
-        window.addEventListener("mousemove", this.handleMouseMove, false);
-        window.addEventListener("mouseup", this.handleMouseUp, false);
-        
-        // window.addEventListener("click", this.handleMouseClick, true);
-        // window.addEventListener ('click', this.ignore_click, true ); 
-        event.preventDefault(); // prevent text selection when dragging
-        event.stopPropagation();
-        return false;
-    }
-
-    render()
-    {
-        return h('g', { 
-            ref: this.ref,
-            onMouseDown: (e) => this.handleMouseDown(e),
-            ...this.props
-        },
-            h('g', null,
-                this.props.children
-            )
-        );
-    }  
-}
-
 
 function SceneItem({
     sceneObject, 
@@ -145,112 +51,26 @@ function SceneItem({
 
     else if(sceneObject instanceof LineSegment)
     {
-        const setP1 = (Px, Py)=>{
-            const newSceneObject = sceneObject.copy()
-            newSceneObject.p1 = new Point(Px, Py)
-            onChange(sceneObject, newSceneObject)
-        }
-        const setP2 = (Px, Py)=>{
-            const newSceneObject = sceneObject.copy()
-            newSceneObject.p2 = new Point(Px, Py)
-            onChange(sceneObject, newSceneObject)
-        }
-        return h('g', {
-                className: isSelected ? 'selected sceneItem': 'sceneItem',
-            }, 
-            h('line', {
-                x1: sceneObject.p1.x,
-                y1: sceneObject.p1.y,
-                x2: sceneObject.p2.x,
-                y2: sceneObject.p2.y,
-                className: 'shape',
-                vectorEffect: "non-scaling-stroke",
-                // onMouseDown: ()=>this.selectObject(shape)
-            }),
-            h(PointManip, {
-                x: sceneObject.p1.x, 
-                y: sceneObject.p1.y,
-                onChange: (x, y)=>setP1(x, y)
-            }),
-            h(PointManip, {
-                x: sceneObject.p2.x, 
-                y: sceneObject.p2.y,
-                onChange: (x, y)=>setP2(x, y)
-            })
-        )
+        return LineSegmentItem({
+            lineSegment: sceneObject,
+            onChange: onChange
+        })
     }
 
     else if(sceneObject instanceof PointLight)
     {
-        const ref = React.useRef(null)
-        const setPos = (Px, Py)=>{
-            const newLight = sceneObject.copy()
-            newLight.center.x = Px;
-            newLight.center.y = Py;
-            onChange(sceneObject, newLight)
-        }
-
-        return h('g', {
-            className: isSelected ? 'selected sceneItem light point': 'sceneItem light point',
-            ref:ref
-        }, 
-            h('circle', {
-                cx: sceneObject.center.x,
-                cy: sceneObject.center.y,
-                r: 6,
-                vectorEffect: "non-scaling-stroke",
-                className: "shape"
-            }),
-            h(PointManip, {
-                x: sceneObject.center.x,
-                y: sceneObject.center.y,
-                onChange: (x, y)=>setPos(x, y),
-            })
-            
-        )
+        return PointLightItem({
+            light: sceneObject,
+            onChange: onChange
+        })
     }
 
     else if(sceneObject instanceof LaserLight)
     {
-        const ref = React.useRef(null)
-        const setPos = (x, y)=>{
-            const newLight = sceneObject.copy()
-            newLight.center.x = x;
-            newLight.center.y = y;
-            onChange(sceneObject, newLight)
-        }
-
-        const [mouseScenePos, setMouseScenePos] = React.useState({x:0, y:0});
-
-        const setRadians = (newRadians)=>{
-            const newSceneObject = sceneObject.copy()
-            newSceneObject.angle = newRadians;
-            onChange(sceneObject, newSceneObject)
-        }
-
-        return h('g', {
-            className: isSelected ? 'selected sceneItem light laser': 'sceneItem light point',
-            ref:ref}, 
-            h('circle', {
-                cx: sceneObject.center.x,
-                cy: sceneObject.center.y,
-                r: 2,
-                vectorEffect: "non-scaling-stroke",
-                className: "shape"
-            }),
-            h(PointManip, {
-                x: sceneObject.center.x,
-                y: sceneObject.center.y,
-                onChange: (x, y)=>setPos(x, y),
-            }),
-            h(AngleManip, {
-                x:sceneObject.center.x, 
-                y:sceneObject.center.y,
-                radians: sceneObject.angle,
-                onChange: (newRadians)=>setRadians(newRadians)
-            })
-            
-        )
+        return LaserLightItem({
+            light: sceneObject,
+            onChange: onChange
+        })
     }
 
     else if(sceneObject instanceof DirectonalLight)
@@ -395,6 +215,10 @@ function SVGViewport({
                 h('path', {d:'M0,0 V8 L8,4 Z'})
             )
         ),
+        h("text", {
+            x: 0, y:0,
+            style: {transform: `scale(var(--zoom))`}
+        }, "O"),
         h('g', {className: 'paths'},
             paths.filter(path => path.length > 1).map(points =>
                 h('g', null,
@@ -447,10 +271,10 @@ function SVGViewport({
                     sceneObject: sceneObject,
                     onChange: (oldSceneObject, newSceneObject)=>onSceneObject(sceneObject, newSceneObject),
                     isSelected: selection.indexOf(sceneObject)>=0,
-                    onSelect: ()=>onSelection([sceneObject])
+                    onSelect: ()=>onSelection([sceneObject]),
                 })
             })
-        )
+        ),
     );
 }
 

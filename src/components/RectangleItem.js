@@ -1,6 +1,7 @@
 import React, {useState} from "react"
 import {Point, Vector, Ray} from "../geo.js"
 import PointManip from "./PointManip.js";
+import Manipulator from "./Manipulator.js"
 
 
 const h = React.createElement;
@@ -9,7 +10,9 @@ function RectangleItem({
     rectangle,
     onChange,
     ...props
-}){
+})
+{
+    const grabOffset = React.useRef();
     const setPos = (x, y)=>{
         const newRectangle = rectangle.copy()
         newRectangle.center.x = x
@@ -17,8 +20,11 @@ function RectangleItem({
         onChange(rectangle, newRectangle)
     }
 
-    return h("g", {
-            className: 'sceneItem rectangle',
+    return h(Manipulator, {
+        className: "sceneItem shape rectangle",
+        onDragStart: (e)=>grabOffset.current = {x: e.sceneX-rectangle.center.x, y: e.sceneY-rectangle.center.y},
+        onDrag: (e)=>setPos(e.sceneX-grabOffset.current.x, e.sceneY-grabOffset.current.y),
+        ...props
         },
             h('rect', {
                 x: rectangle.center.x - rectangle.width / 2,
@@ -27,11 +33,6 @@ function RectangleItem({
                 height: rectangle.height,
                 vectorEffect: "non-scaling-stroke",
                 className: "handle shape"
-            }),
-            h(PointManip, {
-                x: rectangle.center.x,
-                y: rectangle.center.y,
-                onChange: (x, y)=>setPos(x, y)
             })
     )
 }

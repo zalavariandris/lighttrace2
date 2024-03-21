@@ -165,13 +165,19 @@ class Lens extends Geometry
     {
         const topRight = new Point(this.center.x+this.width/2, this.center.y+this.height/2)
         const bottomRight =  new Point(this.center.x+this.width/2, this.center.y-this.height/2)
-        const rightCircle = Circle.fromRadiusAndTwoPoints(Math.abs(this.rightRadius), topRight, bottomRight, true)
-        
         const topLeft = new Point(this.center.x-this.width/2, this.center.y+this.height/2)
         const bottomLeft =  new Point(this.center.x-this.width/2, this.center.y-this.height/2)
+
+        const topSide = new LineSegment(topLeft, topRight)
+        const bottomSide = new LineSegment(bottomLeft, bottomRight)
+
+
+        const rightCircle = Circle.fromRadiusAndTwoPoints(Math.abs(this.rightRadius), topRight, bottomRight, true)
+        
+
         const leftCircle = Circle.fromRadiusAndTwoPoints(Math.abs(this.leftRadius), topLeft, bottomLeft, false)
 
-        const hits = [...leftCircle.hitTest(ray), ...rightCircle.hitTest(ray)]
+        const hits = [...leftCircle.hitTest(ray), ...rightCircle.hitTest(ray), ...topSide.hitTest(ray), ...bottomSide.hitTest(ray)]
 
         const top = this.center.y+this.height/2
         const bottom = this.center.y-this.height/2
@@ -181,7 +187,7 @@ class Lens extends Geometry
         return hits.filter((hitPoint)=>{
             const Ix = hitPoint.position.x;
             const Iy = hitPoint.position.y;
-            return right+1>Ix && left+1 < Ix && Iy>bottom-1 && Iy<top+1;
+            return right+1>Ix && left-1 < Ix && Iy>bottom-1 && Iy<top+1;
         });
     }
 
@@ -356,37 +362,38 @@ class Light extends SceneObject
 
 class PointLight extends Light
 {
-    constructor(center){
+    constructor(center, angle=0){
         super(center)
+        this.angle = angle;
     }
 
     copy()
     {
-        return new PointLight(this.center.copy())
+        return new PointLight(this.center.copy(), this.angle)
     }
 
     toString()
     {
-        return `Pointlight(${this.center})`
+        return `Pointlight(${this.center} ${this.angle.toFixed(0)})`
     }
 
     sampleRays({sampleCount, samplingMethod=SamplingMethod.Uniform}={})
     {
         
-        function makeUniformAngles(N)
+        function makeUniformAngles(N, angleOffset=0)
         {
             return Array.from({length:N},(v,k)=>{
-                return k/N*Math.PI*2
+                return k/N*Math.PI*2+angleOffset
             });
         }
 
-        function makeRandomAngles(N)
+        function makeRandomAngles(N, angleOffset=0)
         {
             return Array.from({length:N},(v,k)=>{
-                return Math.random()*Math.PI*2;
+                return Math.random()*Math.PI*2+angleOffset;
             });
         }
-        const angles = samplingMethod==SamplingMethod.Random ? makeRandomAngles(sampleCount) : makeUniformAngles(sampleCount)
+        const angles = samplingMethod==SamplingMethod.Random ? makeRandomAngles(sampleCount, this.angle) : makeUniformAngles(sampleCount, this.angle)
         return angles.map((a)=>{
             const x = Math.cos(a);
             const y = Math.sin(a);
@@ -411,7 +418,7 @@ class LaserLight extends Light
 
     toString()
     {
-        return `LaserLight(${this.center}, ${this.angle})`
+        return `LaserLight(${this.center}, ${this.angle.toFixed()})`
     }
 
     sampleRays({sampleCount=9, samplingMethod=SamplingMethod.Uniform}={}){
