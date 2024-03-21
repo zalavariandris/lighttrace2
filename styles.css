@@ -37,9 +37,17 @@ svg *{
 .panel{
     color: white;
     background-color: hsla(0, 0%, 8%, 0.9);
-    padding: 1rem;
+    margin: 1rem;
     /* border: 1px solid white; */
     backdrop-filter: blur(4px)
+}
+
+.panel .collapsable>header{
+    display: flex;
+    align-items: center;
+    justify-content: start;
+    cursor: pointer;
+    background-color: hsl(208deg 100% 97.06% / 2%)
 }
 
 #sceneInfo{

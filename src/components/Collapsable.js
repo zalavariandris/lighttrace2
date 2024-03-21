@@ -11,15 +11,24 @@ const Collapsable = ({...props})=>{
             onClick: (e)=>setOpen(!isOpen),
             
             style: {
-                cursor: "pointer",
+
                 ...props.style,
-                position: "relative"
             }
         }, 
-            isOpen?"▶":"▼",
+            h("div", {
+                style:{
+                    paddingRight: "1rem"
+                }
+                }, 
+                isOpen?"▼":"▶"),
             props.title
         ),
-        isOpen?props.children:[]
+        h("div", {
+            style: {}
+        }, 
+            isOpen?props.children:[]
+        )
+        
     );
 }
 
