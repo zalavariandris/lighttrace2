@@ -1,6 +1,4 @@
 import React, {useState} from "react"
-import {Point, Vector, Ray} from "../geo.js"
-import PointManip from "./PointManip.js";
 
 
 const h = React.createElement;

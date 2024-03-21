@@ -14,9 +14,16 @@ body{
     background-color: rgb(24, 24, 24);
     
     color: rgb(203, 203, 203);
-    font-family: "Operator mono"
+    /* font-family: "Operator Mono"; */
+    /* font-family: "CMU Bright"; */
+    font-family: "IBM Plex Mono", monospace;
+    /* font-family: "Fira Code"; */
+    font-size: 10px;
 }
 
+h2{
+    font-style: italic;
+}
 svg{
     /* background-color: #59D5E0; */
     /* position: fixed;

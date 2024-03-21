@@ -1,19 +1,19 @@
 import React, {useState} from "react"
-import {Point, Vector, Ray} from "../geo.js"
 import {Circle, DirectonalLight, LaserLight, LineSegment, Rectangle, Lens} from "../scene.js"
 import {PointLight} from "../scene.js"
 
-import PointManip from "./PointManip.js"
-import AngleManip from "./AngleManip.js"
 import CircleItem from "./CircleItem.js"
+import LineSegmentItem from "./LineSegmentItem.js"
 import RectangleItem from "./RectangleItem.js"
 import LensItem from "./LensItem.js"
+
 import DirectionalLightItem from "./DirectionalLightItem.js"
 import PointLightItem from "./PointLightItem.js"
 import LaserLightItem from "./LaserLightItem.js"
-import LineSegmentItem from "./LineSegmentItem.js"
 
-function viewboxString(viewBox){
+
+function viewboxString(viewBox)
+{
     return viewBox.x+" "+viewBox.y+" "+viewBox.w+" "+viewBox.h;
 }
 const h = React.createElement;
@@ -100,7 +100,6 @@ function SVGViewport({
 {
     const svgRef = React.useRef()
     const isPanning = React.useRef(false)
-    const prevMouse = React.useRef({x:0,y:0});
 
     const calcScale = ()=>{
         if(svgRef.current){
@@ -112,8 +111,7 @@ function SVGViewport({
     }
 
     // event handling
-    const onmousewheel = (e)=>
-    {
+    const onmousewheel = (e)=>{
         const clientSize = {w: svgRef.current.clientWidth, h: svgRef.current.clientHeight}
         var w = viewBox.w;
         var h = viewBox.h;
@@ -133,14 +131,12 @@ function SVGViewport({
         onViewChange(newViewBox)
     }
 
-    const onmousedown = (e)=>
-    {
+    const onmousedown = (e)=>{
         isPanning.current = true,
         e.preventDefault();
     }
 
-    const onmousemove = (e)=>
-    {
+    const onmousemove = (e)=>{
         if (isPanning.current)
         {
             const clientSize = {w: svgRef.current.clientWidth, h: svgRef.current.clientHeight}
@@ -160,33 +156,22 @@ function SVGViewport({
         }
     }
 
-    const onmouseup = (e)=>
-    {
+    const onmouseup = (e)=>{
         if (isPanning.current)
         {
             isPanning.current = false
         }
     }
 
-    const onmouseleave = (e)=>
-    {
+    const onmouseleave = (e)=>{
         isPanning.current = false
     }
-
-
 
     // utils
     const pointsToSvgPath = (points)=> {
         let path = "M" + points.map(p => `${p.x},${p.y}`).join(" L");
         return path;
     }
-
-    // actions
-
-
-    // const manipulateGeometry = (oldObject, newGeometry)=>{
-    //     onSceneObject(oldObject, newGeometry)
-    // }
 
     return h('svg', {
             xmlns:"http://www.w3.org/2000/svg",

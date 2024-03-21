@@ -1,22 +1,30 @@
 import React, {useState} from "react"
-import {Point, Vector, Ray} from "../geo.js"
 
 const h = React.createElement;
 
-function cursorPoint(svg, {x, y}){
+function cursorPoint(svg, {x, y})
+{
     let pt = svg.createSVGPoint();
     pt.x =x; pt.y = y;
     const scenePoint = pt.matrixTransform(svg.getScreenCTM().inverse());
     return {x:scenePoint.x, y:scenePoint.y};
 }
 
-function AngleManip({x, y, radians=0, length=30, onChange=(radians)=>{}, ...props}={}){
+function AngleManip({
+    x, y, 
+    radians=0, 
+    length=30, 
+    onChange=(radians)=>{}, 
+    ...props
+}={})
+{
     const [mouseScenePos, setMouseScenePos] = React.useState({x: x, y: y});
     const [startPos, setStartPos] = React.useState({x:x, y:y});
     const [startRadians, setStartRadians] = React.useState(radians);
     const [active, setActive] = React.useState(false);
 
-    function getCirclePath(points, radius, clockWise) {
+    function getCirclePath(points, radius, clockWise)
+    {
         return ['L', points[0].x, points[0].y,
                 'A', radius, radius, 0, 0, clockWise, points[1].x, points[1].y,
                 'A', radius, radius, 0, 0, clockWise, points[2].x, points[2].y,
@@ -24,7 +32,8 @@ function AngleManip({x, y, radians=0, length=30, onChange=(radians)=>{}, ...prop
                ].join(' ');
       }
 
-    function getLocationFromAngle(degree, radius, center) {
+    function getLocationFromAngle(degree, radius, center)
+    {
         var radian = degree * Math.PI / 180;
         return {
           x : Math.cos(radian) * radius + center.x,
@@ -32,7 +41,8 @@ function AngleManip({x, y, radians=0, length=30, onChange=(radians)=>{}, ...prop
         }
       }
 
-    function getPathArc(center, start, end, radius) {
+    function getPathArc(center, start, end, radius)
+    {
         if (end == start) end += 360;
         var degree = end - start;
         // degree = degree < 0 ? (degree + 360) : degree;
@@ -42,7 +52,7 @@ function AngleManip({x, y, radians=0, length=30, onChange=(radians)=>{}, ...prop
         points.push( getLocationFromAngle(start+degree*2/3, radius, center) );
         points.push( getLocationFromAngle(end, radius, center) );
         return getCirclePath(points, radius, degree < 0 ? 0:1);
-      }
+    }
 
     const handleMouseDown = (e)=>{
         // const svg = e.target.closest("SVG");
@@ -78,7 +88,6 @@ function AngleManip({x, y, radians=0, length=30, onChange=(radians)=>{}, ...prop
         window.addEventListener("mouseup", (e)=>handleMouseUp(e), {once: true});
     }
 
-
     const r=40;
     const dx = x-mouseScenePos.x;
     const dy = y-mouseScenePos.y;
@@ -103,7 +112,6 @@ function AngleManip({x, y, radians=0, length=30, onChange=(radians)=>{}, ...prop
             x2: mouseScenePos.x, 
             y2: mouseScenePos.y
         }):null
-        
     )
 }
 

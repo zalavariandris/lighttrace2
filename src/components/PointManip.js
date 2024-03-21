@@ -1,5 +1,5 @@
 import React, {useState} from "react"
-import {Point, Vector, Ray} from "../geo.js"
+
 
 const h = React.createElement;
 

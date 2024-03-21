@@ -1,6 +1,5 @@
 import React, {useState} from "react"
 import createREGL from "regl"
-
 import {mat4} from 'gl-matrix'
 
 /* Utilities */

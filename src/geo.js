@@ -1,26 +1,38 @@
 // Define an epsilon value
-class Point{
-    constructor(x,y){this.x=x; this.y=y;}
-    copy(){
+class Point
+{
+    constructor(x,y)
+    {
+        this.x=x; this.y=y;
+    }
+
+    copy()
+    {
         return new Point(this.x, this.y)
     }
-    distanceTo(p){
+
+    distanceTo(p)
+    {
         const dx = this.x-p.x;
         const dy = this.y-p.y;
         return Math.sqrt(dx * dx + dy * dy);
     }
-    distanceTo2(p){
+
+    distanceTo2(p)
+    {
         const dx = this.x-p.x;
         const dy = this.y-p.y;
         return dx * dx + dy * dy;
     }
+    
     toString()
     {
         return `Point(${this.x.toFixed(1)}, ${this.y.toFixed(1)})`
     }
 }
 
-class Vector{
+class Vector
+{
     constructor(x,y)
     {
         this.x=x; 
@@ -103,28 +115,9 @@ class Vector{
     }
 }
 
-class Ray{
-    constructor(origin, direction)
-    {
-        console.assert(origin instanceof Point, `origin must be a Point, got: ${origin}`)
-        console.assert(direction instanceof Vector, `direction must be a vector, got: ${direction}`)
-        this.origin=origin;
-        this.direction=direction;
-    }
-
-    toString()
-    {
-        return `Ray(${this.origin}, ${this.direction})`
-    }
-    
-    copy(other)
-    {
-        return new Ray(this.origin.copy(), this.direction.copy())
-    }
-}
 
 function P(x,y){return new Point(x,y)}
 function V(x,y){return new Vector(x,y)}
 
-export {Point, Vector, Ray}
+export {Point, Vector}
 export {P, V}

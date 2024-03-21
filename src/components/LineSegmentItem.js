@@ -1,5 +1,5 @@
 import React, {useState} from "react"
-import {Point, Vector, Ray} from "../geo.js"
+import {Point, Vector} from "../geo.js"
 import PointManip from "./PointManip.js";
 import Manipulator from "./Manipulator.js";
 

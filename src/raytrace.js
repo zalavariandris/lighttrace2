@@ -1,5 +1,4 @@
 import {Point, Vector, P, V} from "./geo.js"
-import {Ray} from "./geo.js"
 import {Circle, LineSegment, Rectangle} from "./scene.js"
 import {Light, PointLight, LaserLight} from "./scene.js"
 import {SamplingMethod} from "./scene.js"
@@ -9,7 +8,8 @@ const Side = Object.freeze({
     Inside: "Inside"
 })
 
-class HitPoint{
+class HitPoint
+{
     constructor(position, surfaceNormal, shape=null, side=Side.Outside)
     {
         console.assert(position instanceof Point, "got:", position)
@@ -30,7 +30,8 @@ class HitPoint{
     }
 }
 
-class Lightray{
+class Lightray
+{
     constructor(origin, direction, ior=1.0, wavelength=550)
     {
         console.assert(origin instanceof Point)
@@ -58,6 +59,7 @@ function makeRaysFromLights(lights, {sampleCount, samplingMethod})
         return light.sampleRays({sampleCount, samplingMethod});
     }).flat(1);
 }
+
 function raytrace_pass(rays, [shapes, materials], {THRESHOLD=1e-6})
 {
     // intersection

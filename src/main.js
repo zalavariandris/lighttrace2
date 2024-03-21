@@ -4,7 +4,7 @@ import React, {useState} from "react"
 import SVGViewport from "./components/SVGViewport.js";
 import GLViewport from "./components/GLViewport.js";
 import Collapsable from "./components/Collapsable.js";
-import {Point, Vector, Ray, P, V} from "./geo.js"
+import {Point, Vector, P, V} from "./geo.js"
 import {Geometry, Circle, LineSegment, Rectangle, Lens} from "./scene.js"
 import {Light, PointLight, LaserLight, DirectonalLight} from "./scene.js";
 import {Lightray, makeRaysFromLights, raytrace, SamplingMethod} from "./raytrace.js"
@@ -12,12 +12,12 @@ import {Material, MirrorMaterial, TransparentMaterial, DiffuseMaterial} from "./
 
 const h = React.createElement;
 
-const RaytraceStats = ({
+function RaytraceStats({
     scene=[],
     lightRays=[],
     hitPoints=[],
     lightPaths=[]
-}={})=>{
+}={}){
     return h("section", null, 
         h("h3", null, "RaytraceStats"),
 
@@ -52,7 +52,8 @@ const RaytraceStats = ({
     )
 }
 
-const Outliner = ({scene=[]}={})=>{
+function Outliner({scene=[]}={})
+{
     return h("section", null,
         h("h3", null, "Outliner"),
         h("ul", null, 
@@ -110,39 +111,40 @@ const App = ()=>{
         setSelection(newSelection)
     }
 
+    function updateRaytrace()
+    {
+        const lights = scene.filter(obj=>obj instanceof Light)
+        const shapes = scene.filter(obj=>obj instanceof Geometry)
+        const [newRays, newHitPoints, newPaths] = raytrace(lights, [shapes, shapes.map(shp=>shp.material)], {
+            maxBounce:raytraceOptions.maxBounce, 
+            samplingMethod: raytraceOptions.samplingMethod, 
+            lightSamples: raytraceOptions.lightSamples
+        });
 
-    // update_raytrace
-    const lights = scene.filter(obj=>obj instanceof Light)
-    const shapes = scene.filter(obj=>obj instanceof Geometry)
-    const [newRays, newHitPoints, newPaths] = raytrace(lights, [shapes, shapes.map(shp=>shp.material)], {
-        maxBounce:raytraceOptions.maxBounce, 
-        samplingMethod: raytraceOptions.samplingMethod, 
-        lightSamples: raytraceOptions.lightSamples
-    });
-    // set React state
-    const rays = newRays;
-    const hitPoints = newHitPoints;
-    const lightPaths = newPaths;
+        return {
+            rays: newRays,
+            hitPoints: newHitPoints,
+            lightPaths: newPaths
+        }
+    }
+    const {rays, hitPoints, lightPaths} = updateRaytrace();
 
     /* step rayrace on animation frame */
     const [animate, setAnimate] = React.useState(true)
     const [count, setCount] = React.useState(0);
     const requestRef = React.useRef();
 
-    const onAnimationTick = time => {
-        // if (previousTimeRef.current != undefined) {
+    const onAnimationTick = timeStamp => {
         setCount(prevCount => prevCount + 1);
-        // }
-        // previousTimeRef.current = time;
         requestRef.current = requestAnimationFrame(onAnimationTick);
-      }
-      
-      React.useEffect(() => {
+    }
+
+    React.useEffect(() => {
         if(animate){
             requestRef.current = requestAnimationFrame(onAnimationTick);
             return () => cancelAnimationFrame(requestRef.current);
         }
-      }, [animate]); // Make sure the effect runs only once
+    }, [animate]); // Make sure the effect runs only once
 
     return h("div", null,
         h(GLViewport,  {
@@ -150,9 +152,6 @@ const App = ()=>{
             viewBox: viewBox,
             scene: scene,
             paths: lightPaths
-            // paths: lightPaths,
-            // lights: lights,
-            // shapes: shapes,
         }),
         h(SVGViewport, {
             // style: {opacity: "0.2"},
@@ -299,5 +298,6 @@ const App = ()=>{
         )
     )
 }
+
 const rdom = ReactDOM.createRoot(document.getElementById('root'))
 rdom.render(React.createElement(App));

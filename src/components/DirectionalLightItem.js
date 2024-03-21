@@ -1,8 +1,5 @@
 import React, {useState} from "react"
-import {Point, Vector, Ray} from "../geo.js"
-import PointManip from "./PointManip.js";
 import AngleManip from "./AngleManip.js";
-import {Circle, DirectonalLight, LaserLight, LineSegment, Rectangle, Lens} from "../scene.js"
 import Manipulator from "./Manipulator.js";
 
 const h = React.createElement;
