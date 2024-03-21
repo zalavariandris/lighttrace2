@@ -271,7 +271,7 @@ function SVGViewport({
     scene=[],
     onSceneObject=()=>{},
     rays=[], 
-    intersections=[], 
+    hitPoints=[], 
     paths=[], 
     selection=[],
     onSelection=()=>{},
@@ -424,15 +424,15 @@ function SVGViewport({
             )
         ),
 
-        h('g', { className: 'intersections'},
-            intersections==undefined?null:intersections.map(intersection =>
+        h('g', { className: 'hitPoints'},
+            hitPoints==undefined?null:hitPoints.map(hitPoint =>
                 h('g', null,
                     h('line', {
-                        x1: intersection.origin.x,
-                        y1: intersection.origin.y,
-                        x2: intersection.origin.x + intersection.direction.x * 20,
-                        y2: intersection.origin.y + intersection.direction.y * 20,
-                        className: 'intersection',
+                        x1: hitPoint.position.x,
+                        y1: hitPoint.position.y,
+                        x2: hitPoint.position.x + hitPoint.surfaceNormal.x * 20,
+                        y2: hitPoint.position.y + hitPoint.surfaceNormal.y * 20,
+                        className: 'hitPoint',
                         // markerEnd:'url(#head)',
                         vectorEffect: "non-scaling-stroke"
                     })

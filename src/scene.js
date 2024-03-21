@@ -119,10 +119,11 @@ class Circle extends Geometry
             {
                 return [];
             }
-            const origin = P(ray.origin.x + t * ray.direction.x, ray.origin.y + t * ray.direction.y);
-            const direction = V(origin.x - this.center.x, origin.y - this.center.y).normalized();
+
+            const hitPosition = P(ray.origin.x + t * ray.direction.x, ray.origin.y + t * ray.direction.y);
+            const surfaceNormal = V(hitPosition.x - this.center.x, hitPosition.y - this.center.y).normalized();
             
-            return [new HitPoint(origin, direction.multiply(1))];
+            return [new HitPoint(hitPosition, surfaceNormal.multiply(1))];
         }
         else
         {
@@ -132,12 +133,12 @@ class Circle extends Geometry
             {
                 return [];
             }
-            const origin = P(ray.origin.x + t * ray.direction.x, ray.origin.y + t * ray.direction.y);
+            const hitPosition = P(ray.origin.x + t * ray.direction.x, ray.origin.y + t * ray.direction.y);
             // origin = P(10,10)
 
-            const direction = V(origin.x - this.center.x, origin.y - this.center.y).normalized();
+            const surfaceNormal = V(hitPosition.x - this.center.x, hitPosition.y - this.center.y).normalized();
             
-            return [new HitPoint(origin, direction.multiply(-1))];
+            return [new HitPoint(hitPosition, surfaceNormal.multiply(-1))];
         }
         return []
     }
@@ -178,9 +179,9 @@ class Lens extends Geometry
         const right = rightCircle.center.x+rightCircle.radius;
 
         return hits.filter((hitPoint)=>{
-            const Ix = hitPoint.origin.x;
-            const Iy = hitPoint.origin.y;
-            return right+1>Ix && left-1 < Ix && Iy>bottom-1 && Iy<top+1;
+            const Ix = hitPoint.position.x;
+            const Iy = hitPoint.position.y;
+            return right+1>Ix && left+1 < Ix && Iy>bottom-1 && Iy<top+1;
         });
     }
 
@@ -305,7 +306,7 @@ class LineSegment extends Geometry
         
         // Check if the intersection point is within the line segment and the ray
         if (t1 >= -EPSILON && t2 >= -EPSILON && t2 <= 1 + EPSILON) {
-            const intersectionPoint = P(
+            const hitPosition = P(
                 rayOrigin.x + t1 * rayDirection.x,
                 rayOrigin.y + t1 * rayDirection.y,
             );
@@ -332,7 +333,7 @@ class LineSegment extends Geometry
                 N = N.negate()
             }
             
-            return [new HitPoint(intersectionPoint, N)];
+            return [new HitPoint(hitPosition, N)];
         }
         
         // No intersection

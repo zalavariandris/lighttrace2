@@ -1,7 +1,7 @@
 // Define an epsilon value
 class Point{
     constructor(x,y){this.x=x; this.y=y;}
-    copy(other){
+    copy(){
         return new Point(this.x, this.y)
     }
     distanceTo(p){
@@ -32,7 +32,7 @@ class Vector{
         return `Vector(${this.x.toFixed(1)}, ${this.y.toFixed(1)})`
     }
 
-    copy(other)
+    copy()
     {
         return new Point(this.x, this.y)
     }

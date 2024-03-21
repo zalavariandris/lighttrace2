@@ -10,20 +10,44 @@ const Side = Object.freeze({
 })
 
 class HitPoint{
-    constructor(origin, direction, shape=null, side=Side.Outside){
-        this.origin = origin;
-        this.direction = direction;
+    constructor(position, surfaceNormal, shape=null, side=Side.Outside)
+    {
+        console.assert(position instanceof Point, "got:", position)
+        console.assert(surfaceNormal instanceof Vector, "got:", surfaceNormal)
+        this.position = position;
+        this.surfaceNormal = surfaceNormal;
         this.shape = shape;
         this.side = side;
+    }
+
+    copy()
+    {
+        return new HitPoint(this.position, this.surfaceNormal, this.shape, this.side);
+    }
+
+    toString(){
+        return `HitPoint(${this.position}, ${this.surfaceNormal})`
     }
 }
 
 class Lightray{
-    constructor(origin, direction, ior=1.0, wavelength=550){
+    constructor(origin, direction, ior=1.0, wavelength=550)
+    {
+        console.assert(origin instanceof Point)
+        console.assert(direction instanceof Vector)
         this.origin = origin;
         this.direction = direction;
         this.ior = ior;
         this.wavelength = wavelength;
+    }
+
+    copy()
+    {
+        return new Lightray(this.origin, this.direction, this.ior, this.wavelength);
+    }
+
+    toString(){
+        return `Lightray(${this.origin}, ${this.direction})`
     }
 }
 
@@ -39,89 +63,90 @@ function raytrace_pass(rays, [shapes, materials], {THRESHOLD=1e-6})
     // intersection
 
     const THRESHOLD_SQUARED = THRESHOLD**THRESHOLD
-    const intersections = rays.map((ray)=>{
+    const hitPoints = rays.map((ray)=>{
         if(ray==null)
         {
             return null;
         }
 
-        const compare_distance = (a,b)=>{
-            if(a===null) return b;
-            if(b===null) return a;
-            return ray.origin.distanceTo(a.origin) < ray.origin.distanceTo(b.origin) ? a : b;
+        const compareDistance = (A,B)=>{
+            if(A===null) return B;
+            if(B===null) return A;
+            return A.position.distanceTo(ray.origin) < A.position.distanceTo(ray.origin) ? A : B;
         }
 
-        const shape_intersection = shapes.map((shape, shapeIdx)=>{
-            const intersections = shape.hitTest(ray).filter(intersection=>ray.origin.distanceTo2(intersection.origin)>THRESHOLD_SQUARED);
-            const closest_intersection = intersections.reduce(compare_distance, null);
-            if(closest_intersection) {closest_intersection.shapeIdx = shapeIdx;}
-            return closest_intersection;
+        const raySceneHitPoints = shapes.map((shape, shapeIdx)=>{
+            const hitPoints = shape.hitTest(ray).filter(hitPoint=>hitPoint.position.distanceTo2(ray.origin)>THRESHOLD_SQUARED);
+            const closestHitPoint = hitPoints.reduce(compareDistance, null);
+            if(closestHitPoint) {closestHitPoint.shapeIdx = shapeIdx;}
+            return closestHitPoint;
         })
 
         // return closest intersection of ray
 
-        return shape_intersection.reduce(compare_distance, null);
+        return raySceneHitPoints.reduce(compareDistance, null);
     });
 
     // secondary rays
-    const secondaries = intersections.map((intersection, i)=>{
-        if(intersection==null)
+    const secondaries = hitPoints.map((hitPoint, i)=>{
+        if(hitPoint==null)
         {
             return null;
         }
         else
         {
             const ray = rays[i];
-            const material = materials[intersection.shapeIdx]
-            const secondary_direction = material.sample(ray.direction.normalized(1), intersection.direction.normalized(1), ray.ior || 1.0);
-            return new Ray(intersection.origin, secondary_direction);
+            const material = materials[hitPoint.shapeIdx]
+            const bounceDirection = material.sample(ray.direction.normalized(1), hitPoint.surfaceNormal.normalized(1), ray.ior || 1.0);
+            const lightray = new Lightray(hitPoint.position, bounceDirection);
+            return lightray
         }
     });
 
-    return [secondaries, intersections];
+    return [secondaries, hitPoints];
 }
 
 function raytrace(lights, [shapes, materials], {maxBounce=3, samplingMethod="Uniform", lightSamples=9}={})
 {
     // initial rays
-    const initial_rays = makeRaysFromLights(lights, {sampleCount: lightSamples, samplingMethod:samplingMethod});
+    const initialLightrays = makeRaysFromLights(lights, {sampleCount: lightSamples, samplingMethod:samplingMethod});
 
     // raytrace steps
-    let currentRays = initial_rays;
-    const ray_steps = [initial_rays];
-    const intersections_steps = [];
-    const paths = initial_rays.map(r=>[r.origin]);
+    let currentRays = initialLightrays;
+    const raytraceSteps = [initialLightrays];
+    const hitPointSteps = [];
+    const lightPaths = initialLightrays.map(r=>[r.origin]);
     for(let i=0; i<maxBounce; i++)
     {
-        const [secondaries, intersections] = raytrace_pass(currentRays, [shapes, materials], {THRESHOLD:1e-6});
-        ray_steps.push(secondaries);
-        intersections_steps.push(intersections);
+        const [secondaries, hitPoints] = raytrace_pass(currentRays, [shapes, materials], {THRESHOLD:1e-6});
+        raytraceSteps.push(secondaries);
+        hitPointSteps.push(hitPoints);
 
         // build paths
-        for(let p=0; p<paths.length; p++)
+        for(let pathIdx=0; pathIdx<lightPaths.length; pathIdx++)
         {
-            if(intersections[p])
+            if(hitPoints[pathIdx])
             {
-                paths[p].push(intersections[p].origin);
+                lightPaths[pathIdx].push(hitPoints[pathIdx].position);
             }
-            else if(currentRays[p])
+            else if(currentRays[pathIdx])
             {
-                const ray = currentRays[p];
-                paths[p].push(P(ray.origin.x+ray.direction.x*1000, ray.origin.y+ray.direction.y*1000));
+                const ray = currentRays[pathIdx];
+                lightPaths[pathIdx].push(P(ray.origin.x+ray.direction.x*1000, ray.origin.y+ray.direction.y*1000));
             }
         }
 
         // allRays = [...allRays, ...secondaries]
-        // allIntersections = [...allIntersections, ...intersections]
+        // allHitPoints = [...allHitPoints, ...hitPoints]
         currentRays = secondaries;
     }
 
-    const allRays = ray_steps.flat(1);
-    const allIntersections = intersections_steps.flat(1);
+    const allRays = raytraceSteps.flat(1);
+    const allHitPoints = hitPointSteps.flat(1);
     return [
-        allRays.filter(r=>r?true:false), 
-        allIntersections.filter(i=>i?true:false),
-        paths
+        allRays.filter(lightRay=>lightRay?true:false), 
+        allHitPoints.filter(hitPoint=>hitPoint?true:false),
+        lightPaths
     ]
 }
 
