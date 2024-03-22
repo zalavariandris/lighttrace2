@@ -5,10 +5,26 @@ import SVGViewport from "./components/SVGViewport.js";
 import GLViewport from "./components/GLViewport.js";
 import Collapsable from "./components/Collapsable.js";
 import {Point, Vector, P, V} from "./geo.js"
-import {Geometry, Circle, LineSegment, Rectangle, Lens} from "./scene.js"
-import {Light, PointLight, LaserLight, DirectonalLight} from "./scene.js";
+
+import Shape from "./scene/shapes/Shape.js";
+import Circle from "./scene/shapes/Circle.js"
+import LineSegment from "./scene/shapes/LineSegment.js"
+import Rectangle from "./scene/shapes/Rectangle.js"
+import Lens from "./scene/shapes/Lens.js"
+
+import Light from "./scene/lights/Light.js"
+import PointLight from "./scene/lights/PointLight.js"
+import LaserLight from "./scene/lights/LaserLight.js"
+import DirectionalLight from "./scene/lights/DirectionalLight.js"
+
+import Material from "./scene/materials/Material.js"
+import MirrorMaterial from "./scene/materials/MirrorMaterial.js"
+import TransparentMaterial from "./scene/materials/TransparentMaterial.js"
+import DiffuseMaterial from "./scene/materials/DiffuseMaterial.js"
+
+
 import {Lightray, makeRaysFromLights, raytrace, SamplingMethod} from "./raytrace.js"
-import {Material, MirrorMaterial, TransparentMaterial, DiffuseMaterial} from "./scene.js"
+
 
 const h = React.createElement;
 
@@ -79,7 +95,7 @@ const App = ()=>{
 
     const [svgDisplayOptions, setSvgDisplayOptions] = React.useState({
         rays: false,
-        hitPoints: false,
+        hitPoints: true,
         lightPaths: false
     })
     const updateSvgDisplayOptions = options=> setSvgDisplayOptions({...svgDisplayOptions, ...options})
@@ -91,14 +107,14 @@ const App = ()=>{
     const [scene, setScene] = React.useState([
         new PointLight(P(230, 125)),
         new LaserLight(P(150,220), 0),
-        new DirectonalLight(P(50,180), 20,0),
-        new Circle(P(250, 310), new MirrorMaterial(), 50),
+        new DirectionalLight(P(50,180), 20,0),
+        new Circle(P(250, 180), new TransparentMaterial(), 50),
         new Rectangle(P(250,500), new MirrorMaterial(), 600,100),
         new LineSegment(P(400, 250), P(500, 130), new MirrorMaterial()),
         new LineSegment(P(370, 220), P(470, 100), new MirrorMaterial()),
         new Lens(P(250, 180),  new TransparentMaterial(), 20, 100, 100, 100),
-        // new Circle(P(520, 550), new TransparentMaterial(), 100),
-        // new Circle(P(120, 380), new TransparentMaterial(), 80),
+        new Circle(P(520, 550), new TransparentMaterial(), 100),
+        new Circle(P(120, 380), new TransparentMaterial(), 80),
     ]);
 
     const [selection, setSelection] = React.useState([])
@@ -114,7 +130,7 @@ const App = ()=>{
     function updateRaytrace()
     {
         const lights = scene.filter(obj=>obj instanceof Light)
-        const shapes = scene.filter(obj=>obj instanceof Geometry)
+        const shapes = scene.filter(obj=>obj instanceof Shape)
         const [newRays, newHitPoints, newPaths] = raytrace(lights, [shapes, shapes.map(shp=>shp.material)], {
             maxBounce:raytraceOptions.maxBounce, 
             samplingMethod: raytraceOptions.samplingMethod, 

@@ -1,7 +1,23 @@
 import React, {useState} from "react"
-import {Circle, DirectonalLight, LaserLight, LineSegment, Rectangle, Lens} from "../scene.js"
-import {PointLight} from "../scene.js"
 
+/*scene*/
+import Shape from "../scene/shapes/Shape.js";
+import Circle from "../scene/shapes/Circle.js"
+import LineSegment from "../scene/shapes/LineSegment.js"
+import Rectangle from "../scene/shapes/Rectangle.js"
+import Lens from "../scene/shapes/Lens.js"
+
+import Light from "../scene/lights/Light.js"
+import PointLight from "../scene/lights/PointLight.js"
+import LaserLight from "../scene/lights/LaserLight.js"
+import DirectionalLight from "../scene/lights/DirectionalLight.js"
+
+import Material from "../scene/materials/Material.js"
+import MirrorMaterial from "../scene/materials/MirrorMaterial.js"
+import TransparentMaterial from "../scene/materials/TransparentMaterial.js"
+import DiffuseMaterial from "../scene/materials/DiffuseMaterial.js"
+
+/*viewport Items*/
 import CircleItem from "./CircleItem.js"
 import LineSegmentItem from "./LineSegmentItem.js"
 import RectangleItem from "./RectangleItem.js"
@@ -73,7 +89,7 @@ function SceneItem({
         })
     }
 
-    else if(sceneObject instanceof DirectonalLight)
+    else if(sceneObject instanceof DirectionalLight)
     {
         return DirectionalLightItem({
             light: sceneObject,

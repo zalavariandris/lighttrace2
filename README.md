@@ -7,10 +7,11 @@ an interactive 2D light simulator
 ## todo
 - [x] grab and move shapes by their actuals shapes instead of a manipulator
 - [x] leaks pointlight inside a circle (since rewrite) FIXED: compareHitPoint distances in raytrace.js
+- [x] refactor scene.js classes to seperate files
 - [ ] fix transparent material refrection on exit
 - [ ] fix concave lens ray intersections
 - [ ] set light intensity to compensate light samples per frame
-- [ ] refactor scene.js classes to seperate files
+
 
 - [ ] rectangle corners leaking: fix linesegment corners hitTest
 - [ ] cant use manipulators under shapes: fix svg layering and interaction

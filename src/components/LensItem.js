@@ -1,7 +1,8 @@
 import React, {useState} from "react"
 import {Point, Vector} from "../geo.js"
 import PointManip from "./PointManip.js";
-import {Circle, Lens} from "../scene.js"
+import Circle from "../scene/shapes/Circle.js"
+import Lens from "../scene/shapes/Lens.js"
 import Manipulator from "./Manipulator.js";
 const h = React.createElement;
 

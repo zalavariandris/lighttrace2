@@ -1,7 +1,5 @@
 import {Point, Vector, P, V} from "./geo.js"
-import {Circle, LineSegment, Rectangle} from "./scene.js"
-import {Light, PointLight, LaserLight} from "./scene.js"
-import {SamplingMethod} from "./scene.js"
+import {SamplingMethod} from "./scene/lights/Light.js"
 
 const Side = Object.freeze({
     Outside: "Outside",
