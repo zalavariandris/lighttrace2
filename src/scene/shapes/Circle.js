@@ -67,24 +67,46 @@ class Circle extends Shape
 
     hitTest(ray)
     {
-        // 
+        // solve quadratic equatation: at**2+bt+c=0
         const d = new Vector(ray.origin.x - this.center.x, ray.origin.y - this.center.y); // to circle
-
-        const dotProduct = ray.direction.dotProduct(d.normalized());
         const a = ray.direction.dotProduct(ray.direction);
         const b = 2 * ray.direction.dotProduct(d);
         const c = d.dotProduct(d) - this.radius * this.radius;
         const discriminant = b * b - 4 * a * c;
         
-        // console.log(discriminant)
-        if (discriminant < 0) {
+        if (discriminant < 0)
+        {
             return [];
         }
         
+        // calc the distance along the ray (parameter of intersection points)
         const t1 = (-b + Math.sqrt(discriminant)) / (2 * a);
         const t2 = (-b - Math.sqrt(discriminant)) / (2 * a);
 
-        const outsideCircle = new Vector(ray.origin.x-this.center.x, ray.origin.y-this.center.y).magnitude()>(this.radius+EPSILON);
+        let t=-1;
+        if(t1>EPSILON && t2>EPSILON)
+        {
+            t = Math.min(t1, t2)
+        }
+        else if(t1>EPSILON)
+        {
+            t = t1
+        }
+        else if(t2>EPSILON)
+        {
+            t = t2
+        }
+        else
+        {
+            return []
+        }
+
+        const hitPosition = P(ray.origin.x + t * ray.direction.x, ray.origin.y + t * ray.direction.y);
+        const surfaceNormal = V(hitPosition.x - this.center.x, hitPosition.y - this.center.y).normalized();
+        
+        return [new HitPoint(hitPosition, surfaceNormal.multiply(1))];
+
+        // const outsideCircle = new Vector(ray.origin.x-this.center.x, ray.origin.y-this.center.y).magnitude()>(this.radius+EPSILON);
 
         if(outsideCircle)
         {

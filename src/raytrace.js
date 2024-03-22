@@ -95,11 +95,18 @@ function raytrace_pass(rays, [shapes, materials], {THRESHOLD=1e-6})
         }
         else
         {
-            const ray = rays[i];
+            // shortcuts
+            const rayDirection = rays[i].direction.normalized(1);
+            const surfaceNormal = hitPoint.surfaceNormal.normalized(1);
+
+            // calculate hitNormal from surface normal and ray direction. 
+            const IsInside = rayDirection.dotProduct(hitPoint.surfaceNormal)>0;
+            const hitNormal = IsInside?surfaceNormal.negate():surfaceNormal;
+
+            // sample material
             const material = materials[hitPoint.shapeIdx]
-            const bounceDirection = material.sample(ray.direction.normalized(1), hitPoint.surfaceNormal.normalized(1), ray.ior || 1.0);
-            const lightray = new Lightray(hitPoint.position, bounceDirection);
-            return lightray
+            const bounceDirection = material.sample(rayDirection, surfaceNormal);
+            return new Lightray(hitPoint.position, bounceDirection);
         }
     });
 

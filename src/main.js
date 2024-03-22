@@ -105,16 +105,16 @@ const App = ()=>{
     });
 
     const [scene, setScene] = React.useState([
-        new PointLight(P(230, 125)),
-        new LaserLight(P(150,220), 0),
+        new PointLight(P(50, 130)),
+        // new LaserLight(P(150,220), 0),
         new DirectionalLight(P(50,180), 20,0),
-        new Circle(P(250, 180), new TransparentMaterial(), 50),
-        new Rectangle(P(250,500), new MirrorMaterial(), 600,100),
-        new LineSegment(P(400, 250), P(500, 130), new MirrorMaterial()),
-        new LineSegment(P(370, 220), P(470, 100), new MirrorMaterial()),
-        new Lens(P(250, 180),  new TransparentMaterial(), 20, 100, 100, 100),
-        new Circle(P(520, 550), new TransparentMaterial(), 100),
-        new Circle(P(120, 380), new TransparentMaterial(), 80),
+        new Circle(P(350, 150), new TransparentMaterial(), 50),
+        // new Rectangle(P(250,500), new MirrorMaterial(), 600,100),
+        // new LineSegment(P(400, 250), P(500, 130), new MirrorMaterial()),
+        // new LineSegment(P(370, 220), P(470, 100), new MirrorMaterial()),
+        // new Lens(P(250, 180),  new TransparentMaterial(), 20, 100, 100, 100),
+        // new Circle(P(520, 550), new TransparentMaterial(), 100),
+        // new Circle(P(120, 380), new TransparentMaterial(), 80),
     ]);
 
     const [selection, setSelection] = React.useState([])
