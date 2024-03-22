@@ -1,4 +1,5 @@
 import Material from "./Material.js"
+import {Point, Vector} from "../../geo.js"
 
 function sampleDiffuse(V, N)
 {

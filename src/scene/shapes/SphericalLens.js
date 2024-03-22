@@ -4,20 +4,51 @@ import Circle from "./Circle.js"
 import {Point, Vector} from "../../geo.js"
 import {P, V} from "../../geo.js"
 import { HitPoint } from "../../raytrace.js";
-class Lens extends Shape
+class SphericalLens extends Shape
 {
     constructor(center, material, width, height, leftRadius, rightRadius)
     {
         super(center, material)
-        this.width = width
-        this.height = height
-        this.leftRadius = leftRadius
-        this.rightRadius = rightRadius
+        this.width = width;
+        this.height = height;
+        this.leftRadius = leftRadius;
+        this.rightRadius = rightRadius;
     }
 
     copy()
     {
         return new Lens(this.center.copy(), this.material.copy(), this.width, this.height, this.leftRadius, this.rightRadius)
+    }
+
+    getRightCircle()
+    {
+        const topRight = new Point(this.center.x+this.width/2, this.center.y+this.height/2)
+        const bottomRight =  new Point(this.center.x+this.width/2, this.center.y-this.height/2)
+        const topLeft = new Point(this.center.x-this.width/2, this.center.y+this.height/2)
+        const bottomLeft =  new Point(this.center.x-this.width/2, this.center.y-this.height/2)
+
+        const flip = this.rightRadius>0
+        return Circle.fromRadiusAndTwoPoints(Math.abs(this.rightRadius), topRight, bottomRight, flip)
+    }
+
+    getLeftCircle()
+    {
+        const topRight = new Point(this.center.x+this.width/2, this.center.y+this.height/2)
+        const bottomRight =  new Point(this.center.x+this.width/2, this.center.y-this.height/2)
+        const topLeft = new Point(this.center.x-this.width/2, this.center.y+this.height/2)
+        const bottomLeft =  new Point(this.center.x-this.width/2, this.center.y-this.height/2)
+        const flip = this.leftRadius<0
+        return Circle.fromRadiusAndTwoPoints(Math.abs(this.leftRadius), topLeft, bottomLeft, flip)
+    }
+
+    bbox()
+    {
+        return {
+            top: this.center.y+this.height/2,
+            bottom: this.center.y-this.height/2,
+            left: leftCircle.center.x-leftCircle.radius,
+            right: rightCircle.center.x+rightCircle.radius
+        };
     }
 
     hitTest(ray)
@@ -31,10 +62,8 @@ class Lens extends Shape
         const bottomSide = new LineSegment(bottomLeft, bottomRight)
 
 
-        const rightCircle = Circle.fromRadiusAndTwoPoints(Math.abs(this.rightRadius), topRight, bottomRight, true)
-        
-
-        const leftCircle = Circle.fromRadiusAndTwoPoints(Math.abs(this.leftRadius), topLeft, bottomLeft, false)
+        const rightCircle = this.getRightCircle()
+        const leftCircle = this.getLeftCircle()
 
         const hits = [...leftCircle.hitTest(ray), ...rightCircle.hitTest(ray), ...topSide.hitTest(ray), ...bottomSide.hitTest(ray)]
 
@@ -56,4 +85,4 @@ class Lens extends Shape
     }
 }
 
-export default Lens
+export default SphericalLens

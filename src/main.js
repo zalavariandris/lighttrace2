@@ -10,7 +10,8 @@ import Shape from "./scene/shapes/Shape.js";
 import Circle from "./scene/shapes/Circle.js"
 import LineSegment from "./scene/shapes/LineSegment.js"
 import Rectangle from "./scene/shapes/Rectangle.js"
-import Lens from "./scene/shapes/Lens.js"
+import SphericalLens from "./scene/shapes/SphericalLens.js"
+import SphericalLens2 from "./scene/shapes/SphericalLens2.js"
 
 import Light from "./scene/lights/Light.js"
 import PointLight from "./scene/lights/PointLight.js"
@@ -89,14 +90,14 @@ const App = ()=>{
     const [raytraceOptions, setRaytraceOptions] = React.useState({
         maxBounce: 9,
         lightSamples: 7,
-        samplingMethod: SamplingMethod.Random
+        samplingMethod: SamplingMethod.Uniform
     })
     const updateRaytraceOptions = options=>setRaytraceOptions({...raytraceOptions, ...options})
 
     const [svgDisplayOptions, setSvgDisplayOptions] = React.useState({
         rays: false,
         hitPoints: true,
-        lightPaths: false
+        lightPaths: true
     })
     const updateSvgDisplayOptions = options=> setSvgDisplayOptions({...svgDisplayOptions, ...options})
 
@@ -105,16 +106,28 @@ const App = ()=>{
     });
 
     const [scene, setScene] = React.useState([
-        new PointLight(P(50, 130)),
+        // new PointLight(P(50, 130)),
         // new LaserLight(P(150,220), 0),
-        new DirectionalLight(P(50,180), 20,0),
-        new Circle(P(350, 150), new TransparentMaterial(), 50),
-        // new Rectangle(P(250,500), new MirrorMaterial(), 600,100),
+        // new DirectionalLight(P(50,180), 20,0),
+        // new Circle(P(350, 150), new TransparentMaterial(), 50),
+        // 
         // new LineSegment(P(400, 250), P(500, 130), new MirrorMaterial()),
         // new LineSegment(P(370, 220), P(470, 100), new MirrorMaterial()),
-        // new Lens(P(250, 180),  new TransparentMaterial(), 20, 100, 100, 100),
+        // new SphericalLens(P(250, 180),  new TransparentMaterial(), 20, 100, 100, 100),
         // new Circle(P(520, 550), new TransparentMaterial(), 100),
-        // new Circle(P(120, 380), new TransparentMaterial(), 80),
+
+        // new DirectionalLight(P(50,180), 50,0),
+        // new SphericalLens(P(250, 180),  new TransparentMaterial(), 50, 100, -100, -100),
+        // new SphericalLens(P(250, 180),  new TransparentMaterial(), 50, 100, -100, -100),
+        // new Circle(P(440, 130), new MirrorMaterial(), 80),
+        // new Rectangle(P(250,500), new DiffuseMaterial(), 600,100)
+
+        new DirectionalLight(P(50, 240), 60,0),
+        new SphericalLens2(P(250, 250), new TransparentMaterial(), {
+            diameter: 100,
+            edgeThickness: 20,
+            centerThickness:40
+        })
     ]);
 
     const [selection, setSelection] = React.useState([])
@@ -163,12 +176,12 @@ const App = ()=>{
     }, [animate]); // Make sure the effect runs only once
 
     return h("div", null,
-        h(GLViewport,  {
-            className:"viewport",
-            viewBox: viewBox,
-            scene: scene,
-            paths: lightPaths
-        }),
+        // h(GLViewport,  {
+        //     className:"viewport",
+        //     viewBox: viewBox,
+        //     scene: scene,
+        //     paths: lightPaths
+        // }),
         h(SVGViewport, {
             // style: {opacity: "0.2"},
             className:"viewport",

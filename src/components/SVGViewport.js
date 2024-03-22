@@ -5,7 +5,8 @@ import Shape from "../scene/shapes/Shape.js";
 import Circle from "../scene/shapes/Circle.js"
 import LineSegment from "../scene/shapes/LineSegment.js"
 import Rectangle from "../scene/shapes/Rectangle.js"
-import Lens from "../scene/shapes/Lens.js"
+import SphericalLens from "../scene/shapes/SphericalLens.js"
+import SphericalLens2 from "../scene/shapes/SphericalLens2.js"
 
 import Light from "../scene/lights/Light.js"
 import PointLight from "../scene/lights/PointLight.js"
@@ -21,7 +22,8 @@ import DiffuseMaterial from "../scene/materials/DiffuseMaterial.js"
 import CircleItem from "./CircleItem.js"
 import LineSegmentItem from "./LineSegmentItem.js"
 import RectangleItem from "./RectangleItem.js"
-import LensItem from "./LensItem.js"
+import SphericalLensItem from "./SphericalLensItem.js"
+import SphericalLens2Item from "./SphericalLens2Item.js"
 
 import DirectionalLightItem from "./DirectionalLightItem.js"
 import PointLightItem from "./PointLightItem.js"
@@ -57,9 +59,17 @@ function SceneItem({
         })
     }
 
-    else if(sceneObject instanceof Lens)
+    else if(sceneObject instanceof SphericalLens)
     {
-        return LensItem({
+        return SphericalLensItem({
+            lens: sceneObject,
+            onChange: onChange
+        })
+    }
+
+    else if(sceneObject instanceof SphericalLens2)
+    {
+        return SphericalLens2Item({
             lens: sceneObject,
             onChange: onChange
         })

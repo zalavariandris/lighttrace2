@@ -10,7 +10,7 @@ class Shape extends SceneObject
 
     hitTest()
     {
-        return null
+        return []
     }
 }
 

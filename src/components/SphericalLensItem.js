@@ -2,7 +2,7 @@ import React, {useState} from "react"
 import {Point, Vector} from "../geo.js"
 import PointManip from "./PointManip.js";
 import Circle from "../scene/shapes/Circle.js"
-import Lens from "../scene/shapes/Lens.js"
+import SphericalLens from "../scene/shapes/SphericalLens.js"
 import Manipulator from "./Manipulator.js";
 const h = React.createElement;
 
@@ -14,7 +14,7 @@ const makeLensPath = (width, height, leftRadius, rightRadius)=>{
     `a ${Math.abs(rightRadius)} ${Math.abs(rightRadius)} 0 0 ${rightRadius<0?1:0} 0 ${-height}`
 }
 
-function LensItem({
+function SphericalLensItem({
     lens,
     onChange,
     ...props
@@ -88,10 +88,8 @@ function LensItem({
         return Math.sign(lens.rightRadius)*(lensCircle.radius - lensCircle.center.x)
     }
 
-    const top = new Point(0, lens.center.y+lens.height/2)
-    const bottom =  new Point(0, lens.center.y-lens.height/2)
-    const rightCircle = Circle.fromRadiusAndTwoPoints(Math.abs(lens.rightRadius), top, bottom)
-    const leftCircle = Circle.fromRadiusAndTwoPoints(Math.abs(lens.leftRadius), top, bottom)
+    const rightCircle = lens.getRightCircle()
+    const leftCircle = lens.getLeftCircle()
 
     return h(Manipulator, {
         className: 'sceneItem shape lens',
@@ -133,15 +131,15 @@ function LensItem({
         }),
         h('circle', {
             className: "guide",
-            cx: lens.center.x+leftCircle.center.x-lens.width/2, 
-            cy: lens.center.y, 
+            cx: leftCircle.center.x, 
+            cy: leftCircle.center.y, 
             r:leftCircle.radius,
             vectorEffect: "non-scaling-stroke",
         }),
         h('circle', {
             className: "guide",
-            cx: lens.center.x-rightCircle.center.x+lens.width/2, 
-            cy: lens.center.y, 
+            cx: rightCircle.center.x, 
+            cy: rightCircle.center.y, 
             r:rightCircle.radius,
             vectorEffect: "non-scaling-stroke",
         })
@@ -149,4 +147,4 @@ function LensItem({
     )
 }
 
-export default LensItem;
+export default SphericalLensItem;
