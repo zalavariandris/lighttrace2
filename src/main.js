@@ -26,6 +26,8 @@ import DiffuseMaterial from "./scene/materials/DiffuseMaterial.js"
 import {Lightray, makeRaysFromLights, raytrace, SamplingMethod} from "./raytrace.js"
 
 
+import Inspector from "./components/Inspector.js"
+
 const h = React.createElement;
 
 function RaytraceStats({
@@ -108,7 +110,10 @@ const App = ()=>{
         // new PointLight(P(50, 130)),
         // new LaserLight(P(150,220), 0),
         // new DirectionalLight(P(50,180), 20,0),
-        new Circle(P(350, 150), new TransparentMaterial(), 50),
+
+        new Circle(P(100, 150), new MirrorMaterial(), 50),
+        new Circle(P(250, 150), new TransparentMaterial(), 50),
+        new Circle(P(400, 150), new DiffuseMaterial(), 50),
         // 
         // new LineSegment(P(400, 250), P(500, 130), new MirrorMaterial()),
         // new LineSegment(P(370, 220), P(470, 100), new MirrorMaterial()),
@@ -119,7 +124,7 @@ const App = ()=>{
         // new SphericalLens(P(250, 180),  new TransparentMaterial(), 50, 100, -100, -100),
         // new SphericalLens(P(250, 180),  new TransparentMaterial(), 50, 100, -100, -100),
         // new Circle(P(440, 130), new MirrorMaterial(), 80),
-        // new Rectangle(P(250,500), new DiffuseMaterial(), 600,100)
+        new Rectangle(P(250,500), new DiffuseMaterial(), 600,100),
 
         new DirectionalLight(P(50, 240), 60,0),
         new SphericalLens(P(150, 250), new TransparentMaterial(), {
@@ -217,9 +222,11 @@ const App = ()=>{
             className: "panel", 
             style: {right: "0px", top:"0px", position: "fixed"}
         }, 
-            h(Collapsable, {
-                title: h("h2", null, "Settings")
-            },
+            selection.length>0?h(Inspector, {
+                sceneObject: selection[0],
+                onChange: (oldObject, newObject)=>updateSceneObject(oldObject, newObject)
+            }):null,
+            h(Collapsable, {title: h("h2", null, "Settings")},
                 h('div', null, 
                     h("section", null,
                         h("h2", null, "Raytrace otions"),

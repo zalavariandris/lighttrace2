@@ -19,10 +19,12 @@ function RectangleItem({
         onChange(rectangle, newRectangle)
     }
 
+    const materialName = rectangle.material.constructor.name;
+
     return h(Manipulator, {
         onDragStart: (e)=>grabOffset.current = {x: e.sceneX-rectangle.center.x, y: e.sceneY-rectangle.center.y},
         onDrag: (e)=>setPos(e.sceneX-grabOffset.current.x, e.sceneY-grabOffset.current.y),
-        className: ["sceneItem shape rectangle", className].filter(item=>item?true:false).join(" "),
+        className: ["sceneItem shape rectangle", materialName, className].filter(item=>item?true:false).join(" "),
         ...props
     },
         h('rect', {

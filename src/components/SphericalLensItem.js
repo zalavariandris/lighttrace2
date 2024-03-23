@@ -71,8 +71,9 @@ function SphericalLensItem({
         onChange(lens, newLens)
     }
 
-    const leftCirlce = lens.getLeftCircle()
-    const rightCircle = lens.getRightCircle()
+    const leftCirlce = lens.getLeftCircle();
+    const rightCircle = lens.getRightCircle();
+    const materialName = lens.material.constructor.name;
 
     const makeLensPath = ()=>{
         return ""+
@@ -101,7 +102,7 @@ function SphericalLensItem({
     return h(Manipulator, {
         onDragStart: (e)=>grabOffset.current = {x: e.sceneX-lens.center.x, y: e.sceneY-lens.center.y},
         onDrag: (e)=>setPos(e.sceneX-grabOffset.current.x, e.sceneY-grabOffset.current.y),
-        className: ['sceneItem shape lens', className].filter(item=>item?true:false).join(" "),
+        className: ['sceneItem shape lens', materialName, className].filter(item=>item?true:false).join(" "),
         ...props
     },
         h("path", {

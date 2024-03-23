@@ -120,6 +120,18 @@ svg .shape{
     transition: opacity 1.3s ease-in;
 }
 
+.sceneItem.TransparentMaterial>.shape{
+    stroke: hsla(180, 100%, 50%, 0.37);
+}
+.sceneItem.DiffuseMaterial>.shape{
+    stroke: darkgray;
+    /* stroke: none; */
+}
+.sceneItem.MirrorMaterial>.shape{
+    stroke: white
+    /* stroke: white; */
+}
+
 .manip .handle{
     fill: hsla(60, 100%, 50%, 0.1);
 }
@@ -159,7 +171,6 @@ text.shape{
 }
 
 .sceneItem.selected .shape{
-    stroke: hsla(0, 0%, 89%)  !important;
     stroke-width: 3;
 }
 

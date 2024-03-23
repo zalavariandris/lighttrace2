@@ -19,9 +19,10 @@ function sampleTransparent(V, N, ior=1.440)
 
 class TransparentMaterial extends Material
 {
-    constructor()
+    constructor(ior=1.440)
     {
         super()
+        this.ior = ior
     }
 
     copy()
@@ -35,7 +36,7 @@ class TransparentMaterial extends Material
         V: ray direction
         N: surface normal (faceing outwards!)
         */
-        return sampleTransparent(V, N)
+        return sampleTransparent(V, N, this.ior)
     }
 }
 

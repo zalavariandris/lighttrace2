@@ -39,11 +39,13 @@ function LineSegmentItem({
         onChange(lineSegment, newLineSegment)
     }
 
+    const materialName = lineSegment.material.constructor.name;
+
     return h(Manipulator, {
         onDragStart: (e)=>handleDragStart(e),
         onDrag: (e)=>handleDrag(e),
-        ...props,
-        className: ["sceneItem shape lineSegment", className].filter(item=>item?true:false).join(" ")
+        className: ["sceneItem shape lineSegment", materialName, className].filter(item=>item?true:false).join(" "),
+        ...props
     }, 
         h('line', {
             x1: lineSegment.p1.x,
