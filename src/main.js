@@ -139,6 +139,15 @@ const App = ()=>{
         })
     ]);
 
+    const addSceneObject = (sceneObject)=>{
+        setScene([...scene, sceneObject])
+    }
+
+    const removeSceneObjects=(objects)=>{
+        setSelection(selection.filter(sceneObject=>objects.indexOf(sceneObject)<0))
+        setScene(scene.filter(sceneObject=>objects.indexOf(sceneObject)<0))
+    }
+
     const [selection, setSelection] = React.useState([])
     const updateSceneObject = (oldObject, newObject)=>{
         const sceneIdx = scene.indexOf(oldObject)
@@ -217,6 +226,35 @@ const App = ()=>{
             paths:svgDisplayOptions.lightPaths?uniformRaytraceResults.lightPaths:[], 
             onSceneObject: (oldObject, newObject)=>updateSceneObject(oldObject, newObject)
         }),
+        h("div", {
+            id: "toolbar", className: "panel"
+        },
+            h("button", {
+                onClick: ()=>addSceneObject(new Circle(P(0,0), new MirrorMaterial, 50))
+            }, "Circle"),
+            h("button", {
+                onClick: ()=>addSceneObject(new Rectangle(P(0,0), new DiffuseMaterial, 200, 200, 0))
+            }, "Rectangle"),
+            h("button", {
+                onClick: ()=>addSceneObject(new SphericalLens(P(0,0), new TransparentMaterial, 200, 0, 50))
+            }, "Lens"),
+            h("button", {
+                onClick: ()=>addSceneObject(new LineSegment(P(-100, 0), P(100, 0), new MirrorMaterial))
+            }, "LineSegment"),
+            h("button", {
+                onClick: ()=>addSceneObject(new PointLight(P(0,0), 0))
+            }, "PointLight"),
+            h("button", {
+                onClick: ()=>addSceneObject(new LaserLight(P(0,0), 0))
+            }, "LaserLight"),
+            h("button", {
+                onClick: ()=>addSceneObject(new DirectionalLight(P(0,0), 50, 0))
+            }, "DirectionalLight"),
+            h("button", {
+                onClick: (e)=>removeSceneObjects(selection),
+                className: "danger"
+            }, "delete selection")
+        ),
 
         h("div", {
             className: "panel", 

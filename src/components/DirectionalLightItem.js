@@ -1,6 +1,7 @@
 import React, {useState} from "react"
 import AngleManip from "./AngleManip.js";
 import Manipulator from "./Manipulator.js";
+import PointManip from "./PointManip.js";
 
 const h = React.createElement;
 
@@ -47,7 +48,6 @@ function DirectionalLightItem({
             radians: light.angle,
             onChange: (newRadians)=>setRadians(newRadians)
         })
-        
     )
 }
 
