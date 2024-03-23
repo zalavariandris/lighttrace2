@@ -93,7 +93,7 @@ svg .hitPoint{
     stroke: rgb(170, 255, 0);
     fill: rgb(0, 255, 170);
     opacity: 1.0;
-    stroke-width: 3;
+    stroke-width: 1;
 }
 
 svg .lightpath{
@@ -115,7 +115,7 @@ svg .shape{
 }
 
 /* MANIPULATORS */
-.sceneItem:not(:hover) .manip .handle{
+.sceneItem:not(:hover) .autohide{
     opacity: 0.0;
     transition: opacity 1.3s ease-in;
 }
@@ -158,8 +158,9 @@ text.shape{
     font-size: 6px;
 }
 
-.selected .shape{
-    fill: hsla(0, 0%, 89%)  !important;
+.sceneItem.selected .shape{
+    stroke: hsla(0, 0%, 89%)  !important;
+    stroke-width: 3;
 }
 
 

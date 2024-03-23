@@ -1,5 +1,6 @@
 import React, {useState} from "react"
 import {Point, Vector} from "../geo.js"
+import {P, V} from "../geo.js"
 import PointManip from "./PointManip.js";
 import Circle from "../scene/shapes/Circle.js"
 import SphericalLens from "../scene/shapes/SphericalLens.js"
@@ -7,16 +8,34 @@ import Manipulator from "./Manipulator.js";
 const h = React.createElement;
 
 
-const makeLensPath = (width, height, leftRadius, rightRadius)=>{
-    return `M ${-width/2} ${-height/2} `+
-    `a ${Math.abs(leftRadius)} ${Math.abs(leftRadius)} 0 0 ${leftRadius<0?1:0} 0 ${height} `+
-    `L ${width/2} ${height/2} `+
-    `a ${Math.abs(rightRadius)} ${Math.abs(rightRadius)} 0 0 ${rightRadius<0?1:0} 0 ${-height}`
+
+
+function arcFromThreePoints({Sx, Sy, Mx, My, Ex, Ey})
+{
+    const circle = Circle.fromThreePoints({x:Sx, y:Sy}, {x:Mx, y:My}, {x:Ex, y:Ey})
+    const r = circle.radius;
+    const SE = V(Ex - Sx, Ey - Sy);
+    const SM = V(Mx - Sx, My - Sy);
+    const crossProduct = SE.x * SM.y - SE.y * SM.x;
+    const side = crossProduct>0 ? 0 : 1; // 0: Left, 1:right
+    return `M ${Sx} ${Sy} `+
+    `a ${Math.abs(r)} ${Math.abs(r)} 0 0 ${side} ${Ex-Sx} ${Ey-Sy} `;
+}
+
+function BBox({bbox, ...props}){
+    return h("rect", {
+        x: bbox.left,
+        y: bbox.bottom,
+        width: bbox.right-bbox.left,
+        height: bbox.top-bbox.bottom,
+        className: "guide"
+    })
 }
 
 function SphericalLensItem({
     lens,
     onChange,
+    className,
     ...props
 })
 {
@@ -28,122 +47,131 @@ function SphericalLensItem({
         onChange(lens, newLens)
     }
 
-    const onSizeManip = (Px, Py)=>
-    {
+    const handleCenterManip = (e)=>{
         const newLens = lens.copy()
-        newLens.width = Math.max(0, (Px - lens.center.x)*2)
-        newLens.height = Math.max((Py - lens.center.y)*2)
+
+        const newCenterThickness = Math.max(1, (e.sceneX - lens.center.x)*2);
+        newLens.centerThickness = newCenterThickness;
         onChange(lens, newLens)
-    }
-    
-    const onRightLensManip = (Px, Py)=>{
-        const newLens = lens.copy()
-    
-        const topRight = new Point(0, lens.height/2)
-    
-        let V = new Vector(Px-(lens.center.x+lens.width/2), Py-(lens.center.y))
-        if(V.magnitude()>lens.height/2){
-            V = V.normalized(lens.height/2)
-            console.log(V)
-        }
-        const middle = new Point(V.x, V.y );
-        const bottomRight = new Point(0, -lens.height/2)
-        const lensCircle = Circle.fromThreePoints(topRight, middle, bottomRight)
-    
-        newLens.rightRadius = Math.sign(V.x)*lensCircle.radius
-        onChange(lens, newLens)
-    }
-    
-    const onLeftLensManip = (Px, Py)=>{
-        const newLens = lens.copy()
-    
-        const topRight = new Point(0, lens.height/2)
-    
-        let V = new Vector(+Px-(lens.center.x-lens.width/2), Py-(lens.center.y))
-        if(V.magnitude()>lens.height/2){
-            V = V.normalized(lens.height/2)
-            console.log(V)
-        }
-        const middle = new Point(V.x, V.y );
-        const bottomRight = new Point(0, -lens.height/2)
-        const lensCircle = Circle.fromThreePoints(topRight, middle, bottomRight)
-    
-        newLens.leftRadius = -Math.sign(V.x)*lensCircle.radius
-        onChange(lens, newLens)
-    }
-    
-    const getLeftLensWidth = ()=>{
-        const topLeft = new Point(0, lens.center.y+lens.height/2)
-        const bottomLeft =  new Point(0, lens.center.y-lens.height/2)
-        const lensCircle = Circle.fromRadiusAndTwoPoints(Math.abs(lens.leftRadius), topLeft, bottomLeft)
-        // console.log("lensCircle", lensCircle.center.x, lensCircle.radius)
-        return Math.sign(lens.leftRadius)*(lensCircle.radius - lensCircle.center.x)
-    }
-    
-    const getRightLensWidth = ()=>{
-        const topLeft = new Point(0, lens.center.y+lens.height/2)
-        const bottomLeft =  new Point(0, lens.center.y-lens.height/2)
-        const lensCircle = Circle.fromRadiusAndTwoPoints(Math.abs(lens.rightRadius), topLeft, bottomLeft)
-        // console.log("lensCircle", lensCircle.center.x, lensCircle.radius)
-        return Math.sign(lens.rightRadius)*(lensCircle.radius - lensCircle.center.x)
     }
 
+    const handleCornerManip = (e)=>{
+        const newLens = lens.copy()
+        const newEdgeThickness = Math.max(1, (e.sceneX-lens.center.x)*2);
+        const newDiameter = Math.max(1, (e.sceneY-lens.center.y)*2);
+
+
+        newLens.edgeThickness = newEdgeThickness;
+        newLens.diameter = newDiameter;
+
+        // update centerThickness to scale respectively
+        const newCenterThickness = Math.max(1, newEdgeThickness-lens.edgeThickness + lens.centerThickness);
+        newLens.centerThickness = newCenterThickness
+
+        onChange(lens, newLens)
+    }
+
+    const leftCirlce = lens.getLeftCircle()
     const rightCircle = lens.getRightCircle()
-    const leftCircle = lens.getLeftCircle()
+
+    const makeLensPath = ()=>{
+        return ""+
+        arcFromThreePoints({
+            Sx: lens.center.x-lens.edgeThickness/2, 
+            Sy: lens.center.y-lens.diameter/2,
+            Mx: lens.center.x-lens.centerThickness/2,
+            My: lens.center.y,
+            Ex: lens.center.x-lens.edgeThickness/2, 
+            Ey: lens.center.y+lens.diameter/2
+        })+
+        `L ${lens.center.x+lens.edgeThickness/2} ${lens.center.y+lens.diameter/2}`+
+        arcFromThreePoints({
+            Sx: lens.center.x+lens.edgeThickness/2, 
+            Sy: lens.center.y+lens.diameter/2,
+            Mx: lens.center.x+lens.centerThickness/2,
+            My: lens.center.y,
+            Ex: lens.center.x+lens.edgeThickness/2, 
+            Ey: lens.center.y-lens.diameter/2
+        })+
+        `L ${lens.center.x-lens.edgeThickness/2} ${lens.center.y-lens.diameter/2}` // this should wotk with close path 'Z'
+    }
+
+    const bbox = lens.bbox()
 
     return h(Manipulator, {
-        className: 'sceneItem shape lens',
         onDragStart: (e)=>grabOffset.current = {x: e.sceneX-lens.center.x, y: e.sceneY-lens.center.y},
         onDrag: (e)=>setPos(e.sceneX-grabOffset.current.x, e.sceneY-grabOffset.current.y),
+        className: ['sceneItem shape lens', className].filter(item=>item?true:false).join(" "),
         ...props
     },
-        h('rect', {
-            x: lens.center.x - lens.width / 2,
-            y: lens.center.y - lens.height / 2,
-            width: lens.width,
-            height: lens.height,
+        h("path", {
+            d: makeLensPath(),
+            className: "shape"
+        }),
+        h(Manipulator, {
+            onDrag: (e)=>handleCenterManip(e)
+        }, h('circle', {
+            className: "autohide",
+            cx:lens.center.x+lens.centerThickness/2, 
+            cy:lens.center.y,
+            r: 5,
             vectorEffect: "non-scaling-stroke",
-            fill: "transparent"
-        }),
-        h('path', {
-            d: makeLensPath(lens.width, lens.height, lens.leftRadius, lens.rightRadius),
-            style: {
-                transform: `translate(${lens.center.x}px, ${lens.center.y}px)`,
-                fill: "white",
-                opacity: 0.1,
-                className: "handle shape",
-            }
-        }),
-        h(PointManip, {
-            x: lens.center.x+lens.width/2,
-            y: lens.center.y+lens.height/2,
-            onChange: (x, y)=>onSizeManip(x, y)
-        }),
-        h(PointManip, {
-            x: lens.center.x-lens.width/2-getLeftLensWidth(),
-            y: lens.center.y,
-            onChange: (x, y)=>onLeftLensManip(x, y)
-        }),
-        h(PointManip, {
-            x: lens.center.x+lens.width/2+getRightLensWidth(),
-            y: lens.center.y,
-            onChange: (x, y)=>onRightLensManip(x, y)
-        }),
-        h('circle', {
-            className: "guide",
-            cx: leftCircle.center.x, 
-            cy: leftCircle.center.y, 
-            r:leftCircle.radius,
+            style: {cursor: "ew-resize"}
+        })),
+        h(Manipulator, {
+            onDrag: (e)=>handleCornerManip(e)
+        }, h('circle', {
+            className: "autohide",
+            cx:lens.center.x+lens.edgeThickness/2, 
+            cy:lens.center.y+lens.diameter/2,
+            r: 5,
             vectorEffect: "non-scaling-stroke",
-        }),
-        h('circle', {
-            className: "guide",
-            cx: rightCircle.center.x, 
-            cy: rightCircle.center.y, 
-            r:rightCircle.radius,
-            vectorEffect: "non-scaling-stroke",
-        })
-        
+            style: {cursor: "nwse-resize"}
+        })),
+        // h(BBox, {bbox: lens.bbox()}),
+        // h("line", {
+        //     x1: lens.center.x, 
+        //     x2: lens.center.x, 
+        //     y1: lens.center.y+lens.diameter/2,
+        //     y2: lens.center.y-lens.diameter/2,
+        //     className: "guide",
+        //     strokeWidth: 1,
+        //     vectorEffect: "non-scaling-stroke"
+        // }),
+        // h("line", {
+        //     x1: lens.center.x-lens.centerThickness/2, 
+        //     x2: lens.center.x+lens.centerThickness/2, 
+        //     y1: lens.center.y,
+        //     y2: lens.center.y,
+        //     className: "guide",
+        //     vectorEffect: "non-scaling-stroke",
+        //     strokeWidth: 1
+        // }),
+        // h("line", {
+        //     x1: lens.center.x-lens.edgeThickness/2, 
+        //     x2: lens.center.x+lens.edgeThickness/2, 
+        //     y1: lens.center.y+lens.diameter/2,
+        //     y2: lens.center.y+lens.diameter/2,
+        //     className: "guide",
+        //     vectorEffect: "non-scaling-stroke",
+        //     strokeWidth: 1
+        // }),
+        // h("circle", {
+        //     cx: leftCirlce.center.x,
+        //     cy: leftCirlce.center.y,
+        //     r:  leftCirlce.radius,
+        //     className: "guide",
+        //     vectorEffect: "non-scaling-stroke",
+        //     strokeWidth: 1
+        // }),
+        // h("circle", {
+        //     cx: rightCircle.center.x,
+        //     cy: rightCircle.center.y,
+        //     r:  rightCircle.radius,
+        //     className: "guide",
+        //     vectorEffect: "non-scaling-stroke",
+        //     strokeWidth: 1
+        // })
     )
 }
 

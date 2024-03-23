@@ -6,7 +6,6 @@ import Circle from "../scene/shapes/Circle.js"
 import LineSegment from "../scene/shapes/LineSegment.js"
 import Rectangle from "../scene/shapes/Rectangle.js"
 import SphericalLens from "../scene/shapes/SphericalLens.js"
-import SphericalLens2 from "../scene/shapes/SphericalLens2.js"
 
 import Light from "../scene/lights/Light.js"
 import PointLight from "../scene/lights/PointLight.js"
@@ -23,7 +22,6 @@ import CircleItem from "./CircleItem.js"
 import LineSegmentItem from "./LineSegmentItem.js"
 import RectangleItem from "./RectangleItem.js"
 import SphericalLensItem from "./SphericalLensItem.js"
-import SphericalLens2Item from "./SphericalLens2Item.js"
 
 import DirectionalLightItem from "./DirectionalLightItem.js"
 import PointLightItem from "./PointLightItem.js"
@@ -39,8 +37,6 @@ const h = React.createElement;
 function SceneItem({
     sceneObject, 
     onChange=(oldSceneObject, newSceneObject)=>{},
-    isSelected, 
-    onSelect=(oldSceneObject)=>{}, 
     ...props
 })
 {
@@ -48,14 +44,16 @@ function SceneItem({
     {
         return h(CircleItem, {
             circle:sceneObject, 
-            onChange: onChange
+            onChange: onChange,
+            ...props
         })
     }
     if(sceneObject instanceof Rectangle)
     {
         return RectangleItem({
             rectangle: sceneObject,
-            onChange: onChange
+            onChange: onChange,
+            ...props
         })
     }
 
@@ -63,15 +61,8 @@ function SceneItem({
     {
         return SphericalLensItem({
             lens: sceneObject,
-            onChange: onChange
-        })
-    }
-
-    else if(sceneObject instanceof SphericalLens2)
-    {
-        return SphericalLens2Item({
-            lens: sceneObject,
-            onChange: onChange
+            onChange: onChange,
+            ...props
         })
     }
 
@@ -79,7 +70,8 @@ function SceneItem({
     {
         return LineSegmentItem({
             lineSegment: sceneObject,
-            onChange: onChange
+            onChange: onChange,
+            ...props
         })
     }
 
@@ -87,7 +79,8 @@ function SceneItem({
     {
         return PointLightItem({
             light: sceneObject,
-            onChange: onChange
+            onChange: onChange,
+            ...props
         })
     }
 
@@ -95,7 +88,8 @@ function SceneItem({
     {
         return LaserLightItem({
             light: sceneObject,
-            onChange: onChange
+            onChange: onChange,
+            ...props
         })
     }
 
@@ -103,7 +97,8 @@ function SceneItem({
     {
         return DirectionalLightItem({
             light: sceneObject,
-            onChange: onChange
+            onChange: onChange,
+            ...props
         });
     }
 
@@ -199,6 +194,10 @@ function SVGViewport({
         return path;
     }
 
+    function handleClick(e){
+
+    }
+
     return h('svg', {
             xmlns:"http://www.w3.org/2000/svg",
             width: props.width,
@@ -211,7 +210,13 @@ function SVGViewport({
             onWheel: (e) => onmousewheel(e),
             onMouseMove: (e) => onmousemove(e),
             onMouseUp: (e) => onmouseup(e),
-            onMouseLeave: (e) => onmouseleave(e)
+            onMouseLeave: (e) => onmouseleave(e),
+            onClick: (e)=>{
+                if(e.target==svgRef.current)
+                {
+                    onSelection([]); // clear selection
+                }
+            }
         },
         h('defs', null, 
             h('marker', {
@@ -283,8 +288,9 @@ function SVGViewport({
                 return h(SceneItem, {
                     sceneObject: sceneObject,
                     onChange: (oldSceneObject, newSceneObject)=>onSceneObject(sceneObject, newSceneObject),
-                    isSelected: selection.indexOf(sceneObject)>=0,
-                    onSelect: ()=>onSelection([sceneObject]),
+                    className: selection.indexOf(sceneObject)>=0 ? "selected" : "not-selected",
+                    onClick: (e)=>onSelection([sceneObject]),
+                    isSelected: selection.indexOf(sceneObject)>=0
                 })
             })
         ),

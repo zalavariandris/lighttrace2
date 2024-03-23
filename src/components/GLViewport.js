@@ -254,10 +254,6 @@ class GLRenderer{
                         [path.points[i+1].x, path.points[i+1].y]
                     ]
                     linesPoints.push(line);
-
-                    colors.push([
-                        color, color
-                    ]);
                 }
             }
             return {positions: linesPoints.flat()};
@@ -309,62 +305,11 @@ class GLRenderer{
                         color: [0, 0, 0, 0]
                     },
             
-                    count: positions.length*2,
-                    primitive: "lines"
+                    count: lightpath.points.length,
+                    primitive: "line strip"
                 }));
                 draw_lightpath()
             }
-
-            // const draw_lines = regl({
-            //     // framebuffer: this.sceneFbo,
-            //     viewport: {x: 0, y:0, width: canvaswidth, height: canvasheight},
-            //     vert: `
-            //     precision mediump float;
-            //     uniform mat4 projection;
-            //     attribute vec2 position;
-            //     attribute vec4 color;
-            //     varying vec4 vColor;
-            //     void main () {
-            //         vColor = color;
-            //         gl_Position = projection * vec4(position, 0, 1);
-            //     }`,
-
-            //     frag: `
-            //     precision mediump float;
-            //     varying vec4 vColor;
-            //     void main () {
-            //         gl_FragColor = vec4(vColor.r,vColor.g,vColor.b,vColor.a);
-            //     }`,
-        
-            //     attributes: {
-            //         position: positions,
-            //         color: colors
-            //     },
-        
-            //     uniforms: {
-            //         // color: [1, 0, .9, 1],
-            //         projection: projection
-            //     },
-        
-            //     blend: {
-            //         enable: true,
-            //         func: {
-            //             srcRGB: 'src alpha',
-            //             srcAlpha: 1,
-            //             dstRGB: 'one minus src alpha',
-            //             dstAlpha: 1
-            //         },
-            //         equation: {
-            //             rgb: 'add',
-            //             alpha: 'add'
-            //         },
-            //         color: [0, 0, 0, 0]
-            //     },
-        
-            //     count: positions.length*2,
-            //     primitive: "lines"
-            // });
-            // draw_lines();
         });
 
         // comp fbo with previous buffer
@@ -413,7 +358,7 @@ class GLRenderer{
                 framebuffer: this.toneFbo,
                 uniforms: {
                     texture: this.compTexture,
-                    exposure: 5/this.samples
+                    exposure: 20/this.samples
                 },
 
                 frag: `
@@ -422,9 +367,17 @@ class GLRenderer{
                 uniform sampler2D texture;
                 uniform float exposure;
             
+                vec3 filmic(vec3 x) {
+                    vec3 X = max(vec3(0.0), x - 0.004);
+                    vec3 result = (X * (6.2 * X + 0.5)) / (X * (6.2 * X + 1.7) + 0.06);
+                    return pow(result, vec3(2.2));
+                }
+
                 void main() {
                     vec4 tex = texture2D(texture, vUV).rgba;
-                    gl_FragColor = vec4(tex.rgb*exposure, 1.0);
+                    vec3 color = tex.rgb*exposure;
+                    // color = filmic(color);
+                    gl_FragColor = vec4(color, 1.0);
                 }`
             })();
         });

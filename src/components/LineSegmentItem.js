@@ -8,6 +8,7 @@ const h = React.createElement;
 function LineSegmentItem({
     lineSegment,
     onChange,
+    className,
     ...props
 }){
     const grabOffsetP1 = React.useRef();
@@ -39,10 +40,10 @@ function LineSegmentItem({
     }
 
     return h(Manipulator, {
-        className: "sceneItem shape lineSegment",
         onDragStart: (e)=>handleDragStart(e),
         onDrag: (e)=>handleDrag(e),
-        ...props
+        ...props,
+        className: ["sceneItem shape lineSegment", className].filter(item=>item?true:false).join(" ")
     }, 
         h('line', {
             x1: lineSegment.p1.x,

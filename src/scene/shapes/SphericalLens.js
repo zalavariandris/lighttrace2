@@ -1,88 +1,108 @@
 import Shape from "./Shape.js"
-import LineSegment from "./LineSegment.js"
-import Circle from "./Circle.js"
-import {Point, Vector} from "../../geo.js"
-import {P, V} from "../../geo.js"
-import { HitPoint } from "../../raytrace.js";
-class SphericalLens extends Shape
+import {Point, P} from "../../geo.js"
+import Circle from "./Circle.js";
+import LineSegment from "./LineSegment.js";
+
+
+class SphericalLens2 extends Shape
 {
-    constructor(center, material, width, height, leftRadius, rightRadius)
+    constructor(center, material, {diameter, edgeThickness, centerThickness})
     {
-        super(center, material)
-        this.width = width;
-        this.height = height;
-        this.leftRadius = leftRadius;
-        this.rightRadius = rightRadius;
-    }
-
-    copy()
-    {
-        return new Lens(this.center.copy(), this.material.copy(), this.width, this.height, this.leftRadius, this.rightRadius)
-    }
-
-    getRightCircle()
-    {
-        const topRight = new Point(this.center.x+this.width/2, this.center.y+this.height/2)
-        const bottomRight =  new Point(this.center.x+this.width/2, this.center.y-this.height/2)
-        const topLeft = new Point(this.center.x-this.width/2, this.center.y+this.height/2)
-        const bottomLeft =  new Point(this.center.x-this.width/2, this.center.y-this.height/2)
-
-        const flip = this.rightRadius>0
-        return Circle.fromRadiusAndTwoPoints(Math.abs(this.rightRadius), topRight, bottomRight, flip)
+        super(center, material);
+        this.diameter = diameter;
+        this.edgeThickness = edgeThickness;
+        this.centerThickness = centerThickness;
     }
 
     getLeftCircle()
     {
-        const topRight = new Point(this.center.x+this.width/2, this.center.y+this.height/2)
-        const bottomRight =  new Point(this.center.x+this.width/2, this.center.y-this.height/2)
-        const topLeft = new Point(this.center.x-this.width/2, this.center.y+this.height/2)
-        const bottomLeft =  new Point(this.center.x-this.width/2, this.center.y-this.height/2)
-        const flip = this.leftRadius<0
-        return Circle.fromRadiusAndTwoPoints(Math.abs(this.leftRadius), topLeft, bottomLeft, flip)
+        const Cx = this.center.x;
+        const Cy = this.center.y;
+        const topLeft =    P(Cx-this.edgeThickness/2,   Cy+this.diameter/2)
+        const middleLeft = P(Cx-this.centerThickness/2, Cy+0              )
+        const bottomLeft = P(Cx-this.edgeThickness/2,   Cy-this.diameter/2)
+        return Circle.fromThreePoints(topLeft, middleLeft, bottomLeft)
+    }
+
+    getRightCircle()
+    {
+        const Cx = this.center.x;
+        const Cy = this.center.y;
+        const topRight =    P(Cx+this.edgeThickness/2,   Cy+this.diameter/2)
+        const middleRight = P(Cx+this.centerThickness/2, Cy+0               )
+        const bottomRight = P(Cx+this.edgeThickness/2,   Cy-this.diameter/2)
+        return Circle.fromThreePoints(topRight, middleRight, bottomRight)
+    }
+
+    copy()
+    {
+        return new SphericalLens2(this.center, this.material, {
+            diameter: this.diameter,
+            edgeThickness:this.edgeThickness,
+            centerThickness: this.centerThickness
+        })
     }
 
     bbox()
     {
+        const Cx = this.center.x;
+        const Cy = this.center.y
         return {
-            top: this.center.y+this.height/2,
-            bottom: this.center.y-this.height/2,
-            left: leftCircle.center.x-leftCircle.radius,
-            right: rightCircle.center.x+rightCircle.radius
+            top: Cy+this.diameter/2,
+            bottom: Cy-this.diameter/2,
+            left: Cx-Math.max(this.edgeThickness/2, this.centerThickness/2),
+            right: Cx+Math.max(this.edgeThickness/2, this.centerThickness/2)
         };
     }
 
     hitTest(ray)
     {
-        const topRight = new Point(this.center.x+this.width/2, this.center.y+this.height/2)
-        const bottomRight =  new Point(this.center.x+this.width/2, this.center.y-this.height/2)
-        const topLeft = new Point(this.center.x-this.width/2, this.center.y+this.height/2)
-        const bottomLeft =  new Point(this.center.x-this.width/2, this.center.y-this.height/2)
-
-        const topSide = new LineSegment(topLeft, topRight)
-        const bottomSide = new LineSegment(bottomLeft, bottomRight)
-
-
-        const rightCircle = this.getRightCircle()
+        // create compound shapes
         const leftCircle = this.getLeftCircle()
+        const rightCircle = this.getRightCircle()
 
-        const hits = [...leftCircle.hitTest(ray), ...rightCircle.hitTest(ray), ...topSide.hitTest(ray), ...bottomSide.hitTest(ray)]
+        const Cx = this.center.x;
+        const Cy = this.center.y
+        const topLeft =  P(Cx - this.edgeThickness/2, Cy+this.diameter/2)
+        const topRight = P(Cx + this.edgeThickness/2, Cy+this.diameter/2)
+        const bottomLeft =  P(Cx - this.edgeThickness/2, Cy+-this.diameter/2)
+        const bottomRight = P(Cx + this.edgeThickness/2, Cy+-this.diameter/2)
 
-        const top = this.center.y+this.height/2
-        const bottom = this.center.y-this.height/2
-        const left = leftCircle.center.x-leftCircle.radius;
-        const right = rightCircle.center.x+rightCircle.radius;
+        const topSide = new LineSegment(topLeft, topRight);
+        const bottomSide = new LineSegment(bottomLeft, bottomRight);
 
-        return hits.filter((hitPoint)=>{
+        // calc all possible hits
+        const leftCircleHitPoints = leftCircle.hitTest(ray);
+        const rightCircleHitPoints = rightCircle.hitTest(ray);
+        if(this.centerThickness<this.edgeThickness)
+        {
+            for(let hitPoint of leftCircleHitPoints)
+            {
+                hitPoint.surfaceNormal = hitPoint.surfaceNormal.negate()
+            }
+            for(let hitPoint of rightCircleHitPoints)
+            {
+                hitPoint.surfaceNormal = hitPoint.surfaceNormal.negate()
+            }
+        }
+        const hitPoints = [
+            ...leftCircleHitPoints,
+            ...rightCircleHitPoints,
+            ...topSide.hitTest(ray),
+            ...bottomSide.hitTest(ray)
+        ]
+
+        // filter to bbox
+        const {top, bottom, left, right} = this.bbox();
+
+        // return hitPoints;
+
+        return hitPoints.filter((hitPoint)=>{
             const Ix = hitPoint.position.x;
             const Iy = hitPoint.position.y;
             return right+1>Ix && left-1 < Ix && Iy>bottom-1 && Iy<top+1;
         });
     }
-
-    toString()
-    {
-        return `Lens(${this.width}x${this.height} left: ${this.leftRadius}, right: ${this.rightRadius})`
-    }
 }
 
-export default SphericalLens
+export default SphericalLens2

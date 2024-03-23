@@ -8,6 +8,7 @@ const h = React.createElement;
 function LaserLightItem({
     light,
     onChange,
+    className,
     ...props
 })
 {
@@ -26,10 +27,10 @@ function LaserLightItem({
     }
 
     return h(Manipulator, {
-        className: "sceneItem light laser",
         onDragStart: (e)=>grabOffset.current = {x: e.sceneX-light.center.x, y: e.sceneY-light.center.y},
         onDrag: (e)=>setPos(e.sceneX-grabOffset.current.x, e.sceneY-grabOffset.current.y),
-        ...props
+        ...props,
+        className: ["sceneItem light laser", className].filter(item=>item?true:false).join(" ")
 
     }, 
         h('circle', {

@@ -11,7 +11,6 @@ import Circle from "./scene/shapes/Circle.js"
 import LineSegment from "./scene/shapes/LineSegment.js"
 import Rectangle from "./scene/shapes/Rectangle.js"
 import SphericalLens from "./scene/shapes/SphericalLens.js"
-import SphericalLens2 from "./scene/shapes/SphericalLens2.js"
 
 import Light from "./scene/lights/Light.js"
 import PointLight from "./scene/lights/PointLight.js"
@@ -96,8 +95,8 @@ const App = ()=>{
 
     const [svgDisplayOptions, setSvgDisplayOptions] = React.useState({
         lightrays: false,
-        hitPoints: true,
-        lightPaths: true
+        hitPoints: false,
+        lightPaths: false
     })
     const updateSvgDisplayOptions = options=> setSvgDisplayOptions({...svgDisplayOptions, ...options})
 
@@ -123,12 +122,12 @@ const App = ()=>{
         // new Rectangle(P(250,500), new DiffuseMaterial(), 600,100)
 
         new DirectionalLight(P(50, 240), 60,0),
-        new SphericalLens2(P(150, 250), new TransparentMaterial(), {
+        new SphericalLens(P(150, 250), new TransparentMaterial(), {
             diameter: 100,
             edgeThickness: 20,
             centerThickness:40
         }),
-        new SphericalLens2(P(350, 250), new TransparentMaterial(), {
+        new SphericalLens(P(350, 250), new TransparentMaterial(), {
             diameter: 100,
             edgeThickness: 50,
             centerThickness: 10
@@ -204,7 +203,10 @@ const App = ()=>{
             onViewChange: (value) => setViewBox(value),
             scene: scene,
             selection:selection,
-            onSelection: (newSelection)=>setSelection(newSelection),
+            onSelection: (newSelection)=>{
+                console.log("main->setSelection", newSelection)
+                setSelection(newSelection);
+            },
             rays: svgDisplayOptions.lightrays?uniformRaytraceResults.lightrays:[],
             hitPoints: svgDisplayOptions.hitPoints?uniformRaytraceResults.hitPoints:[], 
             paths:svgDisplayOptions.lightPaths?uniformRaytraceResults.lightPaths:[], 

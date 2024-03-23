@@ -7,6 +7,7 @@ const h = React.createElement;
 function DirectionalLightItem({
     light,
     onChange,
+    className,
     ...props
 })
 {
@@ -25,10 +26,10 @@ function DirectionalLightItem({
     }
 
     return h(Manipulator, {
-        className: 'sceneItem light directional',
         onDragStart: (e)=>grabOffset.current = {x: e.sceneX-light.center.x, y: e.sceneY-light.center.y},
         onDrag: (e)=>setPos(e.sceneX-grabOffset.current.x, e.sceneY-grabOffset.current.y),
-        ...props
+        ...props,
+        className: ['sceneItem light directional', className].filter(item=>item?true:false).join(" "),
 
     }, 
         h('rect', {

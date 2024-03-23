@@ -26,6 +26,7 @@ function Manipulator({
     onDragStart=(manipEvent)=>{},
     onDrag=(manipEvent)=>{},
     onDragEnd=(manipEvent)=>{},
+    onClick=(e)=>{},
     showGuide=true,
     ...props
 }={})
@@ -37,6 +38,7 @@ function Manipulator({
     // const [mouseScenePos, setMouseScenePos] = React.useState({x: x, y: y});
     // const [startPos, setStartPos] = React.useState({x: x, y: y});
 
+    // TODO: dispatct startDrag, when mouse is mactually moved. Not on mousedown.   
     const handleMouseDown = (e)=>{
         if(props.onMouseDown){
             // call native event
@@ -90,8 +92,19 @@ function Manipulator({
             setActive(false)
         }
 
+        const handleClick = (e)=>{
+            var svg  = e.target.closest("SVG");
+            let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
+            const dx = startLoc.x-loc.x
+            const dy = startLoc.y-loc.y
+            if(dx**2+dy**2>1){
+                e.stopPropagation()
+            }
+        }
+
         window.addEventListener("mousemove", handleMouseMove);
         window.addEventListener("mouseup", (e)=>handleMouseUp(e), {once: true});
+        window.addEventListener("click", (e)=>handleClick(e), {once: true, capture:true});
     }
 
     return h("g", {
@@ -99,6 +112,7 @@ function Manipulator({
         style: {cursor: active?"grabbing":"grab"},
         ...props,
         onMouseDown: (e)=>handleMouseDown(e),
+        onClick:onClick
     }, 
         (active&&showGuide)?h("line", {
             className: "guide",
