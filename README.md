@@ -1,9 +1,10 @@
 # lighttrace2
 an interactive 2D light simulator
 
-## features
-- [ ] 
- 
+
+## demo
+https://zalavariandris.github.io/lighttrace2/
+
 ## todo
 - [x] grab and move shapes by their actuals shapes instead of a manipulator
 - [x] refactor scene.js classes to seperate files
