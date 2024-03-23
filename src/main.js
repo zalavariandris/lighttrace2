@@ -111,9 +111,9 @@ const App = ()=>{
         // new LaserLight(P(150,220), 0),
         // new DirectionalLight(P(50,180), 20,0),
 
-        new Circle(P(100, 150), new MirrorMaterial(), 50),
-        new Circle(P(250, 150), new TransparentMaterial(), 50),
-        new Circle(P(400, 150), new DiffuseMaterial(), 50),
+        // new Circle(P(100, 150), new MirrorMaterial(), 50),
+        // new Circle(P(250, 150), new TransparentMaterial(), 50),
+        // new Circle(P(400, 150), new DiffuseMaterial(), 50),
         // 
         // new LineSegment(P(400, 250), P(500, 130), new MirrorMaterial()),
         // new LineSegment(P(370, 220), P(470, 100), new MirrorMaterial()),
@@ -124,28 +124,32 @@ const App = ()=>{
         // new SphericalLens(P(250, 180),  new TransparentMaterial(), 50, 100, -100, -100),
         // new SphericalLens(P(250, 180),  new TransparentMaterial(), 50, 100, -100, -100),
         // new Circle(P(440, 130), new MirrorMaterial(), 80),
-        new Rectangle(P(250,500), new DiffuseMaterial(), 600,100),
+        // new Rectangle(P(250,500), new DiffuseMaterial(), 600,100),
 
-        new DirectionalLight(P(50, 240), 60,0),
+        new LineSegment(P(50, 500), P(462, 500), new DiffuseMaterial()),
+        new DirectionalLight(P(50, 250), 30,0),
         new SphericalLens(P(150, 250), new TransparentMaterial(), {
             diameter: 100,
-            edgeThickness: 20,
-            centerThickness:40
+            edgeThickness: 40,
+            centerThickness:5
         }),
-        new SphericalLens(P(350, 250), new TransparentMaterial(), {
+        new SphericalLens(P(230, 250), new TransparentMaterial(), {
             diameter: 100,
-            edgeThickness: 50,
-            centerThickness: 10
-        })
+            edgeThickness: 5,
+            centerThickness: 50
+        }),
+        new Circle(P(400, 220), new MirrorMaterial(), 50),
     ]);
 
     const addSceneObject = (sceneObject)=>{
         setScene([...scene, sceneObject])
+        setSelection([sceneObject])
     }
 
-    const removeSceneObjects=(objects)=>{
-        setSelection(selection.filter(sceneObject=>objects.indexOf(sceneObject)<0))
-        setScene(scene.filter(sceneObject=>objects.indexOf(sceneObject)<0))
+    const removeSelectedObjects=()=>{
+        
+        setScene(scene.filter(sceneObject=>selection.indexOf(sceneObject)<0));
+        setSelection([])
     }
 
     const [selection, setSelection] = React.useState([])
@@ -251,7 +255,7 @@ const App = ()=>{
                 onClick: ()=>addSceneObject(new DirectionalLight(P(0,0), 50, 0))
             }, "DirectionalLight"),
             h("button", {
-                onClick: (e)=>removeSceneObjects(selection),
+                onClick: (e)=>removeSelectedObjects(),
                 className: "danger"
             }, "delete selection")
         ),
@@ -260,7 +264,7 @@ const App = ()=>{
             className: "panel", 
             style: {right: "0px", top:"0px", position: "fixed"}
         }, 
-            selection.length>0?h(Inspector, {
+            selection[0]?h(Inspector, {
                 sceneObject: selection[0],
                 onChange: (oldObject, newObject)=>updateSceneObject(oldObject, newObject)
             }):null,

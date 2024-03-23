@@ -37,6 +37,7 @@ an interactive 2D light simulator
 - [ ] rectangle corners leaking: fix linesegment corners hitTest
 - [ ] cant use manipulators under shapes: fix svg layering and interaction
 - [ ] rotate shapes
+- [ ] fix memory leak on long simulations.
 
 
 
