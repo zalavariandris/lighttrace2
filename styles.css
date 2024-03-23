@@ -97,7 +97,6 @@ svg .hitPoint{
 }
 
 svg .lightpath{
-    stroke: hsla(39, 100%, 50%, 0.5);
     opacity: 1.0;
 }
 

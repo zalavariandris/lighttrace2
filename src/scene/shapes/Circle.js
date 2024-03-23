@@ -83,6 +83,7 @@ class Circle extends Shape
         const t1 = (-b + Math.sqrt(discriminant)) / (2 * a);
         const t2 = (-b - Math.sqrt(discriminant)) / (2 * a);
 
+        
         let t=-1;
         if(t1>EPSILON && t2>EPSILON)
         {
@@ -101,44 +102,12 @@ class Circle extends Shape
             return []
         }
 
-        const hitPosition = P(ray.origin.x + t * ray.direction.x, ray.origin.y + t * ray.direction.y);
-        const surfaceNormal = V(hitPosition.x - this.center.x, hitPosition.y - this.center.y).normalized();
-        
-        return [new HitPoint(hitPosition, surfaceNormal.multiply(1))];
-
-        // const outsideCircle = new Vector(ray.origin.x-this.center.x, ray.origin.y-this.center.y).magnitude()>(this.radius+EPSILON);
-
-        if(outsideCircle)
-        {
-            // return []
-            const t = Math.min(t1, t2);
-            // console.log("outside", t)
-            if (t < EPSILON)
-            {
-                return [];
-            }
-
+        return [t1, t2].filter(t=>t>EPSILON).map(t=>{
             const hitPosition = P(ray.origin.x + t * ray.direction.x, ray.origin.y + t * ray.direction.y);
             const surfaceNormal = V(hitPosition.x - this.center.x, hitPosition.y - this.center.y).normalized();
             
-            return [new HitPoint(hitPosition, surfaceNormal.multiply(1))];
-        }
-        else
-        {
-            const t = Math.max(t1, t2);
-            // console.log("inside", t)
-            if (t < EPSILON)
-            {
-                return [];
-            }
-            const hitPosition = P(ray.origin.x + t * ray.direction.x, ray.origin.y + t * ray.direction.y);
-            // origin = P(10,10)
-
-            const surfaceNormal = V(hitPosition.x - this.center.x, hitPosition.y - this.center.y).normalized();
-            
-            return [new HitPoint(hitPosition, surfaceNormal.multiply(-1))];
-        }
-        return []
+            return new HitPoint(hitPosition, surfaceNormal.multiply(1));
+        })
     }
 }
 

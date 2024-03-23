@@ -29,19 +29,6 @@ function makeTransform({position=[0,0,0],rotation=[0,0,0],scale=[1,1,1]}={}){
     return model;
 }
 
-// map paths to gl line primitives
-function makeLinesFromPaths(paths)
-{
-    let lines = []
-    for(let path of paths)
-    {
-        for(let i=0; i<path.length-1; i++){
-            lines.push([path[i].x, path[i].y]);
-            lines.push([path[i+1].x, path[i+1].y]);
-        }
-    }
-    return lines;
-}
 
 function fitViewboxInSize(viewBox, size)
 {
@@ -243,70 +230,141 @@ class GLRenderer{
 
     renderGL(regl, paths, viewBox, width, height)
     {
-        // this.rendererRef.current.render({scene: this.props.scene, tick: this.tick});
-        const lines = makeLinesFromPaths(paths);
         const [canvaswidth, canvasheight] = [width, height]
         viewBox = fitViewboxInSize(viewBox, {width: canvaswidth, height: canvasheight})
         const projection = makeProjectionFromViewbox(viewBox)
 
-
-        // viewBox = {x:0,y:0,w:canvaswidth, h:canvasheight}
-        // console.log("renderGL:", viewBox, {width: canvaswidth, height: canvasheight})
-        // console.log(viewBox)
         this.sceneFbo.resize(canvaswidth, canvasheight);
         this.bufferFbo.resize(canvaswidth, canvasheight);
         this.compFbo.resize(canvaswidth, canvasheight);
         this.toneFbo.resize(canvaswidth, canvasheight);
 
-        // draw scene to fbo
+        // Draw Scene to fbo
+        function makeAttributesFromPaths(paths)
+        {
+            const linesPoints = []
+            const colors = []
+            for(let path of paths)
+            {
+                const color = [path.intensity,path.intensity,path.intensity,1]
+                for(let i=0; i<path.points.length-1; i++)
+                {
+                    const line = [
+                        [path.points[i].x, path.points[i].y],
+                        [path.points[i+1].x, path.points[i+1].y]
+                    ]
+                    linesPoints.push(line);
+
+                    colors.push([
+                        color, color
+                    ]);
+                }
+            }
+            return {positions: linesPoints.flat()};
+        }
+        const {positions} = makeAttributesFromPaths(paths);
+
         this.drawToFbo({framebuffer: this.sceneFbo}, ()=>{
             regl.clear({color: [0,0,0,0]});
-            const draw_lines = regl({
-                // framebuffer: this.sceneFbo,
-                viewport: {x: 0, y:0, width: canvaswidth, height: canvasheight},
-                frag: `
-                precision mediump float;
-                uniform vec4 color;
-                void main () {
-                    gl_FragColor = color;
-                }`,
-        
-                vert: `
-                precision mediump float;
-                attribute vec2 position;
-                uniform mat4 projection;
-                void main () {
-                    gl_Position = projection * vec4(position, 0, 1);
-                }`,
-        
-                attributes: {
-                    position: lines
-                },
-        
-                uniforms: {
-                    color: [1, 1, .9, 1],
-                    projection: projection
-                },
-        
-                blend: {
-                    enable: true,
-                    func: {
-                        srcRGB: 'src alpha',
-                        srcAlpha: 1,
-                        dstRGB: 'one minus src alpha',
-                        dstAlpha: 1
+
+            for(let lightpath of paths){
+                const draw_lightpath = regl(({
+                    viewport: {x: 0, y:0, width: canvaswidth, height: canvasheight},
+                    vert: `
+                    precision mediump float;
+                    uniform mat4 projection;
+                    attribute vec2 position;
+                    
+                    void main () {
+                        gl_Position = projection * vec4(position, 0, 1);
+                    }`,
+    
+                    frag: `
+                    precision mediump float;
+                    uniform vec4 color;
+                    void main () {
+                        gl_FragColor = vec4(color.r,color.g,color.b,color.a);
+                    }`,
+                    attributes: {
+                        position: lightpath.points.map(point=>[point.x, point.y]).flat(),
                     },
-                    equation: {
-                        rgb: 'add',
-                        alpha: 'add'
+            
+                    uniforms: {
+                        color: [1,1,1, lightpath.intensity],
+                        projection: projection
                     },
-                    color: [0, 0, 0, 0]
-                },
+            
+                    blend: {
+                        enable: true,
+                        func: {
+                            srcRGB: 'src alpha',
+                            srcAlpha: 1,
+                            dstRGB: 'one minus src alpha',
+                            dstAlpha: 1
+                        },
+                        equation: {
+                            rgb: 'add',
+                            alpha: 'add'
+                        },
+                        color: [0, 0, 0, 0]
+                    },
+            
+                    count: positions.length*2,
+                    primitive: "lines"
+                }));
+                draw_lightpath()
+            }
+
+            // const draw_lines = regl({
+            //     // framebuffer: this.sceneFbo,
+            //     viewport: {x: 0, y:0, width: canvaswidth, height: canvasheight},
+            //     vert: `
+            //     precision mediump float;
+            //     uniform mat4 projection;
+            //     attribute vec2 position;
+            //     attribute vec4 color;
+            //     varying vec4 vColor;
+            //     void main () {
+            //         vColor = color;
+            //         gl_Position = projection * vec4(position, 0, 1);
+            //     }`,
+
+            //     frag: `
+            //     precision mediump float;
+            //     varying vec4 vColor;
+            //     void main () {
+            //         gl_FragColor = vec4(vColor.r,vColor.g,vColor.b,vColor.a);
+            //     }`,
         
-                count: lines.length*2,
-                primitive: "lines"
-            });
-            draw_lines();
+            //     attributes: {
+            //         position: positions,
+            //         color: colors
+            //     },
+        
+            //     uniforms: {
+            //         // color: [1, 0, .9, 1],
+            //         projection: projection
+            //     },
+        
+            //     blend: {
+            //         enable: true,
+            //         func: {
+            //             srcRGB: 'src alpha',
+            //             srcAlpha: 1,
+            //             dstRGB: 'one minus src alpha',
+            //             dstAlpha: 1
+            //         },
+            //         equation: {
+            //             rgb: 'add',
+            //             alpha: 'add'
+            //         },
+            //         color: [0, 0, 0, 0]
+            //     },
+        
+            //     count: positions.length*2,
+            //     primitive: "lines"
+            // });
+            // draw_lines();
         });
 
         // comp fbo with previous buffer
@@ -355,7 +413,7 @@ class GLRenderer{
                 framebuffer: this.toneFbo,
                 uniforms: {
                     texture: this.compTexture,
-                    exposure: 1/this.samples
+                    exposure: 5/this.samples
                 },
 
                 frag: `

@@ -43,6 +43,18 @@ class SphericalLens2 extends Shape
         })
     }
 
+    bbox()
+    {
+        const Cx = this.center.x;
+        const Cy = this.center.y
+        return {
+            top: Cy+this.diameter/2,
+            bottom: Cy-this.diameter/2,
+            left: Cx-Math.max(this.edgeThickness/2, this.centerThickness/2),
+            right: Cx+Math.max(this.edgeThickness/2, this.centerThickness/2)
+        };
+    }
+
     hitTest(ray)
     {
         // create compound shapes
@@ -81,10 +93,7 @@ class SphericalLens2 extends Shape
         ]
 
         // filter to bbox
-        const top = Cy+this.diameter/2
-        const bottom = Cy-this.diameter/2
-        const left = Cx-Math.max(this.edgeThickness, this.centerThickness);
-        const right = Cx+Math.max(this.edgeThickness, this.centerThickness);
+        const {top, bottom, left, right} = this.bbox();
 
         // return hitPoints;
 

@@ -22,6 +22,16 @@ function arcFromThreePoints({Sx, Sy, Mx, My, Ex, Ey})
     `a ${Math.abs(r)} ${Math.abs(r)} 0 0 ${side} ${Ex-Sx} ${Ey-Sy} `;
 }
 
+function BBox({bbox, ...props}){
+    return h("rect", {
+        x: bbox.left,
+        y: bbox.bottom,
+        width: bbox.right-bbox.left,
+        height: bbox.top-bbox.bottom,
+        className: "guide"
+    })
+}
+
 function SphericalLens2Item({
     lens,
     onChange,
@@ -38,21 +48,23 @@ function SphericalLens2Item({
 
     const handleCenterManip = (e)=>{
         const newLens = lens.copy()
-        newLens.centerThickness = (e.sceneX - lens.center.x)*2
+
+        const newCenterThickness = Math.max(1, (e.sceneX - lens.center.x)*2);
+        newLens.centerThickness = newCenterThickness;
         onChange(lens, newLens)
     }
 
     const handleCornerManip = (e)=>{
         const newLens = lens.copy()
-        const newEdgeThickness = (e.sceneX-lens.center.x)*2;
-        const newDiameter = (e.sceneY-lens.center.y)*2;
+        const newEdgeThickness = Math.max(1, (e.sceneX-lens.center.x)*2);
+        const newDiameter = Math.max(1, (e.sceneY-lens.center.y)*2);
 
-    
+
         newLens.edgeThickness = newEdgeThickness;
         newLens.diameter = newDiameter;
 
         // update centerThickness to scale respectively
-        const newCenterThickness = newEdgeThickness/lens.edgeThickness * lens.centerThickness;
+        const newCenterThickness = Math.max(1, newEdgeThickness-lens.edgeThickness + lens.centerThickness);
         newLens.centerThickness = newCenterThickness
 
         onChange(lens, newLens)
@@ -83,6 +95,8 @@ function SphericalLens2Item({
         `L ${lens.center.x-lens.edgeThickness/2} ${lens.center.y-lens.diameter/2}` // this should wotk with close path 'Z'
     }
 
+    const bbox = lens.bbox()
+
     return h(Manipulator, {
         className: 'sceneItem shape lens',
         onDragStart: (e)=>grabOffset.current = {x: e.sceneX-lens.center.x, y: e.sceneY-lens.center.y},
@@ -110,6 +124,7 @@ function SphericalLens2Item({
             vectorEffect: "non-scaling-stroke",
             style: {cursor: "nwse-resize"}
         })),
+        h(BBox, {bbox: lens.bbox()}),
         // h("line", {
         //     x1: lens.center.x, 
         //     x2: lens.center.x, 
@@ -137,22 +152,22 @@ function SphericalLens2Item({
         //     vectorEffect: "non-scaling-stroke",
         //     strokeWidth: 1
         // }),
-        // h("circle", {
-        //     cx: leftCirlce.center.x,
-        //     cy: leftCirlce.center.y,
-        //     r:  leftCirlce.radius,
-        //     className: "guide",
-        //     vectorEffect: "non-scaling-stroke",
-        //     strokeWidth: 1
-        // }),
-        // h("circle", {
-        //     cx: rightCircle.center.x,
-        //     cy: rightCircle.center.y,
-        //     r:  rightCircle.radius,
-        //     className: "guide",
-        //     vectorEffect: "non-scaling-stroke",
-        //     strokeWidth: 1
-        // })
+        h("circle", {
+            cx: leftCirlce.center.x,
+            cy: leftCirlce.center.y,
+            r:  leftCirlce.radius,
+            className: "guide",
+            vectorEffect: "non-scaling-stroke",
+            strokeWidth: 1
+        }),
+        h("circle", {
+            cx: rightCircle.center.x,
+            cy: rightCircle.center.y,
+            r:  rightCircle.radius,
+            className: "guide",
+            vectorEffect: "non-scaling-stroke",
+            strokeWidth: 1
+        })
     )
 }
 

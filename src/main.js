@@ -95,7 +95,7 @@ const App = ()=>{
     const updateRaytraceOptions = options=>setRaytraceOptions({...raytraceOptions, ...options})
 
     const [svgDisplayOptions, setSvgDisplayOptions] = React.useState({
-        rays: false,
+        lightrays: false,
         hitPoints: true,
         lightPaths: true
     })
@@ -109,7 +109,7 @@ const App = ()=>{
         // new PointLight(P(50, 130)),
         // new LaserLight(P(150,220), 0),
         // new DirectionalLight(P(50,180), 20,0),
-        // new Circle(P(350, 150), new TransparentMaterial(), 50),
+        new Circle(P(350, 150), new TransparentMaterial(), 50),
         // 
         // new LineSegment(P(400, 250), P(500, 130), new MirrorMaterial()),
         // new LineSegment(P(370, 220), P(470, 100), new MirrorMaterial()),
@@ -123,10 +123,15 @@ const App = ()=>{
         // new Rectangle(P(250,500), new DiffuseMaterial(), 600,100)
 
         new DirectionalLight(P(50, 240), 60,0),
-        new SphericalLens2(P(250, 250), new TransparentMaterial(), {
+        new SphericalLens2(P(150, 250), new TransparentMaterial(), {
             diameter: 100,
             edgeThickness: 20,
             centerThickness:40
+        }),
+        new SphericalLens2(P(350, 250), new TransparentMaterial(), {
+            diameter: 100,
+            edgeThickness: 50,
+            centerThickness: 10
         })
     ]);
 
@@ -140,23 +145,33 @@ const App = ()=>{
         setSelection(newSelection)
     }
 
-    function updateRaytrace()
+    function updateRaytraceUniform()
     {
         const lights = scene.filter(obj=>obj instanceof Light)
         const shapes = scene.filter(obj=>obj instanceof Shape)
-        const [newRays, newHitPoints, newPaths] = raytrace(lights, [shapes, shapes.map(shp=>shp.material)], {
+        const newRaytraceResults = raytrace(lights, [shapes, shapes.map(shp=>shp.material)], {
             maxBounce:raytraceOptions.maxBounce, 
             samplingMethod: raytraceOptions.samplingMethod, 
             lightSamples: raytraceOptions.lightSamples
         });
 
-        return {
-            rays: newRays,
-            hitPoints: newHitPoints,
-            lightPaths: newPaths
-        }
+        return newRaytraceResults
     }
-    const {rays, hitPoints, lightPaths} = updateRaytrace();
+    const uniformRaytraceResults = updateRaytraceUniform();
+
+    function updateRaytraceRandom()
+    {
+        const lights = scene.filter(obj=>obj instanceof Light)
+        const shapes = scene.filter(obj=>obj instanceof Shape)
+        const newRaytraceResults = raytrace(lights, [shapes, shapes.map(shp=>shp.material)], {
+            maxBounce:raytraceOptions.maxBounce, 
+            samplingMethod: SamplingMethod.Random, 
+            lightSamples: raytraceOptions.lightSamples
+        });
+
+        return newRaytraceResults
+    }
+    const randomRaytraceResults = updateRaytraceRandom();
 
     /* step rayrace on animation frame */
     const [animate, setAnimate] = React.useState(true)
@@ -176,12 +191,12 @@ const App = ()=>{
     }, [animate]); // Make sure the effect runs only once
 
     return h("div", null,
-        // h(GLViewport,  {
-        //     className:"viewport",
-        //     viewBox: viewBox,
-        //     scene: scene,
-        //     paths: lightPaths
-        // }),
+        h(GLViewport,  {
+            className:"viewport",
+            viewBox: viewBox,
+            scene: scene,
+            paths: randomRaytraceResults.lightPaths
+        }),
         h(SVGViewport, {
             // style: {opacity: "0.2"},
             className:"viewport",
@@ -190,9 +205,9 @@ const App = ()=>{
             scene: scene,
             selection:selection,
             onSelection: (newSelection)=>setSelection(newSelection),
-            rays: svgDisplayOptions.rays?rays:[],
-            hitPoints: svgDisplayOptions.hitPoints?hitPoints:[], 
-            paths:svgDisplayOptions.lightPaths?lightPaths:[], 
+            rays: svgDisplayOptions.lightrays?uniformRaytraceResults.lightrays:[],
+            hitPoints: svgDisplayOptions.hitPoints?uniformRaytraceResults.hitPoints:[], 
+            paths:svgDisplayOptions.lightPaths?uniformRaytraceResults.lightPaths:[], 
             onSceneObject: (oldObject, newObject)=>updateSceneObject(oldObject, newObject)
         }),
 
@@ -287,12 +302,13 @@ const App = ()=>{
                             h("label", null,
                                 h("input", {
                                     name:"rays",
-                                    checked: svgDisplayOptions.rays, 
-                                    onChange: (e)=>updateSvgDisplayOptions({rays: e.target.checked}),
+                                    checked: svgDisplayOptions.lightrays, 
+                                    onChange: (e)=>updateSvgDisplayOptions({lightrays: e.target.checked}),
                                     type: "checkbox"
                                 }),
-                                "show rays"
+                                "show lightrays"
                             ),
+                            h("br"),
                             h("label", null,
                                 h("input", {
                                     name:"hitPoints",
@@ -302,6 +318,7 @@ const App = ()=>{
                                 }),
                                 "show hitpoints"
                             ),
+                            h("br"),
                             h("label", null,
                                 h("input", {
                                     name:"lightPaths",
@@ -309,7 +326,7 @@ const App = ()=>{
                                     onChange: (e)=>updateSvgDisplayOptions({lightPaths: e.target.checked}),
                                     type: "checkbox"
                                 }),
-                                "show rays"
+                                "show lightpaths"
                             )
                         )
                     )
@@ -319,9 +336,9 @@ const App = ()=>{
                 h(Outliner, {scene: scene}),
                 h(RaytraceStats, {
                     scene: scene, 
-                    lightRays: rays, 
-                    hitPoints: hitPoints, 
-                    lightPaths: lightPaths
+                    lightRays: uniformRaytraceResults.rays, 
+                    hitPoints: uniformRaytraceResults.hitPoints, 
+                    lightPaths: uniformRaytraceResults.lightPaths
                 })
             )
         )

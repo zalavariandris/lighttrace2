@@ -231,15 +231,17 @@ function SVGViewport({
             style: {transform: `scale(var(--zoom))`}
         }, "O"),
         h('g', {className: 'paths'},
-            paths.filter(path => path.length > 1).map(points =>
+            paths.filter(path => path.points.length > 1).map(path =>
                 h('g', null,
                     h('path', {
-                        d: pointsToSvgPath(points),
+                        d: pointsToSvgPath(path.points),
                         fill: 'none',
+                        stroke: `hsl(0deg 100% 100% / ${(path.intensity*100).toFixed(0)}%)`,
                         className: 'lightpath',
                         strokeLinejoin:"round",
                         strokeLinecap:"round",
-                        vectorEffect: "non-scaling-stroke"
+                        vectorEffect: "non-scaling-stroke",
+                        
                     })
                 )
             )
