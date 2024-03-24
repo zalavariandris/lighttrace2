@@ -19,8 +19,8 @@ https://zalavariandris.github.io/lighttrace2/
 - [x] DirectionalLight width manipulator.
 - [x] Circle shape radius manipulator
 
-- [ ] remove class Object like Point from constructors. Use Cx, Cy for example.
-- [ ] refactor constructors to accept {key value objects}
+- [x] remove class Object like Point from constructors. Use Cx, Cy for example.
+- [x] refactor constructors to accept {key value objects}
 - [ ] refactor _sceneObject_ to sceneObject({shape, material})
 
 
