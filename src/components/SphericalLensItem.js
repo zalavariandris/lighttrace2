@@ -1,7 +1,6 @@
 import React, {useState} from "react"
 import {Point, Vector} from "../geo.js"
 import {P, V} from "../geo.js"
-import PointManip from "./PointManip.js";
 import Circle from "../scene/shapes/Circle.js"
 import SphericalLens from "../scene/shapes/SphericalLens.js"
 import Manipulator from "./Manipulator.js";

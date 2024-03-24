@@ -1,7 +1,6 @@
 import React, {useState} from "react"
 import AngleManip from "./AngleManip.js";
 import Manipulator from "./Manipulator.js";
-import PointManip from "./PointManip.js";
 
 const h = React.createElement;
 
@@ -26,6 +25,24 @@ function DirectionalLightItem({
         onChange(light, newSceneObject)
     }
 
+    const grabWidthOffset = React.useRef();
+    const handleWidthDragStart = e=>{
+        grabWidthOffset.current = {
+            x: e.sceneX-light.center.x, 
+            y: e.sceneY-light.center.y
+        };
+    }
+
+    const handleWidthDrag = e=>{
+        const dx = e.sceneX-light.center.x;
+        const dy = e.sceneY-light.center.y;
+        const d = Math.sqrt(dx**2+dy**2);
+
+        const newSceneObject = light.copy()
+        newSceneObject.width = d*2;
+        onChange(light, newSceneObject)
+    }
+
     return h(Manipulator, {
         onDragStart: (e)=>grabOffset.current = {x: e.sceneX-light.center.x, y: e.sceneY-light.center.y},
         onDrag: (e)=>setPos(e.sceneX-grabOffset.current.x, e.sceneY-grabOffset.current.y),
@@ -47,7 +64,18 @@ function DirectionalLightItem({
             y:light.center.y,
             radians: light.angle,
             onChange: (newRadians)=>setRadians(newRadians)
-        })
+        }),
+        h(Manipulator, {
+            onDragStart: e=>handleWidthDragStart(e),
+            onDrag: e=>handleWidthDrag(e),
+            className:"manip"
+        }, h("circle", {
+            cx: light.center.x+Math.cos(light.angle)*-3+Math.cos(light.angle+Math.PI/2)*light.width/2,
+            cy: light.center.y+Math.sin(light.angle)*-3+Math.sin(light.angle+Math.PI/2)*light.width/2,
+            r:4,
+            style: {cursor: "ns-resize"},
+            className: "handle"
+        }))
     )
 }
 

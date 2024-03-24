@@ -1,6 +1,5 @@
 import React, {useState} from "react"
 import {Point, Vector} from "../geo.js"
-import PointManip from "./PointManip.js";
 import Manipulator from "./Manipulator.js";
 
 const h = React.createElement;
@@ -13,6 +12,8 @@ function LineSegmentItem({
 }){
     const grabOffsetP1 = React.useRef();
     const grabOffsetP2 = React.useRef();
+
+    
     const setP1 = (Px, Py)=>{
         const newLineSegment = lineSegment.copy()
         newLineSegment.p1 = new Point(Px, Py)
@@ -24,13 +25,12 @@ function LineSegmentItem({
         onChange(lineSegment, newLineSegment)
     }
 
-    const handleDragStart = (e)=>{
+    const handleShapeDragStart = (e)=>{
         grabOffsetP1.current = {x: e.sceneX-lineSegment.p1.x, y: e.sceneY-lineSegment.p1.y};
         grabOffsetP2.current = {x: e.sceneX-lineSegment.p2.x, y: e.sceneY-lineSegment.p2.y};
     }
 
-    const handleDrag = (e)=>{
-
+    const handleShapeDrag = (e)=>{
         const newLineSegment = lineSegment.copy()
         newLineSegment.p1.x = e.sceneX-grabOffsetP1.current.x;
         newLineSegment.p1.y = e.sceneY-grabOffsetP1.current.y;
@@ -39,11 +39,31 @@ function LineSegmentItem({
         onChange(lineSegment, newLineSegment)
     }
 
+    const handleP1DragStart = e=>{
+        grabOffsetP1.current = {x: e.sceneX-lineSegment.p1.x, y: e.sceneY-lineSegment.p1.y};
+    }
+    const handleP1Drag = e=>{
+        const newLineSegment = lineSegment.copy()
+        newLineSegment.p1.x = e.sceneX-grabOffsetP1.current.x;
+        newLineSegment.p1.y = e.sceneY-grabOffsetP1.current.y;
+        onChange(lineSegment, newLineSegment)
+    }
+
+    const handleP2DragStart = e=>{
+        grabOffsetP2.current = {x: e.sceneX-lineSegment.p2.x, y: e.sceneY-lineSegment.p2.y};
+    }
+    const handleP2Drag = e=>{
+        const newLineSegment = lineSegment.copy()
+        newLineSegment.p2.x = e.sceneX-grabOffsetP2.current.x;
+        newLineSegment.p2.y = e.sceneY-grabOffsetP2.current.y;
+        onChange(lineSegment, newLineSegment)
+    }
+
     const materialName = lineSegment.material.constructor.name;
 
     return h(Manipulator, {
-        onDragStart: (e)=>handleDragStart(e),
-        onDrag: (e)=>handleDrag(e),
+        onDragStart: (e)=>handleShapeDragStart(e),
+        onDrag: (e)=>handleShapeDrag(e),
         className: ["sceneItem shape lineSegment", materialName, className].filter(item=>item?true:false).join(" "),
         ...props
     }, 
@@ -52,21 +72,31 @@ function LineSegmentItem({
             y1: lineSegment.p1.y,
             x2: lineSegment.p2.x,
             y2: lineSegment.p2.y,
-            className: 'shape',
-            vectorEffect: "non-scaling-stroke",
-            strokeWidth: "5px"
+            className: 'shape'
             // onMouseDown: ()=>this.selectObject(shape)
         }),
-        h(PointManip, {
-            x: lineSegment.p1.x, 
-            y: lineSegment.p1.y,
-            onChange: (x, y)=>setP1(x, y)
-        }),
-        h(PointManip, {
-            x: lineSegment.p2.x, 
-            y: lineSegment.p2.y,
-            onChange: (x, y)=>setP2(x, y)
-        })
+        h(Manipulator, {
+            onDragStart: (e)=>handleP1DragStart(e),
+            onDrag: (e)=>handleP1Drag(e)
+        }, h("circle", {cx: lineSegment.p1.x, cy:lineSegment.p1.y, r:5})),
+        h(Manipulator, {
+            onDragStart: (e)=>handleP1DragStart(e),
+            onDrag: (e)=>handleP1Drag(e)
+        }, h("circle", {
+            cx: lineSegment.p1.x, 
+            cy:lineSegment.p1.y, 
+            r:5,
+            style: {cursor: "move"}
+        })),
+        h(Manipulator, {
+            onDragStart: (e)=>handleP2DragStart(e),
+            onDrag: (e)=>handleP2Drag(e)
+        }, h("circle", {
+            cx: lineSegment.p2.x, 
+            cy:lineSegment.p2.y, 
+            r:5,
+            style: {cursor: "move"}
+        }))
     )
 }
 

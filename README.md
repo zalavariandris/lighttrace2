@@ -14,21 +14,21 @@ https://zalavariandris.github.io/lighttrace2/
 - [x] display material in viewport
 - [x] toolbar: create new shapes and lightsources from toolbar
 - [x] delete selected objects
-- [ ] create new Point Manipulator based on Manipulator.
-- [ ] DirectionalLight width manipulator.
-- [ ] Circle shape radius manipulator
+
+- [x] get rid of Point Manipulator
+- [x] DirectionalLight width manipulator.
+- [x] Circle shape radius manipulator
+
+- [ ] remove class Object like Point from constructors. Use Cx, Cy for example.
+- [ ] refactor constructors to accept {key value objects}
+- [ ] refactor _sceneObject_ to sceneObject({shape, material})
+
 
 - [ ] mousetools to create scene objects
 - [ ] support light frequency
 - [ ] support light distribution
-- [ ] refactor _sceneObject_ to sceneObject({shape, material})
-- [ ] remove class Object like Point from constructors. Use Cx, Cy for example.
-- [ ] refactor constructors to accept {key value objects}
 
 - [ ] support light source intensity
-
-
-
 - [ ] simulate light as wave
 
 ### fix known bugs:
@@ -40,6 +40,7 @@ https://zalavariandris.github.io/lighttrace2/
 - [ ] rotate shapes
 - [ ] fix selection when scene has changed
 - [ ] fix (potential) memory leak on long simulations.
+  - [ ] stop refining(rendering) after a number of samples!
 
 
 

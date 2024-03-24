@@ -84,6 +84,10 @@ function Outliner({scene=[]}={})
     )
 }
 
+function MouseTool(...props){
+    
+}
+
 const App = ()=>{
     /* STATE */
     const [showSettings, setShowSettings] = React.useState(true)
@@ -197,6 +201,7 @@ const App = ()=>{
 
     const onAnimationTick = timeStamp => {
         setCount(prevCount => prevCount + 1);
+
         requestRef.current = requestAnimationFrame(onAnimationTick);
     }
 
