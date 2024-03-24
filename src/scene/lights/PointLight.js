@@ -6,19 +6,23 @@ import { Lightray } from "../../raytrace.js";
 
 class PointLight extends Light
 {
-    constructor(center, angle=0){
-        super(center)
+    constructor({x, y, angle=0}={}){
+        super({x, y})
         this.angle = angle;
     }
 
     copy()
     {
-        return new PointLight(this.center.copy(), this.angle)
+        return new PointLight({
+            x: this.x, 
+            y:this.y, 
+            angle: this.angle
+        });
     }
 
     toString()
     {
-        return `Pointlight(${this.center} ${this.angle.toFixed(0)})`
+        return `Pointlight(${this.x}, ${this.y} ${this.angle.toFixed(0)})`
     }
 
     sampleRays({sampleCount, samplingMethod=SamplingMethod.Uniform}={})
@@ -43,7 +47,7 @@ class PointLight extends Light
             const x = Math.cos(a);
             const y = Math.sin(a);
             const dir = V(x,y);
-            return new Lightray(this.center, dir.normalized(1), 1/sampleCount)
+            return new Lightray(P(this.x, this.y), dir.normalized(1), 1/sampleCount)
         })
     }
 }

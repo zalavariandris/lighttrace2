@@ -1,8 +1,9 @@
 class SceneObject
 {
-    constructor(center)
+    constructor({x, y})
     {
-        this.center = center;
+        this.x = x;
+        this.y = y;
     }
 }
 

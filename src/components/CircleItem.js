@@ -12,8 +12,8 @@ function CircleItem({
 {
     const setPos = (x, y)=>{
         const newCircle = circle.copy()
-        newCircle.center.x = x
-        newCircle.center.y = y
+        newCircle.x = x
+        newCircle.y = y
         onChange(circle, newCircle)
     }
 
@@ -24,13 +24,13 @@ function CircleItem({
     const grabRadiusOffset = React.useRef({x:0, y:0})
     const handleRadiusDragStart = e=>{
         grabRadiusOffset.current = {
-            x: e.sceneX-circle.center.x, 
-            y: e.sceneY-circle.center.y
+            x: e.sceneX-circle.x, 
+            y: e.sceneY-circle.y
         };
     }
     const handleRadiusDrag = e=>{
-        const dx = e.sceneX-circle.center.x;
-        const dy = e.sceneY-circle.center.y;
+        const dx = e.sceneX-circle.x;
+        const dy = e.sceneY-circle.y;
         const d = Math.sqrt(dx**2+dy**2);
 
         const newCircle = circle.copy()
@@ -40,15 +40,15 @@ function CircleItem({
 
     return h(Manipulator, {
             onMouseDown: (e)=>console.log("native event still works!"),
-            onDragStart: (e)=>grabOffset.current = {x: e.sceneX-circle.center.x, y: e.sceneY-circle.center.y},
+            onDragStart: (e)=>grabOffset.current = {x: e.sceneX-circle.x, y: e.sceneY-circle.y},
             onDrag: (e)=>setPos(e.sceneX-grabOffset.current.x, e.sceneY-grabOffset.current.y),
             showGuide: false,
             className: ['sceneItem shape circle', materialName, className].filter(item=>item?true:false).join(" "),
             ...props
         },
         h("circle", {
-            cx: circle.center.x,
-            cy: circle.center.y,
+            cx: circle.x,
+            cy: circle.y,
             r: circle.radius,
             className: "handle shape"
         }),
@@ -56,8 +56,8 @@ function CircleItem({
             onDragStart: e=>handleRadiusDragStart(e),
             onDrag: e=>handleRadiusDrag(e)
         }, h("circle", {
-            cx: circle.center.x,
-            cy: circle.center.y,
+            cx: circle.x,
+            cy: circle.y,
             r: circle.radius,
             stroke: "rgba(255,255,255,0)",
             strokeWidth: 10,

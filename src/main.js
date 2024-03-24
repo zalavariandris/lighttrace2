@@ -130,19 +130,20 @@ const App = ()=>{
         // new Circle(P(440, 130), new MirrorMaterial(), 80),
         // new Rectangle(P(250,500), new DiffuseMaterial(), 600,100),
 
-        new LineSegment(P(50, 500), P(462, 500), new DiffuseMaterial()),
-        new DirectionalLight(P(50, 250), 30,0),
-        new SphericalLens(P(150, 250), new TransparentMaterial(), {
+        
+        new DirectionalLight({x:50, y: 250, width: 30, angle: 0}),
+        new SphericalLens({x: 150, y:250, material: new TransparentMaterial(), 
             diameter: 100,
             edgeThickness: 40,
             centerThickness:5
         }),
-        new SphericalLens(P(230, 250), new TransparentMaterial(), {
+        new SphericalLens({x: 230, y: 250, material: new TransparentMaterial(), 
             diameter: 100,
             edgeThickness: 5,
             centerThickness: 50
         }),
-        new Circle(P(400, 220), new MirrorMaterial(), 50),
+        new Circle({x: 400, y:220, material: new MirrorMaterial(), radius: 50}),
+        new LineSegment({Ax: 50, Ay: 500, Bx: 462, By: 500, material: new DiffuseMaterial()}),
     ]);
 
     const addSceneObject = (sceneObject)=>{

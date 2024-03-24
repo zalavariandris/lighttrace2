@@ -15,8 +15,8 @@ function LaserLightItem({
     const grabOffset = React.useRef();
     const setPos = (x, y)=>{
         const newLight = light.copy()
-        newLight.center.x = x;
-        newLight.center.y = y;
+        newLight.x = x;
+        newLight.y = y;
         onChange(light, newLight)
     }
 
@@ -27,22 +27,22 @@ function LaserLightItem({
     }
 
     return h(Manipulator, {
-        onDragStart: (e)=>grabOffset.current = {x: e.sceneX-light.center.x, y: e.sceneY-light.center.y},
+        onDragStart: (e)=>grabOffset.current = {x: e.sceneX-light.x, y: e.sceneY-light.y},
         onDrag: (e)=>setPos(e.sceneX-grabOffset.current.x, e.sceneY-grabOffset.current.y),
         ...props,
         className: ["sceneItem light laser", className].filter(item=>item?true:false).join(" ")
 
     }, 
         h('circle', {
-            cx: light.center.x,
-            cy: light.center.y,
+            cx: light.x,
+            cy: light.y,
             r: 2,
             vectorEffect: "non-scaling-stroke",
             className: "shape"
         }),
         h(AngleManip, {
-            x:light.center.x, 
-            y:light.center.y,
+            x:light.x, 
+            y:light.y,
             radians: light.angle,
             onChange: (newRadians)=>setRadians(newRadians)
         })

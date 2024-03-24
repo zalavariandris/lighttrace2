@@ -4,20 +4,25 @@ import Circle from "./Circle.js";
 import LineSegment from "./LineSegment.js";
 
 
-class SphericalLens2 extends Shape
+class SphericalLens extends Shape
 {
-    constructor(center, material, {diameter, edgeThickness, centerThickness})
+    constructor({x, y, material, diameter, edgeThickness, centerThickness})
     {
-        super(center, material);
+        super({x, y, material});
         this.diameter = diameter;
         this.edgeThickness = edgeThickness;
         this.centerThickness = centerThickness;
     }
 
+    toString()
+    {
+        return `SphericalLens(${this.x}, ${this.y}, d${this.diameter}, ${this.edgeThickness}, ${this.centerThickness})`
+    }
+
     getLeftCircle()
     {
-        const Cx = this.center.x;
-        const Cy = this.center.y;
+        const Cx = this.x;
+        const Cy = this.y;
         const topLeft =    P(Cx-this.edgeThickness/2,   Cy+this.diameter/2)
         const middleLeft = P(Cx-this.centerThickness/2, Cy+0              )
         const bottomLeft = P(Cx-this.edgeThickness/2,   Cy-this.diameter/2)
@@ -26,8 +31,8 @@ class SphericalLens2 extends Shape
 
     getRightCircle()
     {
-        const Cx = this.center.x;
-        const Cy = this.center.y;
+        const Cx = this.x;
+        const Cy = this.y;
         const topRight =    P(Cx+this.edgeThickness/2,   Cy+this.diameter/2)
         const middleRight = P(Cx+this.centerThickness/2, Cy+0               )
         const bottomRight = P(Cx+this.edgeThickness/2,   Cy-this.diameter/2)
@@ -36,17 +41,20 @@ class SphericalLens2 extends Shape
 
     copy()
     {
-        return new SphericalLens2(this.center, this.material, {
+        return new SphericalLens({
+            x: this.x, 
+            y: this.y, 
+            material: this.material, 
             diameter: this.diameter,
             edgeThickness:this.edgeThickness,
             centerThickness: this.centerThickness
-        })
+        });
     }
 
     bbox()
     {
-        const Cx = this.center.x;
-        const Cy = this.center.y
+        const Cx = this.x;
+        const Cy = this.y
         return {
             top: Cy+this.diameter/2,
             bottom: Cy-this.diameter/2,
@@ -61,8 +69,8 @@ class SphericalLens2 extends Shape
         const leftCircle = this.getLeftCircle()
         const rightCircle = this.getRightCircle()
 
-        const Cx = this.center.x;
-        const Cy = this.center.y
+        const Cx = this.x;
+        const Cy = this.y
         const topLeft =  P(Cx - this.edgeThickness/2, Cy+this.diameter/2)
         const topRight = P(Cx + this.edgeThickness/2, Cy+this.diameter/2)
         const bottomLeft =  P(Cx - this.edgeThickness/2, Cy+-this.diameter/2)
@@ -105,4 +113,4 @@ class SphericalLens2 extends Shape
     }
 }
 
-export default SphericalLens2
+export default SphericalLens

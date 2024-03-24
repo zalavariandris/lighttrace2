@@ -6,20 +6,24 @@ import { Lightray } from "../../raytrace.js";
 
 class LaserLight extends Light
 {
-    constructor(center, angle=0)
+    constructor({x, y, angle=0}={})
     {
-        super(center);
+        super({x, y});
         this.angle = angle;
     }
 
     copy()
     {
-        return new LaserLight(this.center.copy(), this.angle)
+        return new LaserLight({
+            x: this.x, 
+            y:this.y, 
+            angle: this.angle
+        });
     }
 
     toString()
     {
-        return `LaserLight(${this.center}, ${this.angle.toFixed()})`
+        return `LaserLight(${this.x}, ${this.y}, ${this.angle.toFixed()})`
     }
 
     sampleRays({sampleCount=9, samplingMethod=SamplingMethod.Uniform}={}){
@@ -27,7 +31,7 @@ class LaserLight extends Light
         const y = Math.sin(this.angle);
         const dir = V(x,y);
         return Array.from({length: sampleCount}).map((_, i)=>{
-            return new Lightray(this.center, dir.normalized(1), 1/sampleCount)
+            return new Lightray(P(this.x, this.y), dir.normalized(1), 1/sampleCount)
         })
     }
 }

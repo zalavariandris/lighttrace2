@@ -16,46 +16,48 @@ function LineSegmentItem({
     
     const setP1 = (Px, Py)=>{
         const newLineSegment = lineSegment.copy()
-        newLineSegment.p1 = new Point(Px, Py)
+        newLineSegment.Ax = Px;
+        newLineSegment.Ay = Py;
         onChange(lineSegment, newLineSegment)
     }
     const setP2 = (Px, Py)=>{
         const newLineSegment = lineSegment.copy()
-        newLineSegment.p2 = new Point(Px, Py)
+        newLineSegment.Bx = Px;
+        newLineSegment.By = Py;
         onChange(lineSegment, newLineSegment)
     }
 
     const handleShapeDragStart = (e)=>{
-        grabOffsetP1.current = {x: e.sceneX-lineSegment.p1.x, y: e.sceneY-lineSegment.p1.y};
-        grabOffsetP2.current = {x: e.sceneX-lineSegment.p2.x, y: e.sceneY-lineSegment.p2.y};
+        grabOffsetP1.current = {x: e.sceneX-lineSegment.Ax, y: e.sceneY-lineSegment.Ay};
+        grabOffsetP2.current = {x: e.sceneX-lineSegment.Bx, y: e.sceneY-lineSegment.By};
     }
 
     const handleShapeDrag = (e)=>{
         const newLineSegment = lineSegment.copy()
-        newLineSegment.p1.x = e.sceneX-grabOffsetP1.current.x;
-        newLineSegment.p1.y = e.sceneY-grabOffsetP1.current.y;
-        newLineSegment.p2.x = e.sceneX-grabOffsetP2.current.x;
-        newLineSegment.p2.y = e.sceneY-grabOffsetP2.current.y;
+        newLineSegment.Ax = e.sceneX-grabOffsetP1.current.x;
+        newLineSegment.Ay = e.sceneY-grabOffsetP1.current.y;
+        newLineSegment.Bx = e.sceneX-grabOffsetP2.current.x;
+        newLineSegment.By = e.sceneY-grabOffsetP2.current.y;
         onChange(lineSegment, newLineSegment)
     }
 
     const handleP1DragStart = e=>{
-        grabOffsetP1.current = {x: e.sceneX-lineSegment.p1.x, y: e.sceneY-lineSegment.p1.y};
+        grabOffsetP1.current = {x: e.sceneX-lineSegment.Ax, y: e.sceneY-lineSegment.Ay};
     }
     const handleP1Drag = e=>{
         const newLineSegment = lineSegment.copy()
-        newLineSegment.p1.x = e.sceneX-grabOffsetP1.current.x;
-        newLineSegment.p1.y = e.sceneY-grabOffsetP1.current.y;
+        newLineSegment.Ax = e.sceneX-grabOffsetP1.current.x;
+        newLineSegment.Ay = e.sceneY-grabOffsetP1.current.y;
         onChange(lineSegment, newLineSegment)
     }
 
     const handleP2DragStart = e=>{
-        grabOffsetP2.current = {x: e.sceneX-lineSegment.p2.x, y: e.sceneY-lineSegment.p2.y};
+        grabOffsetP2.current = {x: e.sceneX-lineSegment.Bx, y: e.sceneY-lineSegment.By};
     }
     const handleP2Drag = e=>{
         const newLineSegment = lineSegment.copy()
-        newLineSegment.p2.x = e.sceneX-grabOffsetP2.current.x;
-        newLineSegment.p2.y = e.sceneY-grabOffsetP2.current.y;
+        newLineSegment.Bx = e.sceneX-grabOffsetP2.current.x;
+        newLineSegment.By = e.sceneY-grabOffsetP2.current.y;
         onChange(lineSegment, newLineSegment)
     }
 
@@ -68,23 +70,23 @@ function LineSegmentItem({
         ...props
     }, 
         h('line', {
-            x1: lineSegment.p1.x,
-            y1: lineSegment.p1.y,
-            x2: lineSegment.p2.x,
-            y2: lineSegment.p2.y,
+            x1: lineSegment.Ax,
+            y1: lineSegment.Ay,
+            x2: lineSegment.Bx,
+            y2: lineSegment.By,
             className: 'shape'
             // onMouseDown: ()=>this.selectObject(shape)
         }),
         h(Manipulator, {
             onDragStart: (e)=>handleP1DragStart(e),
             onDrag: (e)=>handleP1Drag(e)
-        }, h("circle", {cx: lineSegment.p1.x, cy:lineSegment.p1.y, r:5})),
+        }, h("circle", {cx: lineSegment.Ax, cy:lineSegment.Ay, r:5})),
         h(Manipulator, {
             onDragStart: (e)=>handleP1DragStart(e),
             onDrag: (e)=>handleP1Drag(e)
         }, h("circle", {
-            cx: lineSegment.p1.x, 
-            cy:lineSegment.p1.y, 
+            cx: lineSegment.Ax, 
+            cy:lineSegment.Ay, 
             r:5,
             style: {cursor: "move"}
         })),
@@ -92,8 +94,8 @@ function LineSegmentItem({
             onDragStart: (e)=>handleP2DragStart(e),
             onDrag: (e)=>handleP2Drag(e)
         }, h("circle", {
-            cx: lineSegment.p2.x, 
-            cy:lineSegment.p2.y, 
+            cx: lineSegment.Bx, 
+            cy:lineSegment.By, 
             r:5,
             style: {cursor: "move"}
         }))

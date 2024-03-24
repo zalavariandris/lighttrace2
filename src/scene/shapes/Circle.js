@@ -6,9 +6,9 @@ const EPSILON=1e-6;
 
 class Circle extends Shape
 {
-    constructor(center, material, radius)
+    constructor({x, y, material, radius})
     {
-        super(center, material)
+        super({x, y, material})
         this.radius=radius;
     }
 
@@ -34,7 +34,12 @@ class Circle extends Shape
         var x = -b / (2 * a);
         var y = -c / (2 * a);
       
-        return new Circle(new Point(x, y), null, Math.hypot(x - Sx, y - Sy))
+        return new Circle({
+            x:x, 
+            y:y, 
+            material:null, 
+            radius: Math.hypot(x - Sx, y - Sy)
+        })
       }
 
       static fromRadiusAndTwoPoints(r, A, B, flip=false) {
@@ -52,23 +57,32 @@ class Circle extends Shape
             Cy+=By;
 
             // Create a new Circle instance using the intersection point as the center
-            return new Circle(new Point(Cx, Cy), null, Math.abs(r));
+            return new Circle({
+                x: Cx, 
+                y: Cy, 
+                material: null, 
+                radius: r
+            });
     }
     
     copy(other)
     {
-        return new Circle(this.center.copy(), this.material.copy(), this.radius)
+        return new Circle({
+            x: this.x, 
+            y: this.y, 
+            material: this.material.copy(), 
+            radius: this.radius});
     }
 
     toString()
     {
-        return `Circle O(${this.center.x.toFixed(1)}, ${this.center.y.toFixed(1)}), r${this.radius.toFixed(1)}`
+        return `Circle O(${this.x.toFixed(1)}, ${this.y.toFixed(1)}), r${this.radius.toFixed(1)}`
     }
 
     hitTest(ray)
     {
         // solve quadratic equatation: at**2+bt+c=0
-        const d = new Vector(ray.origin.x - this.center.x, ray.origin.y - this.center.y); // to circle
+        const d = new Vector(ray.origin.x - this.x, ray.origin.y - this.y); // to circle
         const a = ray.direction.dotProduct(ray.direction);
         const b = 2 * ray.direction.dotProduct(d);
         const c = d.dotProduct(d) - this.radius * this.radius;
@@ -104,7 +118,7 @@ class Circle extends Shape
 
         return [t1, t2].filter(t=>t>EPSILON).map(t=>{
             const hitPosition = P(ray.origin.x + t * ray.direction.x, ray.origin.y + t * ray.direction.y);
-            const surfaceNormal = V(hitPosition.x - this.center.x, hitPosition.y - this.center.y).normalized();
+            const surfaceNormal = V(hitPosition.x - this.x, hitPosition.y - this.y).normalized();
             
             return new HitPoint(hitPosition, surfaceNormal.multiply(1));
         })

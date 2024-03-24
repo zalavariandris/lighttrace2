@@ -41,23 +41,23 @@ function SphericalLensItem({
     const grabOffset = React.useRef();
     const setPos = (x, y)=>{
         const newLens = lens.copy()
-        newLens.center.x = x
-        newLens.center.y = y
+        newLens.x = x
+        newLens.y = y
         onChange(lens, newLens)
     }
 
     const handleCenterManip = (e)=>{
         const newLens = lens.copy()
 
-        const newCenterThickness = Math.max(1, (e.sceneX - lens.center.x)*2);
+        const newCenterThickness = Math.max(1, (e.sceneX - lens.x)*2);
         newLens.centerThickness = newCenterThickness;
         onChange(lens, newLens)
     }
 
     const handleCornerManip = (e)=>{
         const newLens = lens.copy()
-        const newEdgeThickness = Math.max(1, (e.sceneX-lens.center.x)*2);
-        const newDiameter = Math.max(1, (e.sceneY-lens.center.y)*2);
+        const newEdgeThickness = Math.max(1, (e.sceneX-lens.x)*2);
+        const newDiameter = Math.max(1, (e.sceneY-lens.y)*2);
 
 
         newLens.edgeThickness = newEdgeThickness;
@@ -77,29 +77,29 @@ function SphericalLensItem({
     const makeLensPath = ()=>{
         return ""+
         arcFromThreePoints({
-            Sx: lens.center.x-lens.edgeThickness/2, 
-            Sy: lens.center.y-lens.diameter/2,
-            Mx: lens.center.x-lens.centerThickness/2,
-            My: lens.center.y,
-            Ex: lens.center.x-lens.edgeThickness/2, 
-            Ey: lens.center.y+lens.diameter/2
+            Sx: lens.x-lens.edgeThickness/2, 
+            Sy: lens.y-lens.diameter/2,
+            Mx: lens.x-lens.centerThickness/2,
+            My: lens.y,
+            Ex: lens.x-lens.edgeThickness/2, 
+            Ey: lens.y+lens.diameter/2
         })+
-        `L ${lens.center.x+lens.edgeThickness/2} ${lens.center.y+lens.diameter/2}`+
+        `L ${lens.x+lens.edgeThickness/2} ${lens.y+lens.diameter/2}`+
         arcFromThreePoints({
-            Sx: lens.center.x+lens.edgeThickness/2, 
-            Sy: lens.center.y+lens.diameter/2,
-            Mx: lens.center.x+lens.centerThickness/2,
-            My: lens.center.y,
-            Ex: lens.center.x+lens.edgeThickness/2, 
-            Ey: lens.center.y-lens.diameter/2
+            Sx: lens.x+lens.edgeThickness/2, 
+            Sy: lens.y+lens.diameter/2,
+            Mx: lens.x+lens.centerThickness/2,
+            My: lens.y,
+            Ex: lens.x+lens.edgeThickness/2, 
+            Ey: lens.y-lens.diameter/2
         })+
-        `L ${lens.center.x-lens.edgeThickness/2} ${lens.center.y-lens.diameter/2}` // this should wotk with close path 'Z'
+        `L ${lens.x-lens.edgeThickness/2} ${lens.y-lens.diameter/2}` // this should wotk with close path 'Z'
     }
 
     const bbox = lens.bbox()
 
     return h(Manipulator, {
-        onDragStart: (e)=>grabOffset.current = {x: e.sceneX-lens.center.x, y: e.sceneY-lens.center.y},
+        onDragStart: (e)=>grabOffset.current = {x: e.sceneX-lens.x, y: e.sceneY-lens.y},
         onDrag: (e)=>setPos(e.sceneX-grabOffset.current.x, e.sceneY-grabOffset.current.y),
         className: ['sceneItem shape lens', materialName, className].filter(item=>item?true:false).join(" "),
         ...props
@@ -112,8 +112,8 @@ function SphericalLensItem({
             onDrag: (e)=>handleCenterManip(e)
         }, h('circle', {
             className: "autohide",
-            cx:lens.center.x+lens.centerThickness/2, 
-            cy:lens.center.y,
+            cx:lens.x+lens.centerThickness/2, 
+            cy:lens.y,
             r: 5,
             vectorEffect: "non-scaling-stroke",
             style: {cursor: "ew-resize"}
@@ -122,8 +122,8 @@ function SphericalLensItem({
             onDrag: (e)=>handleCornerManip(e)
         }, h('circle', {
             className: "autohide",
-            cx:lens.center.x+lens.edgeThickness/2, 
-            cy:lens.center.y+lens.diameter/2,
+            cx:lens.x+lens.edgeThickness/2, 
+            cy:lens.y+lens.diameter/2,
             r: 5,
             vectorEffect: "non-scaling-stroke",
             style: {cursor: "nwse-resize"}

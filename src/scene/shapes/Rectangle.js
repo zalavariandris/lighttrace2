@@ -6,9 +6,9 @@ import { HitPoint } from "../../raytrace.js";
 
 class Rectangle extends Shape
 {
-    constructor(center, material, width, height, angle=0)
+    constructor({x, y, material, width, height, angle=0}={})
     {
-        super(center, material);
+        super({x, y, material});
         this.width = width;
         this.height = height;
         this.angle = angle
@@ -16,12 +16,12 @@ class Rectangle extends Shape
     
     copy(other)
     {
-        return new Rectangle(this.center.copy(), this.material.copy(), this.width, this.height)
+        return new Rectangle({x: this.x, y: this.y, material:this.material, width: this.width, height: this.height, angle: this.angle});
     }
 
     toString()
     {
-        return `Rectangle O(${this.center.x.toFixed(1)}, ${this.center.y.toFixed(1)}), ${this.width.toFixed(1)}x${this.height.toFixed(1)}`
+        return `Rectangle O(${this.x.toFixed(1)}, ${this.y.toFixed(1)}), ${this.width.toFixed(1)}x${this.height.toFixed(1)}`
     }
 
     contains(point)
@@ -31,10 +31,10 @@ class Rectangle extends Shape
         const halfHeight = this.height / 2;
     
         // Calculate the bounds of the rectangle
-        const minX = this.center.x - halfWidth;
-        const maxX = this.center.x + halfWidth;
-        const minY = this.center.y - halfHeight;
-        const maxY = this.center.y + halfHeight;
+        const minX = this.x - halfWidth;
+        const maxX = this.x + halfWidth;
+        const minY = this.y - halfHeight;
+        const maxY = this.y + halfHeight;
     
         // Check if the point is within the bounds of the rectangle
         return point.x >= minX && point.x <= maxX && point.y >= minY && point.y <= maxY;
@@ -42,10 +42,10 @@ class Rectangle extends Shape
 
     hitTest(ray)
     {
-        const top = this.center.y+this.height/2
-        const left = this.center.x-this.width/2
-        const bottom = this.center.y-this.height/2
-        const right = this.center.x+this.width/2
+        const top = this.y+this.height/2
+        const left = this.x-this.width/2
+        const bottom = this.y-this.height/2
+        const right = this.x+this.width/2
         
         const topLeft = new Point(left, top)
         const bottomRight = new Point(right, bottom)

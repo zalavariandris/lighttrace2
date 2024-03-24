@@ -7,34 +7,31 @@ import { HitPoint } from "../../raytrace.js";
 
 class LineSegment extends Shape
 {
-    constructor(p1, p2, material)
+    constructor({Ax, Ay, Bx, By, material})
     {
-        super(P(0,0), material)
-        this.p1 = p1;
-        this.p2 = p2;
-    }
-
-    static fromPoints(p1, p2)
-    {
-        
+        super({x:0,y:0, material})
+        this.Ax = Ax;
+        this.Ay = Ay;
+        this.Bx = Bx;
+        this.By = By;
     }
 
     copy(other)
     {
-        return new LineSegment(this.p1.copy(), this.p2.copy(), this.material.copy())
+        return new LineSegment({Ax:this.Ax, Ay:this.Ay, Bx:this.Bx, By:this.By, material:this.material.copy()})
     }
 
     toString()
     {
-        return `LineSegment P(${this.p1.x.toFixed(1)}, ${this.p1.y.toFixed(1)}), P(${this.p2.x.toFixed(1)}, ${this.p2.y.toFixed(1)})`
+        return `LineSegment(${this.Ax.toFixed(1)}, ${this.Ay.toFixed(1)}), P(${this.Bx.toFixed(1)}, ${this.By.toFixed(1)})`
     }
 
     hitTest(ray)
     {
         const rayOrigin = ray.origin;
         const rayDirection = ray.direction.normalized();
-        const lineSegmentP1 = this.p1;
-        const lineSegmentP2 = this.p2;
+        const lineSegmentP1 = new Point(this.Ax, this.Ay);
+        const lineSegmentP2 = new Point(this.Bx, this.By);
         
         // Calculate the direction vector of the line segment
         const lineSegmentDirection = new Vector(
