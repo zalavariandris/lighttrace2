@@ -1,5 +1,4 @@
 import React, {useState} from "react"
-import AngleManip from "./AngleManip.js";
 import Manipulator from "./Manipulator.js";
 
 
@@ -20,10 +19,14 @@ function LaserLightItem({
         onChange(light, newLight)
     }
 
-    const setRadians = (newRadians)=>{
-        const newLight = light.copy()
-        newLight.angle = newRadians;
-        onChange(light, newLight)
+    const handleAngleDrag = e=>{
+        const dx = e.sceneX-light.x;
+        const dy = e.sceneY-light.y;
+        const newAngle = Math.atan2(dy, dx);
+
+        const newSceneObject = light.copy()
+        newSceneObject.angle = newAngle;
+        onChange(light, newSceneObject);
     }
 
     return h(Manipulator, {
@@ -40,12 +43,16 @@ function LaserLightItem({
             vectorEffect: "non-scaling-stroke",
             className: "shape"
         }),
-        h(AngleManip, {
-            x:light.x, 
-            y:light.y,
-            radians: light.angle,
-            onChange: (newRadians)=>setRadians(newRadians)
-        })
+        h(Manipulator, {
+            onDrag: (e)=>handleAngleDrag(e),
+            className:"manip",
+            showGuide: false
+        }, h("circle", {
+            cx: light.x+Math.cos(light.angle)*50,
+            cy: light.y+Math.sin(light.angle)*50,
+            r: 5,
+            className: "handle"
+        })),
     )
 
 }

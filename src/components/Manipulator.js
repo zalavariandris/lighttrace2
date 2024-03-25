@@ -18,7 +18,7 @@ class ManipEvent{
 function cursorPoint(svg, {x, y}){
     let pt = svg.createSVGPoint();
     pt.x =x; pt.y = y;
-    const scenePoint = pt.matrixTrsceansform(svg.getScreenCTM().inverse());
+    const scenePoint = pt.matrixTransform(svg.getScreenCTM().inverse());
     return {x:scenePoint.x, y:scenePoint.y};
 }
 

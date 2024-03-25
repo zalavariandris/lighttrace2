@@ -24,12 +24,11 @@ import DiffuseMaterial from "./scene/materials/DiffuseMaterial.js"
 
 
 import {Lightray, makeRaysFromLights, raytrace, SamplingMethod} from "./raytrace.js"
-
-
 import Inspector from "./components/Inspector.js"
+import CircleItem from "./components/CircleItem.js";
+
 
 const h = React.createElement;
-
 function RaytraceStats({
     scene=[],
     lightRays=[],
@@ -84,8 +83,15 @@ function Outliner({scene=[]}={})
     )
 }
 
+function cursorPoint(svg, {x, y}){
+    let pt = svg.createSVGPoint();
+    pt.x =x; pt.y = y;
+    const scenePoint = pt.matrixTransform(svg.getScreenCTM().inverse());
+    return {x:scenePoint.x, y:scenePoint.y};
+}
 
 const App = ()=>{
+    console.log("render App")
     /* STATE */
     const [showSettings, setShowSettings] = React.useState(true)
     const [showSceneInfo, setShowSceneInfo] = React.useState(false)
@@ -99,7 +105,7 @@ const App = ()=>{
     const [svgDisplayOptions, setSvgDisplayOptions] = React.useState({
         lightrays: false,
         hitPoints: false,
-        lightPaths: false
+        lightPaths: true
     })
     const updateSvgDisplayOptions = options=> setSvgDisplayOptions({...svgDisplayOptions, ...options})
 
@@ -107,28 +113,10 @@ const App = ()=>{
         x:0,y:0,w:512,h:512
     });
 
-    const [scene, setScene] = React.useState([
-        // new PointLight(P(50, 130)),
-        // new LaserLight(P(150,220), 0),
-        // new DirectionalLight(P(50,180), 20,0),
-
-        // new Circle(P(100, 150), new MirrorMaterial(), 50),
-        // new Circle(P(250, 150), new TransparentMaterial(), 50),
-        // new Circle(P(400, 150), new DiffuseMaterial(), 50),
-        // 
-        // new LineSegment(P(400, 250), P(500, 130), new MirrorMaterial()),
-        // new LineSegment(P(370, 220), P(470, 100), new MirrorMaterial()),
-        // new SphericalLens(P(250, 180),  new TransparentMaterial(), 20, 100, 100, 100),
-        // new Circle(P(520, 550), new TransparentMaterial(), 100),
-
-        // new DirectionalLight(P(50,180), 50,0),
-        // new SphericalLens(P(250, 180),  new TransparentMaterial(), 50, 100, -100, -100),
-        // new SphericalLens(P(250, 180),  new TransparentMaterial(), 50, 100, -100, -100),
-        // new Circle(P(440, 130), new MirrorMaterial(), 80),
-        // new Rectangle(P(250,500), new DiffuseMaterial(), 600,100),
-
-        
+    const [scene, setScene] = React.useState([      
         new DirectionalLight({x:50, y: 250, width: 80, angle: 0}),
+        new PointLight({x: 50, y: 150, angle:0}),
+        new LaserLight({x:50, y: 200, angle: 0}),
         new SphericalLens({x: 150, y:250, material: new TransparentMaterial(), 
             diameter: 140,
             edgeThickness: 60,
@@ -140,28 +128,32 @@ const App = ()=>{
             centerThickness: 50
         }),
         new Circle({x: 400, y:220, material: new MirrorMaterial(), radius: 50}),
-        new LineSegment({Ax: 50, Ay: 500, Bx: 462, By: 500, material: new DiffuseMaterial()}),
+        new LineSegment({Ax: 50, Ay: 450, Bx: 462, By: 450, material: new DiffuseMaterial()}),
     ]);
 
     const addSceneObject = (sceneObject)=>{
-        setScene([...scene, sceneObject])
-        setSelection([sceneObject])
+        console.log("addSceneObject", sceneObject)
+        setScene(scene=>[...scene, sceneObject])
+        setSelection(selection=>[sceneObject])
     }
 
     const removeSelectedObjects=()=>{
-        
-        setScene(scene.filter(sceneObject=>selection.indexOf(sceneObject)<0));
-        setSelection([])
+        setScene(scene=>scene.filter(sceneObject=>selection.indexOf(sceneObject)<0));
+        setSelection(selection=>[]);
     }
 
     const [selection, setSelection] = React.useState([])
     const updateSceneObject = (oldObject, newObject)=>{
-        const sceneIdx = scene.indexOf(oldObject)
-        const newScene = scene.toSpliced(sceneIdx, 1, newObject)
-        const newSelection = selection.map(oldObject=>newScene[scene.indexOf(oldObject)])
+        const sceneIdx = scene.indexOf(oldObject);
 
-        setScene(newScene)
-        setSelection(newSelection)
+        if(sceneIdx<0) {
+            console.warn("scenr object is not in Scene", oldObject)
+            return scene;
+        }
+        const newScene = scene.toSpliced(sceneIdx, 1, newObject)
+
+        setScene(newScene);
+        // setSelection(selection=>[])
     }
 
     function updateRaytraceUniform()
@@ -193,7 +185,7 @@ const App = ()=>{
     const randomRaytraceResults = updateRaytraceRandom();
 
     /* step rayrace on animation frame */
-    const [animate, setAnimate] = React.useState(true)
+    const [animate, setAnimate] = React.useState(false)
     const [count, setCount] = React.useState(0);
     const requestRef = React.useRef();
 
@@ -210,50 +202,301 @@ const App = ()=>{
         }
     }, [animate]); // Make sure the effect runs only once
 
-    const [tool, setTool] = React.useState(null);
-    function cursorPoint(svg, {x, y}){
-        let pt = svg.createSVGPoint();
-        pt.x =x; pt.y = y;
-        const scenePoint = pt.matrixTransform(svg.getScreenCTM().inverse());
-        return {x:scenePoint.x, y:scenePoint.y};
-    }
-    function handleMouseDownTools(e)
-    {
-        var svg  = e.target.closest("SVG");
-        let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
-        const [sceneX, sceneY] = [loc.x, loc.y]
-        console.log("handle mouse tools")
-        // if(tool?true:false){
-            e.preventDefault()
-        // }
+    const [currentToolName, setCurrentToolName] = React.useState(null);
 
-        const handleMouseMove = e=>{
-            console.log("set circle size baed no mouse")
-        }
 
-        // switch (tool) {
-        //     case "Circle":
-                const circle = addSceneObject(new Circle({x: sceneX, y: sceneY, radius:5, material:new TransparentMaterial}));
-                window.addEventListener("mousemove", handleMouseMove)
+
+    const tools = [
+        {name: "circle",
+            handler: (e)=>{
+                e.preventDefault();
+                var svg  = e.target.closest("SVG");
+                let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
+                const [beginSceneX, beginSceneY] = [loc.x, loc.y];
+    
+                // create circle
+                let sceneObject = new Circle({
+                    x: beginSceneX, 
+                    y: beginSceneY, 
+                    radius:5, 
+                    material: new TransparentMaterial()
+                });
+    
+                addSceneObject(sceneObject);
+                const handleDrag = e=>{
+                    // var svg  = e.target.closest("SVG");
+                    let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
+                    const [sceneX, sceneY] = [loc.x, loc.y]
+                    const [dx, dy] = [sceneX-beginSceneX, sceneY-beginSceneY];
+    
+                    const newSceneObject = sceneObject.copy(); 
+                    newSceneObject.radius = Math.hypot(dx, dy);
+                    setScene(scene=>{
+                        const idx = scene.indexOf(sceneObject);
+                        sceneObject = newSceneObject;
+                        return scene.toSpliced(idx, 1, newSceneObject);
+                    })
+                }
+    
+                window.addEventListener("mousemove", handleDrag);
                 window.addEventListener("mouseup", e=>{
-                    console.log("finaliye circle createion")
+                    window.removeEventListener("mousemove", handleDrag);
+                    setCurrentToolName(null)
+                }, {once: true});
+            }
+        },
+        {name: "rectangle",
+            handler: (e)=>{
+                e.preventDefault();
+                var svg  = e.target.closest("SVG");
+                let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
+                const [beginSceneX, beginSceneY] = [loc.x, loc.y];
+    
+                let sceneObject = new Rectangle({
+                    x: beginSceneX, 
+                    y: beginSceneY, 
+                    width: 5,
+                    height: 5,
+                    material: new DiffuseMaterial()
+                });
+    
+                addSceneObject(sceneObject);
+                const handleDrag = e=>{
+                    // var svg  = e.target.closest("SVG");
+                    let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
+                    const [sceneX, sceneY] = [loc.x, loc.y]
+                    const [dx, dy] = [sceneX-beginSceneX, sceneY-beginSceneY];
+    
+                    const newSceneObject = sceneObject.copy(); 
+                    newSceneObject.width = Math.abs(dx)*2;
+                    newSceneObject.height = Math.abs(dy)*2;
+                    setScene(scene=>{
+                        const idx = scene.indexOf(sceneObject);
+                        sceneObject = newSceneObject;
+                        return scene.toSpliced(idx, 1, newSceneObject);
+                    })
+                }
+    
+                window.addEventListener("mousemove", handleDrag);
+                window.addEventListener("mouseup", e=>{
+                    window.removeEventListener("mousemove", handleDrag);
+                    setCurrentToolName(null)
+                }, {once: true});
+            }
+        },
+        {name: "line",
+            handler: (e)=>{
+                e.preventDefault();
+                var svg  = e.target.closest("SVG");
+                let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
+                const [beginSceneX, beginSceneY] = [loc.x, loc.y];
+    
+                let sceneObject = new LineSegment({
+                    Ax: beginSceneX, 
+                    Ay: beginSceneY, 
+                    Bx: beginSceneX+5,
+                    By: beginSceneY,
+                    material: new DiffuseMaterial()
+                });
+    
+                addSceneObject(sceneObject);
+                const handleDrag = e=>{
+                    // var svg  = e.target.closest("SVG");
+                    let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
+                    const [sceneX, sceneY] = [loc.x, loc.y]
+                    const [dx, dy] = [sceneX-beginSceneX, sceneY-beginSceneY];
+    
+                    const newSceneObject = sceneObject.copy(); 
+                    newSceneObject.Bx = sceneX;
+                    newSceneObject.By = sceneY;
+                    setScene(scene=>{
+                        const idx = scene.indexOf(sceneObject);
+                        sceneObject = newSceneObject;
+                        return scene.toSpliced(idx, 1, newSceneObject);
+                    })
+                }
+    
+                window.addEventListener("mousemove", handleDrag);
+                window.addEventListener("mouseup", e=>{
+                    window.removeEventListener("mousemove", handleDrag);
+                    setCurrentToolName(null)
+                }, {once: true});
+            }
+        },
+        {name: "lens",
+            handler: (e)=>{
+                e.preventDefault();
+                var svg  = e.target.closest("SVG");
+                let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
+                const [beginSceneX, beginSceneY] = [loc.x, loc.y];
+                let sceneObject = new SphericalLens({
+                    x: beginSceneX, 
+                    y: beginSceneY, 
+                    centerThickness: 5,
+                    edgeThickness: 0,
+                    material: new DiffuseMaterial()
+                });
+    
+                addSceneObject(sceneObject);
+                const handleDrag = e=>{
+                    // var svg  = e.target.closest("SVG");
+                    let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
+                    const [sceneX, sceneY] = [loc.x, loc.y]
+                    const [dx, dy] = [sceneX-beginSceneX, sceneY-beginSceneY];
+    
+                    const newSceneObject = sceneObject.copy(); 
+                    newSceneObject.diameter = Math.abs(dy*2)
+                    if(dx>0){
+                        newSceneObject.edgeThickness = 1;
+                        newSceneObject.centerThickness = dx*2;
+                    }else{
+                        newSceneObject.edgeThickness = dx*2;
+                        newSceneObject.centerThickness = 1;
+                    }
+                    setScene(scene=>{
+                        const idx = scene.indexOf(sceneObject);
+                        sceneObject = newSceneObject;
+                        return scene.toSpliced(idx, 1, newSceneObject);
+                    })
+                }
+    
+                window.addEventListener("mousemove", handleDrag);
+                window.addEventListener("mouseup", e=>{
+                    window.removeEventListener("mousemove", handleDrag);
+                    setCurrentToolName(null)
+                }, {once: true});
+            }
+        },
+        {name: "pointlight",
+            handler: (e)=>{
+                e.preventDefault();
+                var svg  = e.target.closest("SVG");
+                let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
+                const [beginSceneX, beginSceneY] = [loc.x, loc.y];
+    
+                let sceneObject = new PointLight({
+                    x: beginSceneX, 
+                    y: beginSceneY, 
+                    angle: 0,
+                    material: new DiffuseMaterial()
+                });
+    
+                addSceneObject(sceneObject);
+                const handleDrag = e=>{
+                    // var svg  = e.target.closest("SVG");
+                    let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
+                    const [sceneX, sceneY] = [loc.x, loc.y]
+                    const [dx, dy] = [sceneX-beginSceneX, sceneY-beginSceneY];
+    
+                    const newSceneObject = sceneObject.copy(); 
+                    newSceneObject.angle = Math.atan2(dy, dx);
+                    setScene(scene=>{
+                        const idx = scene.indexOf(sceneObject);
+                        sceneObject = newSceneObject;
+                        return scene.toSpliced(idx, 1, newSceneObject);
+                    })
+                }
+    
+                window.addEventListener("mousemove", handleDrag);
+                window.addEventListener("mouseup", e=>{
+                    window.removeEventListener("mousemove", handleDrag);
+                    setCurrentToolName(null)
+                }, {once: true});
+            }
+        },
+        {name: "directional",
+            handler: (e)=>{
+                e.preventDefault();
+                var svg  = e.target.closest("SVG");
+                let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
+                const [beginSceneX, beginSceneY] = [loc.x, loc.y];
+                
+                let sceneObject = new DirectionalLight({
+                    x: beginSceneX, 
+                    y: beginSceneY, 
+                    angle: 0,
+                    material: new DiffuseMaterial()
+                });
+    
+                addSceneObject(sceneObject);
+                const handleDrag = e=>{
+                    // var svg  = e.target.closest("SVG");
+                    let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
+                    const [sceneX, sceneY] = [loc.x, loc.y]
+                    const [dx, dy] = [sceneX-beginSceneX, sceneY-beginSceneY];
+    
+                    const newSceneObject = sceneObject.copy(); 
+                    newSceneObject.angle = Math.atan2(dy, dx);
+                    newSceneObject.width = Math.hypot(dx, dy)/2;
+                    setScene(scene=>{
+                        const idx = scene.indexOf(sceneObject);
+                        sceneObject = newSceneObject;
+                        return scene.toSpliced(idx, 1, newSceneObject);
+                    })
+                }
+    
+                window.addEventListener("mousemove", handleDrag);
+                window.addEventListener("mouseup", e=>{
+                    window.removeEventListener("mousemove", handleDrag);
+                    setCurrentToolName(null)
+                }, {once: true});
+            }
+        },
+        {name: "laser",
+            handler: (e)=>{
+                e.preventDefault();
+                var svg  = e.target.closest("SVG");
+                let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
+                const [beginSceneX, beginSceneY] = [loc.x, loc.y];
+    
+                let sceneObject = new LaserLight({
+                    x: beginSceneX, 
+                    y: beginSceneY, 
+                    angle: 0,
+                    material: new DiffuseMaterial()
+                });
+    
+                addSceneObject(sceneObject);
+                const handleDrag = e=>{
+                    // var svg  = e.target.closest("SVG");
+                    let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
+                    const [sceneX, sceneY] = [loc.x, loc.y]
+                    const [dx, dy] = [sceneX-beginSceneX, sceneY-beginSceneY];
+    
+                    const newSceneObject = sceneObject.copy(); 
+                    newSceneObject.angle = Math.atan2(dy, dx);
+                    setScene(scene=>{
+                        const idx = scene.indexOf(sceneObject);
+                        sceneObject = newSceneObject;
+                        return scene.toSpliced(idx, 1, newSceneObject);
+                    })
+                }
+    
+                window.addEventListener("mousemove", handleDrag);
+                window.addEventListener("mouseup", e=>{
+                    window.removeEventListener("mousemove", handleDrag);
+                    setCurrentToolName(null)
+                }, {once: true});
+            }
+        }
+     ]
 
-                    window.removeEventListener(handleMouseMove)
-                }, {once: true})
-        //         break;
-        
-        //     default:
-        //         break;
-        // }
+    const handleMouseDownTools = e=>
+    {
+        const toolIdx = tools.findIndex(tool=>tool.name==currentToolName);
+        if(toolIdx>=0){
+            e.preventDefault()
+            tools[toolIdx].handler(e)
+        }
     }
 
     return h("div", null,
-        h(GLViewport,  {
-            className:"viewport",
-            viewBox: viewBox,
-            scene: scene,
-            paths: randomRaytraceResults.lightPaths
-        }),
+        // h(GLViewport,  {
+        //     className:"viewport",
+        //     viewBox: viewBox,
+        //     scene: scene,
+        //     paths: randomRaytraceResults.lightPaths
+        // }),
         h(SVGViewport, {
             // style: {opacity: "0.2"},
             className:"viewport",
@@ -270,42 +513,33 @@ const App = ()=>{
             paths:svgDisplayOptions.lightPaths?uniformRaytraceResults.lightPaths:[], 
             onSceneObject: (oldObject, newObject)=>updateSceneObject(oldObject, newObject),
 
-            onMouseDown: e=>handleMouseDownTools(e)
+            onMouseDown: e=>{
+                if(currentToolName)
+                {
+                    handleMouseDownTools(e);
+                }
+            }
         }),
         h("div", {
             id: "toolbar", className: "panel"
         },
             h("button", {
-                onClick: e=>setTool("Circle")
-            }, "Circle"),
-            h("button", {
-                onClick: e=>setTool("Lens")
-            }, "Lens"),
-            // h("button", {
-            //     onClick: ()=>addSceneObject(new Circle(P(0,0), new MirrorMaterial, 50))
-            // }, "Circle"),
-            // h("button", {
-            //     onClick: ()=>addSceneObject(new Rectangle(P(0,0), new DiffuseMaterial, 200, 200, 0))
-            // }, "Rectangle"),
-            // h("button", {
-            //     onClick: ()=>addSceneObject(new SphericalLens(P(0,0), new TransparentMaterial, 200, 0, 50))
-            // }, "Lens"),
-            // h("button", {
-            //     onClick: ()=>addSceneObject(new LineSegment(P(-100, 0), P(100, 0), new MirrorMaterial))
-            // }, "LineSegment"),
-            // h("button", {
-            //     onClick: ()=>addSceneObject(new PointLight(P(0,0), 0))
-            // }, "PointLight"),
-            // h("button", {
-            //     onClick: ()=>addSceneObject(new LaserLight(P(0,0), 0))
-            // }, "LaserLight"),
-            // h("button", {
-            //     onClick: ()=>addSceneObject(new DirectionalLight(P(0,0), 50, 0))
-            // }, "DirectionalLight"),
+                onClick: e=>setCurrentToolName(null),
+                className: currentToolName == null ? "active" : null
+            }, h("i", {className: "fa-solid fa-arrow-pointer"})),
+
+            tools.map(tool=>{
+                return h("button", {
+                    onClick: e=>setCurrentToolName(tool.name),
+                    title: tool.name,
+                    className: currentToolName == tool.name ? "active" : null
+                }, tool.name)
+            }),
+            h("hr"),
             h("button", {
                 onClick: (e)=>removeSelectedObjects(),
                 className: "danger"
-            }, "delete selection")
+            }, "delete")
         ),
 
         h("div", {

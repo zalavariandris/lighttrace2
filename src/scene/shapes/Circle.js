@@ -71,7 +71,8 @@ class Circle extends Shape
             x: this.x, 
             y: this.y, 
             material: this.material.copy(), 
-            radius: this.radius});
+            radius: this.radius
+        });
     }
 
     toString()

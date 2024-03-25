@@ -5,11 +5,11 @@ import { Lightray } from "../../raytrace.js";
 
 class DirectionalLight extends Light
 {
-    constructor({x, y, width, angle})
+    constructor({x, y, width, angle=0, frequency=560}={})
     {
-        super({x, y})
+        super({x, y, frequency})
         this.width = width;
-        this.angle = angle
+        this.angle = angle;
     }
 
     sampleRays({sampleCount=9, samplingMethod=SamplingMethod.Uniform}={})

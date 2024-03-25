@@ -21,8 +21,9 @@ https://zalavariandris.github.io/lighttrace2/
 
 - [x] remove class Object like Point from constructors. Use Cx, Cy for example.
 - [x] refactor constructors to accept {key value objects}
-
-- [ ] mousetools to create scene objects
+- [x] mousetools to create scene objects
+- [x] rewrite mousetools to a single mouseDown function. to keep track dragStartPosition.
+- [ ] fix selection when when scene updates.
 - [ ] support light frequency
 - [ ] support light distribution
 
@@ -43,6 +44,8 @@ https://zalavariandris.github.io/lighttrace2/
 - [ ] fix selection when scene has changed
 - [ ] fix (potential) memory leak on long simulations.
   - [ ] stop refining(rendering) after a number of samples!
+- [ ] concave lens inner corner does not refract properly
+- [ ] when lens thickness is larger then the diameter, visuals are not in sync with the model. These lenses are not traditional lenses, so constrain the model itself. dont let thicknes to be wider then the lens diameter.
 
 
 

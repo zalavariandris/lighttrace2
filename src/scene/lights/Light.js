@@ -7,6 +7,11 @@ const SamplingMethod = Object.freeze({
 
 class Light extends SceneObject
 {
+    constructor({x, y, frequency=560}={})
+    {
+        super({x, y});
+        this.frequency = frequency;
+    }
     sampleRays()
     {
         return []

@@ -18,7 +18,13 @@ class LineSegment extends Shape
 
     copy(other)
     {
-        return new LineSegment({Ax:this.Ax, Ay:this.Ay, Bx:this.Bx, By:this.By, material:this.material.copy()})
+        return new LineSegment({
+            Ax:this.Ax, 
+            Ay:this.Ay, 
+            Bx:this.Bx, 
+            By:this.By, 
+            material:this.material.copy()
+        })
     }
 
     toString()

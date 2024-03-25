@@ -6,9 +6,9 @@ import { Lightray } from "../../raytrace.js";
 
 class LaserLight extends Light
 {
-    constructor({x, y, angle=0}={})
+    constructor({x, y, angle=0, frequency=560}={})
     {
-        super({x, y});
+        super({x, y, frequency});
         this.angle = angle;
     }
 

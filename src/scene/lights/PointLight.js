@@ -6,9 +6,10 @@ import { Lightray } from "../../raytrace.js";
 
 class PointLight extends Light
 {
-    constructor({x, y, angle=0}={}){
-        super({x, y})
-        this.angle = angle;
+    constructor({x, y, angle=0, frequency=560}={}){
+        super({x, y, frequency})
+        this.angle = angle
+
     }
 
     copy()

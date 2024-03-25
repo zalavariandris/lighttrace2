@@ -1,5 +1,4 @@
 import React, {useState} from "react"
-import AngleManip from "./AngleManip.js";
 import Manipulator from "./Manipulator.js";
 
 const h = React.createElement;
@@ -43,6 +42,16 @@ function DirectionalLightItem({
         onChange(light, newSceneObject)
     }
 
+    const handleAngleDrag = e=>{
+        const dx = e.sceneX-light.x;
+        const dy = e.sceneY-light.y;
+        const newAngle = Math.atan2(dy, dx);
+
+        const newSceneObject = light.copy()
+        newSceneObject.angle = newAngle;
+        onChange(light, newSceneObject);
+    }
+
     return h(Manipulator, {
         onDragStart: (e)=>grabOffset.current = {x: e.sceneX-light.x, y: e.sceneY-light.y},
         onDrag: (e)=>setPos(e.sceneX-grabOffset.current.x, e.sceneY-grabOffset.current.y),
@@ -59,12 +68,16 @@ function DirectionalLightItem({
             className: "shape",
             style: {transform: `rotate(${light.angle*180/Math.PI}deg)`, transformOrigin: `${light.x}px ${light.y}px`}
         }),
-        h(AngleManip, {
-            x:light.x, 
-            y:light.y,
-            radians: light.angle,
-            onChange: (newRadians)=>setRadians(newRadians)
-        }),
+        h(Manipulator, {
+            onDrag: (e)=>handleAngleDrag(e),
+            className:"manip",
+            showGuide: false
+        }, h("circle", {
+            cx: light.x+Math.cos(light.angle)*50,
+            cy: light.y+Math.sin(light.angle)*50,
+            r: 5,
+            className: "handle"
+        })),
         h(Manipulator, {
             onDragStart: e=>handleWidthDragStart(e),
             onDrag: e=>handleWidthDrag(e),

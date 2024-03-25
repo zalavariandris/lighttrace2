@@ -177,6 +177,58 @@ text.shape{
 
 /**/
 
+#toolbar{
+    display: flex;
+    flex-direction: row;
+    width: 10rem;
+    position: fixed;
+    width: 100vw;
+    bottom: 0;
+    left: 0;
+    box-sizing: border-box;
+    margin: 0;
+    justify-content: center;
+    background-color: transparent;
+    pointer-events: none;
+}
+
+#toolbar>*{
+    pointer-events: auto;
+}
+
+#toolbar>*{
+    flex-grow: 0;
+    flex-shrink: 1;
+    flex-basis: 0;
+    margin: 0;
+}
+
+
+#toolbar button{
+    background-color: transparent;
+    border: none;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    margin: 0.5rem;
+
+}
+
+#toolbar button{
+    color: grey;
+    cursor: pointer;
+}
+#toolbar button.danger{
+    color: red;
+}
+#toolbar button:hover{
+    color: white;
+}
+#toolbar button.active{
+    color: white;
+}
+
+
+
 
 #inspector
 {

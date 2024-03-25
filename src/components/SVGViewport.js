@@ -1,111 +1,19 @@
 import React, {useState} from "react"
 
-/*scene*/
-import Shape from "../scene/shapes/Shape.js";
-import Circle from "../scene/shapes/Circle.js"
-import LineSegment from "../scene/shapes/LineSegment.js"
-import Rectangle from "../scene/shapes/Rectangle.js"
-import SphericalLens from "../scene/shapes/SphericalLens.js"
-
-import Light from "../scene/lights/Light.js"
-import PointLight from "../scene/lights/PointLight.js"
-import LaserLight from "../scene/lights/LaserLight.js"
-import DirectionalLight from "../scene/lights/DirectionalLight.js"
-
-import Material from "../scene/materials/Material.js"
-import MirrorMaterial from "../scene/materials/MirrorMaterial.js"
-import TransparentMaterial from "../scene/materials/TransparentMaterial.js"
-import DiffuseMaterial from "../scene/materials/DiffuseMaterial.js"
 
 /*viewport Items*/
-import CircleItem from "./CircleItem.js"
-import LineSegmentItem from "./LineSegmentItem.js"
-import RectangleItem from "./RectangleItem.js"
-import SphericalLensItem from "./SphericalLensItem.js"
+import SceneItem from "./SceneItem.js"
 
-import DirectionalLightItem from "./DirectionalLightItem.js"
-import PointLightItem from "./PointLightItem.js"
-import LaserLightItem from "./LaserLightItem.js"
+
 
 
 function viewboxString(viewBox)
 {
     return viewBox.x+" "+viewBox.y+" "+viewBox.w+" "+viewBox.h;
 }
+
+
 const h = React.createElement;
-
-function SceneItem({
-    sceneObject, 
-    onChange=(oldSceneObject, newSceneObject)=>{},
-    ...props
-})
-{
-    if(sceneObject instanceof Circle)
-    {
-        return h(CircleItem, {
-            circle:sceneObject, 
-            onChange: onChange,
-            ...props
-        })
-    }
-    if(sceneObject instanceof Rectangle)
-    {
-        return RectangleItem({
-            rectangle: sceneObject,
-            onChange: onChange,
-            ...props
-        })
-    }
-
-    else if(sceneObject instanceof SphericalLens)
-    {
-        return SphericalLensItem({
-            lens: sceneObject,
-            onChange: onChange,
-            ...props
-        })
-    }
-
-    else if(sceneObject instanceof LineSegment)
-    {
-        return LineSegmentItem({
-            lineSegment: sceneObject,
-            onChange: onChange,
-            ...props
-        })
-    }
-
-    else if(sceneObject instanceof PointLight)
-    {
-        return PointLightItem({
-            light: sceneObject,
-            onChange: onChange,
-            ...props
-        })
-    }
-
-    else if(sceneObject instanceof LaserLight)
-    {
-        return LaserLightItem({
-            light: sceneObject,
-            onChange: onChange,
-            ...props
-        })
-    }
-
-    else if(sceneObject instanceof DirectionalLight)
-    {
-        return DirectionalLightItem({
-            light: sceneObject,
-            onChange: onChange,
-            ...props
-        });
-    }
-
-    return h("text", {className: "shape", x: sceneObject.center.x, y: sceneObject.center.y, fontSize:12}, `${sceneObject.constructor.name}`)
-
-}
-
 function SVGViewport({
     viewBox={x:0, y:0, w:512, h:512}, 
     onViewChange=()=>{},
@@ -153,7 +61,9 @@ function SVGViewport({
     }
 
     const onmousedown = (e)=>{
-        props.onMouseDown(e);
+        if(props.onMouseDown){
+            props.onMouseDown(e);
+        }
         if(e.isDefaultPrevented()){
             return;
         }

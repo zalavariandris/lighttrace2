@@ -18,8 +18,9 @@ class Lightray
         return new Lightray(this.origin, this.direction, this.intensity, this.frequency);
     }
 
-    toString(){
-        return `Lightray(${this.origin}, ${this.direction})`
+    toString()
+    {
+        return `Lightray(${this.origin}, ${this.direction}, ${this.intensity}, ${this.frequency})`
     }
 }
 
@@ -61,6 +62,11 @@ class LightPath{
     copy()
     {
         return new LightPath(this.points.map(P=>P.copy()), this.intensity, this.frequency)
+    }
+
+    toString()
+    {
+        return `Lightpath(${this.intensity}, ${this.frequency})`
     }
 }
 
