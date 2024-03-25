@@ -139,7 +139,7 @@ function SVGViewport({
         var mx = e.clientX;//mouse x  
         var my = e.clientY;
         var dw = w*e.deltaY*0.01*-0.05;
-        var dh = h*e.deltaY*0.01*-0.05;
+        var dh = h*e.deltaY*0.01*-0.05; 
         var dx = dw*mx/clientSize.w;
         var dy = dh*my/clientSize.h;
         const newViewBox = {
@@ -153,6 +153,10 @@ function SVGViewport({
     }
 
     const onmousedown = (e)=>{
+        props.onMouseDown(e);
+        if(e.isDefaultPrevented()){
+            return;
+        }
         isPanning.current = true,
         e.preventDefault();
     }

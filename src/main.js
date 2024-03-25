@@ -56,7 +56,7 @@ function RaytraceStats({
         h(Collapsable, {title: `Hitpoints №${hitPoints.length}`}, 
             h("ul", null, 
                 hitPoints.map(item=>{
-                    return h('li', null, `${item}`)
+                    return h('li', null, `${item}`);
                 })
             )
         ),
@@ -84,9 +84,6 @@ function Outliner({scene=[]}={})
     )
 }
 
-function MouseTool(...props){
-    
-}
 
 const App = ()=>{
     /* STATE */
@@ -131,10 +128,10 @@ const App = ()=>{
         // new Rectangle(P(250,500), new DiffuseMaterial(), 600,100),
 
         
-        new DirectionalLight({x:50, y: 250, width: 30, angle: 0}),
+        new DirectionalLight({x:50, y: 250, width: 80, angle: 0}),
         new SphericalLens({x: 150, y:250, material: new TransparentMaterial(), 
-            diameter: 100,
-            edgeThickness: 40,
+            diameter: 140,
+            edgeThickness: 60,
             centerThickness:5
         }),
         new SphericalLens({x: 230, y: 250, material: new TransparentMaterial(), 
@@ -213,6 +210,43 @@ const App = ()=>{
         }
     }, [animate]); // Make sure the effect runs only once
 
+    const [tool, setTool] = React.useState(null);
+    function cursorPoint(svg, {x, y}){
+        let pt = svg.createSVGPoint();
+        pt.x =x; pt.y = y;
+        const scenePoint = pt.matrixTransform(svg.getScreenCTM().inverse());
+        return {x:scenePoint.x, y:scenePoint.y};
+    }
+    function handleMouseDownTools(e)
+    {
+        var svg  = e.target.closest("SVG");
+        let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
+        const [sceneX, sceneY] = [loc.x, loc.y]
+        console.log("handle mouse tools")
+        // if(tool?true:false){
+            e.preventDefault()
+        // }
+
+        const handleMouseMove = e=>{
+            console.log("set circle size baed no mouse")
+        }
+
+        // switch (tool) {
+        //     case "Circle":
+                const circle = addSceneObject(new Circle({x: sceneX, y: sceneY, radius:5, material:new TransparentMaterial}));
+                window.addEventListener("mousemove", handleMouseMove)
+                window.addEventListener("mouseup", e=>{
+                    console.log("finaliye circle createion")
+
+                    window.removeEventListener(handleMouseMove)
+                }, {once: true})
+        //         break;
+        
+        //     default:
+        //         break;
+        // }
+    }
+
     return h("div", null,
         h(GLViewport,  {
             className:"viewport",
@@ -234,32 +268,40 @@ const App = ()=>{
             rays: svgDisplayOptions.lightrays?uniformRaytraceResults.lightrays:[],
             hitPoints: svgDisplayOptions.hitPoints?uniformRaytraceResults.hitPoints:[], 
             paths:svgDisplayOptions.lightPaths?uniformRaytraceResults.lightPaths:[], 
-            onSceneObject: (oldObject, newObject)=>updateSceneObject(oldObject, newObject)
+            onSceneObject: (oldObject, newObject)=>updateSceneObject(oldObject, newObject),
+
+            onMouseDown: e=>handleMouseDownTools(e)
         }),
         h("div", {
             id: "toolbar", className: "panel"
         },
             h("button", {
-                onClick: ()=>addSceneObject(new Circle(P(0,0), new MirrorMaterial, 50))
+                onClick: e=>setTool("Circle")
             }, "Circle"),
             h("button", {
-                onClick: ()=>addSceneObject(new Rectangle(P(0,0), new DiffuseMaterial, 200, 200, 0))
-            }, "Rectangle"),
-            h("button", {
-                onClick: ()=>addSceneObject(new SphericalLens(P(0,0), new TransparentMaterial, 200, 0, 50))
+                onClick: e=>setTool("Lens")
             }, "Lens"),
-            h("button", {
-                onClick: ()=>addSceneObject(new LineSegment(P(-100, 0), P(100, 0), new MirrorMaterial))
-            }, "LineSegment"),
-            h("button", {
-                onClick: ()=>addSceneObject(new PointLight(P(0,0), 0))
-            }, "PointLight"),
-            h("button", {
-                onClick: ()=>addSceneObject(new LaserLight(P(0,0), 0))
-            }, "LaserLight"),
-            h("button", {
-                onClick: ()=>addSceneObject(new DirectionalLight(P(0,0), 50, 0))
-            }, "DirectionalLight"),
+            // h("button", {
+            //     onClick: ()=>addSceneObject(new Circle(P(0,0), new MirrorMaterial, 50))
+            // }, "Circle"),
+            // h("button", {
+            //     onClick: ()=>addSceneObject(new Rectangle(P(0,0), new DiffuseMaterial, 200, 200, 0))
+            // }, "Rectangle"),
+            // h("button", {
+            //     onClick: ()=>addSceneObject(new SphericalLens(P(0,0), new TransparentMaterial, 200, 0, 50))
+            // }, "Lens"),
+            // h("button", {
+            //     onClick: ()=>addSceneObject(new LineSegment(P(-100, 0), P(100, 0), new MirrorMaterial))
+            // }, "LineSegment"),
+            // h("button", {
+            //     onClick: ()=>addSceneObject(new PointLight(P(0,0), 0))
+            // }, "PointLight"),
+            // h("button", {
+            //     onClick: ()=>addSceneObject(new LaserLight(P(0,0), 0))
+            // }, "LaserLight"),
+            // h("button", {
+            //     onClick: ()=>addSceneObject(new DirectionalLight(P(0,0), 50, 0))
+            // }, "DirectionalLight"),
             h("button", {
                 onClick: (e)=>removeSelectedObjects(),
                 className: "danger"

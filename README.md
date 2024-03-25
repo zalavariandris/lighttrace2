@@ -21,15 +21,17 @@ https://zalavariandris.github.io/lighttrace2/
 
 - [x] remove class Object like Point from constructors. Use Cx, Cy for example.
 - [x] refactor constructors to accept {key value objects}
-- [ ] refactor _sceneObject_ to sceneObject({shape, material})
-
 
 - [ ] mousetools to create scene objects
 - [ ] support light frequency
 - [ ] support light distribution
 
+- [ ] refactor SVGViewport to accept children components, to populate the scene
+
 - [ ] support light source intensity
 - [ ] simulate light as wave
+
+- [ ] ? refactor _sceneObject_ to sceneObject({shape, material})
 
 ### fix known bugs:
 - [x] leaks pointlight inside a circle (since rewrite) FIXED: compareHitPoint distances in raytrace.js
