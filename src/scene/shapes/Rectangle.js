@@ -6,9 +6,9 @@ import { HitPoint } from "../../raytrace.js";
 
 class Rectangle extends Shape
 {
-    constructor({x, y, material, width, height, angle=0}={})
+    constructor(key, {x, y, material, width, height, angle=0}={})
     {
-        super({x, y, material});
+        super(key, {x, y, material});
         this.width = width;
         this.height = height;
         this.angle = angle

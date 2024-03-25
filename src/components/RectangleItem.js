@@ -33,7 +33,8 @@ function RectangleItem({
             width: rectangle.width,
             height: rectangle.height,
             vectorEffect: "non-scaling-stroke",
-            className: "handle shape"
+            className: "handle shape",
+            style: {fill: colorFromRGB(wavelengthToRGB(light.wavelength))},
         })
     )
 }

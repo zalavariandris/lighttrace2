@@ -6,24 +6,25 @@ import { Lightray } from "../../raytrace.js";
 
 class LaserLight extends Light
 {
-    constructor({x, y, angle=0, frequency=560}={})
+    constructor(key, {x, y, angle=0, wavelength=590}={})
     {
-        super({x, y, frequency});
+        super(key, {x, y, wavelength});
         this.angle = angle;
     }
 
     copy()
     {
-        return new LaserLight({
+        return new LaserLight(this.key, {
             x: this.x, 
             y:this.y, 
-            angle: this.angle
+            angle: this.angle,
+            wavelength: this.wavelength
         });
     }
 
     toString()
     {
-        return `LaserLight(${this.x}, ${this.y}, ${this.angle.toFixed()})`
+        return `LaserLight(${this.key}, ${this.x}, ${this.y}, ${this.angle.toFixed()})`
     }
 
     sampleRays({sampleCount=9, samplingMethod=SamplingMethod.Uniform}={}){

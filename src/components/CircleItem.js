@@ -28,6 +28,7 @@ function CircleItem({
             y: e.sceneY-circle.y
         };
     }
+    
     const handleRadiusDrag = e=>{
         const dx = e.sceneX-circle.x;
         const dy = e.sceneY-circle.y;

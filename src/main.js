@@ -34,7 +34,8 @@ function RaytraceStats({
     lightRays=[],
     hitPoints=[],
     lightPaths=[]
-}={}){
+}={})
+{
     return h("section", null, 
         h("h3", null, "RaytraceStats"),
 
@@ -69,12 +70,12 @@ function RaytraceStats({
     )
 }
 
-function Outliner({scene=[]}={})
+function Outliner({sceneModel={objects: [], selection:[]}}={})
 {
     return h("section", null,
         h("h3", null, "Outliner"),
         h("ul", null, 
-            ...scene.map((sceneObject)=>{
+            ...sceneModel.objects.map((sceneObject)=>{
                 return h("li", null, 
                         `${sceneObject}`
                     )
@@ -113,53 +114,125 @@ const App = ()=>{
         x:0,y:0,w:512,h:512
     });
 
-    const [scene, setScene] = React.useState([      
-        new DirectionalLight({x:50, y: 250, width: 80, angle: 0}),
-        new PointLight({x: 50, y: 150, angle:0}),
-        new LaserLight({x:50, y: 200, angle: 0}),
-        new SphericalLens({x: 150, y:250, material: new TransparentMaterial(), 
-            diameter: 140,
-            edgeThickness: 60,
-            centerThickness:5
-        }),
-        new SphericalLens({x: 230, y: 250, material: new TransparentMaterial(), 
-            diameter: 100,
-            edgeThickness: 5,
-            centerThickness: 50
-        }),
-        new Circle({x: 400, y:220, material: new MirrorMaterial(), radius: 50}),
-        new LineSegment({Ax: 50, Ay: 450, Bx: 462, By: 450, material: new DiffuseMaterial()}),
-    ]);
+    // SCENE MODEL
+    const [sceneModel, setSceneModel] = useState({
+        objects: [
+            
 
-    const addSceneObject = (sceneObject)=>{
-        console.log("addSceneObject", sceneObject)
-        setScene(scene=>[...scene, sceneObject])
-        setSelection(selection=>[sceneObject])
+            new SphericalLens("concave lens", {x: 150, y:250, material: new TransparentMaterial(), 
+                diameter: 140,
+                edgeThickness: 60,
+                centerThickness:5
+            }),
+            new SphericalLens("convex lens", {x: 230, y: 250, material: new TransparentMaterial(), 
+                diameter: 100,
+                edgeThickness: 5,
+                centerThickness: 50
+            }),
+            new Circle("mirror ball", {x: 400, y:220, material: new MirrorMaterial(), radius: 50}),
+            new LineSegment("floor line", {Ax: 50, Ay: 450, Bx: 462, By: 450, material: new DiffuseMaterial()}),
+            new PointLight("lamp", {x: 50, y: 150, angle:0}),
+            new DirectionalLight("sun", {x:50, y: 250, width: 80, angle: 0}),
+            new LaserLight("laser", {x:50, y: 200, angle: 0}),
+        ],
+        selection: []
+    });
+
+    const setSelection = newSelection=>{
+        setSceneModel(sceneModel=>{
+            return {
+                objects: [...sceneModel.objects],
+                selection: newSelection
+            }
+        });
+        return newSelection;
+    };
+
+    const updateSceneObject = (oldSceneObject, newSceneObject)=>{
+        setSceneModel( sceneModel => {
+            // update objects
+            
+            const objectsIdx = sceneModel.objects.findIndex(obj=>obj.key == oldSceneObject.key);
+            if(objectsIdx<0)
+            {
+                console.warn("old scene object not in current scene")
+                return sceneModel;
+            }
+            const newObjects = sceneModel.objects.toSpliced(objectsIdx, 1, newSceneObject);
+
+            // update selection
+            const selectionIdx = sceneModel.selection.findIndex(obj=>obj.key == oldSceneObject.key);
+            const newSelection = [...sceneModel.selection]
+            if(selectionIdx>=0)
+            {
+                newSelection.splice(selectionIdx, 1, newSceneObject)
+            }
+            
+            return {
+                objects: newObjects.map(obj=>obj.copy()),
+                selection: newSelection.map(obj=>obj.copy())
+            }
+        });
+    };
+
+    const removeSelectedObjects = ()=>{
+        setSceneModel(sceneModel=>{
+            const selectedKeys = new Set( sceneModel.selection.map(obj=>obj.key) );
+            return {
+                objects: sceneModel.objects.filter(obj=>!selectedKeys.has(obj.key)).map(obj=>obj.copy()),
+                selection: []
+            }
+        })
     }
+    
+    // const [scene, setScene] = React.useState([      
+    //     new DirectionalLight({x:50, y: 250, width: 80, angle: 0}),
+    //     new PointLight({x: 50, y: 150, angle:0}),
+    //     new LaserLight({x:50, y: 200, angle: 0}),
+    //     new SphericalLens({x: 150, y:250, material: new TransparentMaterial(), 
+    //         diameter: 140,
+    //         edgeThickness: 60,
+    //         centerThickness:5
+    //     }),
+    //     new SphericalLens({x: 230, y: 250, material: new TransparentMaterial(), 
+    //         diameter: 100,
+    //         edgeThickness: 5,
+    //         centerThickness: 50
+    //     }),
+    //     new Circle({x: 400, y:220, material: new MirrorMaterial(), radius: 50}),
+    //     new LineSegment({Ax: 50, Ay: 450, Bx: 462, By: 450, material: new DiffuseMaterial()}),
+    // ]);
 
-    const removeSelectedObjects=()=>{
-        setScene(scene=>scene.filter(sceneObject=>selection.indexOf(sceneObject)<0));
-        setSelection(selection=>[]);
-    }
+    // const [selection, setSelection] = React.useState([])
+    // const updateSceneObject = (oldObject, newObject)=>{
+    //     const sceneIdx = scene.indexOf(oldObject);
 
-    const [selection, setSelection] = React.useState([])
-    const updateSceneObject = (oldObject, newObject)=>{
-        const sceneIdx = scene.indexOf(oldObject);
+    //     if(sceneIdx<0) {
+    //         console.warn("scenr object is not in Scene", oldObject)
+    //         return scene;
+    //     }
+    //     const newScene = scene.toSpliced(sceneIdx, 1, newObject)
 
-        if(sceneIdx<0) {
-            console.warn("scenr object is not in Scene", oldObject)
-            return scene;
-        }
-        const newScene = scene.toSpliced(sceneIdx, 1, newObject)
+    //     setScene(newScene);
+    //     // setSelection(selection=>[])
+    // }
 
-        setScene(newScene);
-        // setSelection(selection=>[])
-    }
+    // const addSceneObject = (sceneObject)=>{
+    //     console.log("addSceneObject", sceneObject)
+    //     setScene(scene=>[...scene, sceneObject])
+    //     setSelection(selection=>[sceneObject])
+    // }
 
+    // const removeSelectedObjects=()=>{
+    //     setScene(scene=>scene.filter(sceneObject=>selection.indexOf(sceneObject)<0));
+    //     setSelection(selection=>[]);
+    // }
+
+    // RAYTRACE
     function updateRaytraceUniform()
     {
-        const lights = scene.filter(obj=>obj instanceof Light)
-        const shapes = scene.filter(obj=>obj instanceof Shape)
+        const lights = sceneModel.objects.filter(obj=>obj instanceof Light)
+        const shapes = sceneModel.objects.filter(obj=>obj instanceof Shape)
         const newRaytraceResults = raytrace(lights, [shapes, shapes.map(shp=>shp.material)], {
             maxBounce:raytraceOptions.maxBounce, 
             samplingMethod: raytraceOptions.samplingMethod, 
@@ -172,8 +245,8 @@ const App = ()=>{
 
     function updateRaytraceRandom()
     {
-        const lights = scene.filter(obj=>obj instanceof Light)
-        const shapes = scene.filter(obj=>obj instanceof Shape)
+        const lights = sceneModel.objects.filter(obj=>obj instanceof Light)
+        const shapes = sceneModel.objects.filter(obj=>obj instanceof Shape)
         const newRaytraceResults = raytrace(lights, [shapes, shapes.map(shp=>shp.material)], {
             maxBounce:raytraceOptions.maxBounce, 
             samplingMethod: SamplingMethod.Random, 
@@ -191,7 +264,6 @@ const App = ()=>{
 
     const onAnimationTick = timeStamp => {
         setCount(prevCount => prevCount + 1);
-
         requestRef.current = requestAnimationFrame(onAnimationTick);
     }
 
@@ -204,11 +276,10 @@ const App = ()=>{
 
     const [currentToolName, setCurrentToolName] = React.useState(null);
 
-
-
     const tools = [
-        {name: "circle",
-            handler: (e)=>{
+        {
+            name: "circle",
+            handler: e => {
                 e.preventDefault();
                 var svg  = e.target.closest("SVG");
                 let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
@@ -245,8 +316,9 @@ const App = ()=>{
                 }, {once: true});
             }
         },
-        {name: "rectangle",
-            handler: (e)=>{
+        {
+            name: "rectangle",
+            handler: e => {
                 e.preventDefault();
                 var svg  = e.target.closest("SVG");
                 let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
@@ -270,6 +342,7 @@ const App = ()=>{
                     const newSceneObject = sceneObject.copy(); 
                     newSceneObject.width = Math.abs(dx)*2;
                     newSceneObject.height = Math.abs(dy)*2;
+
                     setScene(scene=>{
                         const idx = scene.indexOf(sceneObject);
                         sceneObject = newSceneObject;
@@ -284,8 +357,9 @@ const App = ()=>{
                 }, {once: true});
             }
         },
-        {name: "line",
-            handler: (e)=>{
+        {
+            name: "line",
+            handler: e => {
                 e.preventDefault();
                 var svg  = e.target.closest("SVG");
                 let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
@@ -323,8 +397,9 @@ const App = ()=>{
                 }, {once: true});
             }
         },
-        {name: "lens",
-            handler: (e)=>{
+        {
+            name: "lens",
+            handler: e => {
                 e.preventDefault();
                 var svg  = e.target.closest("SVG");
                 let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
@@ -367,8 +442,9 @@ const App = ()=>{
                 }, {once: true});
             }
         },
-        {name: "pointlight",
-            handler: (e)=>{
+        {
+            name: "pointlight",
+            handler: e => {
                 e.preventDefault();
                 var svg  = e.target.closest("SVG");
                 let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
@@ -404,8 +480,9 @@ const App = ()=>{
                 }, {once: true});
             }
         },
-        {name: "directional",
-            handler: (e)=>{
+        {
+            name: "directional",
+            handler: e => {
                 e.preventDefault();
                 var svg  = e.target.closest("SVG");
                 let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
@@ -442,8 +519,9 @@ const App = ()=>{
                 }, {once: true});
             }
         },
-        {name: "laser",
-            handler: (e)=>{
+        {
+            name: "laser",
+            handler: e => {
                 e.preventDefault();
                 var svg  = e.target.closest("SVG");
                 let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
@@ -479,9 +557,9 @@ const App = ()=>{
                 }, {once: true});
             }
         }
-     ]
+    ]
 
-    const handleMouseDownTools = e=>
+    const handleMouseDownTools = e =>
     {
         const toolIdx = tools.findIndex(tool=>tool.name==currentToolName);
         if(toolIdx>=0){
@@ -502,8 +580,8 @@ const App = ()=>{
             className:"viewport",
             viewBox: viewBox,
             onViewChange: (value) => setViewBox(value),
-            scene: scene,
-            selection:selection,
+            scene: sceneModel.objects,
+            selection: sceneModel.selection,
             onSelection: (newSelection)=>{
                 console.log("main->setSelection", newSelection)
                 setSelection(newSelection);
@@ -546,8 +624,8 @@ const App = ()=>{
             className: "panel", 
             style: {right: "0px", top:"0px", position: "fixed"}
         }, 
-            selection[0]?h(Inspector, {
-                sceneObject: selection[0],
+            sceneModel.selection[0]?h(Inspector, {
+                sceneObject: sceneModel.selection[0],
                 onChange: (oldObject, newObject)=>updateSceneObject(oldObject, newObject)
             }):null,
             h(Collapsable, {title: h("h2", null, "Settings")},
@@ -666,13 +744,13 @@ const App = ()=>{
                 )
             ),
             h(Collapsable, {title: h("h2", null, "Scene Info")}, null,
-                h(Outliner, {scene: scene}),
-                h(RaytraceStats, {
-                    scene: scene, 
-                    lightRays: uniformRaytraceResults.rays, 
-                    hitPoints: uniformRaytraceResults.hitPoints, 
-                    lightPaths: uniformRaytraceResults.lightPaths
-                })
+                h(Outliner, {sceneModel: sceneModel}),
+                // h(RaytraceStats, {
+                //     scene: sceneModel.objects, 
+                //     lightRays: uniformRaytraceResults.rays, 
+                //     hitPoints: uniformRaytraceResults.hitPoints, 
+                //     lightPaths: uniformRaytraceResults.lightPaths
+                // })
             )
         )
     )

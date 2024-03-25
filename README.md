@@ -23,7 +23,7 @@ https://zalavariandris.github.io/lighttrace2/
 - [x] refactor constructors to accept {key value objects}
 - [x] mousetools to create scene objects
 - [x] rewrite mousetools to a single mouseDown function. to keep track dragStartPosition.
-- [ ] fix selection when when scene updates.
+- [x] fix selection when when scene updates.
 - [ ] support light frequency
 - [ ] support light distribution
 
@@ -41,7 +41,7 @@ https://zalavariandris.github.io/lighttrace2/
 - [ ] rectangle corners leaking: fix linesegment corners hitTest
 - [ ] cant use manipulators under shapes: fix svg layering and interaction
 - [ ] rotate shapes
-- [ ] fix selection when scene has changed
+- [x] fix selection when scene has changed -> unifiedScenemodel with selection
 - [ ] fix (potential) memory leak on long simulations.
   - [ ] stop refining(rendering) after a number of samples!
 - [ ] concave lens inner corner does not refract properly

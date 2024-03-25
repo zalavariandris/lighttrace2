@@ -6,13 +6,13 @@ const EPSILON=1e-6;
 
 class Circle extends Shape
 {
-    constructor({x, y, material, radius})
+    constructor(key, {x, y, material, radius})
     {
-        super({x, y, material})
+        super(key, {x, y, material})
         this.radius=radius;
     }
 
-    static fromThreePoints(S, M, E) {
+    static fromThreePoints(key, S, M, E) {
 
         var Sx = S.x;
         var Sy = S.y;
@@ -34,7 +34,7 @@ class Circle extends Shape
         var x = -b / (2 * a);
         var y = -c / (2 * a);
       
-        return new Circle({
+        return new Circle(key, {
             x:x, 
             y:y, 
             material:null, 
@@ -42,7 +42,7 @@ class Circle extends Shape
         })
       }
 
-      static fromRadiusAndTwoPoints(r, A, B, flip=false) {
+      static fromRadiusAndTwoPoints(key, r, A, B, flip=false) {
             const [Ax, Ay] = [A.x, A.y];
             const [Bx, By] = [B.x, B.y];
 
@@ -57,7 +57,7 @@ class Circle extends Shape
             Cy+=By;
 
             // Create a new Circle instance using the intersection point as the center
-            return new Circle({
+            return new Circle(key, {
                 x: Cx, 
                 y: Cy, 
                 material: null, 
@@ -67,7 +67,7 @@ class Circle extends Shape
     
     copy(other)
     {
-        return new Circle({
+        return new Circle(this.key, {
             x: this.x, 
             y: this.y, 
             material: this.material.copy(), 
@@ -77,7 +77,7 @@ class Circle extends Shape
 
     toString()
     {
-        return `Circle O(${this.x.toFixed(1)}, ${this.y.toFixed(1)}), r${this.radius.toFixed(1)}`
+        return `Circle ${this.key} (${this.x.toFixed(1)}, ${this.y.toFixed(1)}), r${this.radius.toFixed(1)}`
     }
 
     hitTest(ray)

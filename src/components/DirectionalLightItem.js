@@ -1,5 +1,6 @@
 import React, {useState} from "react"
 import Manipulator from "./Manipulator.js";
+import {colorFromRGB, wavelengthToRGB} from "../colorUtils.js"
 
 const h = React.createElement;
 
@@ -66,7 +67,11 @@ function DirectionalLightItem({
             height: light.width,
             vectorEffect: "non-scaling-stroke",
             className: "shape",
-            style: {transform: `rotate(${light.angle*180/Math.PI}deg)`, transformOrigin: `${light.x}px ${light.y}px`}
+            style: {
+                transform: `rotate(${light.angle*180/Math.PI}deg)`,
+                transformOrigin: `${light.x}px ${light.y}px`,
+                fill: colorFromRGB(wavelengthToRGB(light.wavelength))
+            }
         }),
         h(Manipulator, {
             onDrag: (e)=>handleAngleDrag(e),

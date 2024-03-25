@@ -7,6 +7,8 @@ import MirrorMaterial from "../scene/materials/MirrorMaterial.js";
 import TransparentMaterial from "../scene/materials/TransparentMaterial.js";
 import DiffuseMaterial from "../scene/materials/DiffuseMaterial.js";
 
+import {wavelengthToRGB} from "../colorUtils.js"
+
 const h = React.createElement;
 
 
@@ -19,8 +21,6 @@ function ShapeInspector({
     const material = sceneObject.material;
     const onMaterialSelected = (e, v)=>{
         // set scene object material;
-        const options = e.target.selectedOptions;
-        const idx = e.target.selectedIndex;
         const newMaterialName = e.target.value
         if(newMaterialName == TransparentMaterial.name){
             let newSceneObject = sceneObject.copy()
@@ -79,24 +79,42 @@ function LightInspector({
     ...props
 })
 {
-    function handleFrequencyChange(e)
+    function handleWavelengthChange(e)
     {   
         e.stopPropagation();
         e.preventDefault();
         const newSceneObject = sceneObject.copy();
-        newSceneObject.frequency = e.target.value;
+        newSceneObject.wavelength = e.target.value;
         onChange(sceneObject, newSceneObject)
+    }
+
+    function colorFromWavelength(wavelength)
+    {
+        const [R,G,B] = wavelengthToRGB(wavelength);
+        console.log(R,G,B)
+        return `rgb(${R.toFixed(0)}, ${G.toFixed()}, ${B.toFixed(0)})`
     }
 
     return h("label", null, 
         h("input", {
             type: "range", 
-            value:sceneObject.frequency, 
-            min: 400, 
-            max: 800,
-            onChange: e=>handleFrequencyChange(e)
+            value:sceneObject.wavelength, 
+            min: 380, 
+            max: 780,
+            onChange: e=>handleWavelengthChange(e)
         }),
-        `frequency ${sceneObject.frequency}`
+        `${sceneObject.wavelength}nm`,h("br"),
+        
+        h("svg", {width: 32, height: 32},
+            h("rect", {
+                x: 0, 
+                y: 0, 
+                width: 32, 
+                height: 32,
+                fill: colorFromWavelength(sceneObject.wavelength)
+            })
+        ),
+        `${wavelengthToRGB(sceneObject.wavelength)}`,
     );
 }
 

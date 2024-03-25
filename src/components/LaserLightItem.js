@@ -1,6 +1,6 @@
 import React, {useState} from "react"
 import Manipulator from "./Manipulator.js";
-
+import {colorFromRGB, wavelengthToRGB} from "../colorUtils.js"
 
 const h = React.createElement;
 
@@ -41,7 +41,10 @@ function LaserLightItem({
             cy: light.y,
             r: 2,
             vectorEffect: "non-scaling-stroke",
-            className: "shape"
+            className: "shape",
+            style: {
+                fill: colorFromRGB(wavelengthToRGB(light.wavelength))
+            }
         }),
         h(Manipulator, {
             onDrag: (e)=>handleAngleDrag(e),

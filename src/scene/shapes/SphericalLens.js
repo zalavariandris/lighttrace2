@@ -6,17 +6,29 @@ import LineSegment from "./LineSegment.js";
 
 class SphericalLens extends Shape
 {
-    constructor({x, y, material, diameter, edgeThickness, centerThickness})
+    constructor(key, {x, y, material, diameter, edgeThickness, centerThickness})
     {
-        super({x, y, material});
+        super(key, {x, y, material});
         this.diameter = diameter;
         this.edgeThickness = edgeThickness;
         this.centerThickness = centerThickness;
     }
 
+    copy()
+    {
+        return new SphericalLens(this.key, {
+            x: this.x, 
+            y: this.y, 
+            material: this.material, 
+            diameter: this.diameter,
+            edgeThickness:this.edgeThickness,
+            centerThickness: this.centerThickness
+        });
+    }
+
     toString()
     {
-        return `SphericalLens(${this.x}, ${this.y}, d${this.diameter}, ${this.edgeThickness}, ${this.centerThickness})`
+        return `SphericalLens(${this.key}, ${this.x}, ${this.y}, d${this.diameter}, ${this.edgeThickness}, ${this.centerThickness})`
     }
 
     getLeftCircle()
@@ -26,7 +38,7 @@ class SphericalLens extends Shape
         const topLeft =    P(Cx-this.edgeThickness/2,   Cy+this.diameter/2)
         const middleLeft = P(Cx-this.centerThickness/2, Cy+0              )
         const bottomLeft = P(Cx-this.edgeThickness/2,   Cy-this.diameter/2)
-        return Circle.fromThreePoints(topLeft, middleLeft, bottomLeft)
+        return Circle.fromThreePoints("left lens", topLeft, middleLeft, bottomLeft)
     }
 
     getRightCircle()
@@ -36,20 +48,10 @@ class SphericalLens extends Shape
         const topRight =    P(Cx+this.edgeThickness/2,   Cy+this.diameter/2)
         const middleRight = P(Cx+this.centerThickness/2, Cy+0               )
         const bottomRight = P(Cx+this.edgeThickness/2,   Cy-this.diameter/2)
-        return Circle.fromThreePoints(topRight, middleRight, bottomRight)
+        return Circle.fromThreePoints("right lens", topRight, middleRight, bottomRight)
     }
 
-    copy()
-    {
-        return new SphericalLens({
-            x: this.x, 
-            y: this.y, 
-            material: this.material, 
-            diameter: this.diameter,
-            edgeThickness:this.edgeThickness,
-            centerThickness: this.centerThickness
-        });
-    }
+
 
     bbox()
     {
