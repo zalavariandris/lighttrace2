@@ -97,7 +97,7 @@ function makeProjectionFromViewbox(viewBox)
 class GLRenderer{
     constructor(regl)
     {
-        this.initGL(regl)
+        this.initGL(regl);
     }
 
     initGL(regl)
@@ -228,16 +228,19 @@ class GLRenderer{
         })
     }
 
+    resizeGL(regl, width, height){
+        const [canvaswidth, canvasheight] = [width, height]
+        this.sceneFbo.resize(canvaswidth, canvasheight);
+        this.bufferFbo.resize(canvaswidth, canvasheight);
+        this.compFbo.resize(canvaswidth, canvasheight);
+        this.toneFbo.resize(canvaswidth, canvasheight);
+    }
+
     renderGL(regl, paths, viewBox, width, height)
     {
         const [canvaswidth, canvasheight] = [width, height]
         viewBox = fitViewboxInSize(viewBox, {width: canvaswidth, height: canvasheight})
         const projection = makeProjectionFromViewbox(viewBox)
-
-        this.sceneFbo.resize(canvaswidth, canvasheight);
-        this.bufferFbo.resize(canvaswidth, canvasheight);
-        this.compFbo.resize(canvaswidth, canvasheight);
-        this.toneFbo.resize(canvaswidth, canvasheight);
 
         // Draw Scene to fbo
         function makeAttributesFromPaths(paths)
@@ -358,7 +361,7 @@ class GLRenderer{
                 framebuffer: this.toneFbo,
                 uniforms: {
                     texture: this.compTexture,
-                    exposure: 20/this.samples
+                    exposure: 20/this.samples*Math.min(this.samples/30-0.1, 1.0)
                 },
 
                 frag: `
@@ -418,6 +421,7 @@ function GLViewport({
     viewBox,
     scene,
     paths,
+    style, 
     ...props
 })
 {
@@ -451,6 +455,7 @@ function GLViewport({
 
         // INITIAL
         rendererRef.current = new GLRenderer(reglRef.current);
+        rendererRef.current.resizeGL(reglRef.current, canvasRef.current.offsetWidth, canvasRef.current.offsetHeight);
         rendererRef.current.renderGL(reglRef.current, paths, viewBox, canvasRef.current.offsetWidth, canvasRef.current.offsetHeight);
         
         const [canvaswidth, canvasheight] = [canvasRef.current.offsetWidth, canvasRef.current.offsetHeight]
@@ -461,6 +466,9 @@ function GLViewport({
             const [canvaswidth, canvasheight] = [canvasRef.current.offsetWidth, canvasRef.current.offsetHeight]
             canvasRef.current.width=canvaswidth;
             canvasRef.current.height=canvasheight;
+
+            rendererRef.current.reset(reglRef.current)
+            rendererRef.current.resizeGL(reglRef.current, canvasRef.current.offsetWidth, canvasRef.current.offsetHeight);
             rendererRef.current.renderGL(reglRef.current, paths, viewBox, canvasRef.current.offsetWidth, canvasRef.current.offsetHeight);
         }
         
@@ -471,16 +479,28 @@ function GLViewport({
         resizeHandlerRef.current = resizeHandler
     }, [])
 
+    const renderStartTime = React.useRef(Date.now())
+
     React.useEffect(()=>{
         rendererRef.current.reset(reglRef.current);
+        
+        renderStartTime.current = Date.now()
     },[scene, viewBox])
 
+    
+    // console.log(opacity)
     if(reglRef.current && rendererRef.current)
     {
         rendererRef.current.renderGL(reglRef.current, paths, viewBox, canvasRef.current.offsetWidth, canvasRef.current.offsetHeight);
     }
     const h = React.createElement
-    return h("canvas", {...props, ref:canvasRef})
+    return h("canvas", {
+        style: {
+            ...style
+        },
+        ...props, 
+        ref:canvasRef
+    });
 }
 
 export default GLViewport;

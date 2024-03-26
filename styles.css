@@ -18,6 +18,10 @@ canvas{
     image-rendering: pixelated ;
 }
 
+.fadeIn{
+    animation: fadeIn 3s;
+}
+
 body{
     background-color: rgb(24, 24, 24);
     
@@ -92,7 +96,7 @@ svg .lightray{
 }
 
 svg .hitPoint{
-    stroke: rgb(170, 255, 0);
+    stroke: rgb(170 255 0 / 33%);
     fill: rgb(0, 255, 170);
     opacity: 1.0;
     stroke-width: 1;

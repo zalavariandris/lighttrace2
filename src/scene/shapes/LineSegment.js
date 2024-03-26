@@ -82,9 +82,9 @@ class LineSegment extends Shape
             const V = new Vector(lineSegmentP1.x - lineSegmentP2.x, lineSegmentP1.y - lineSegmentP2.y);
             let N = new Vector(V.y, -V.x).normalized(1); // perpendicular to V
 
-            if(ray.direction.dotProduct(N)>0){
-                N = N.negate()
-            }
+            // if(ray.direction.dotProduct(N)>0){
+            //     N = N.negate()
+            // }
             
             return [new HitPoint(hitPosition, N)];
         }

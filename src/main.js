@@ -91,7 +91,7 @@ const App = ()=>{
 
     const [svgDisplayOptions, setSvgDisplayOptions] = React.useState({
         lightrays: false,
-        hitPoints: false,
+        hitPoints: true,
         lightPaths: true
     })
     const updateSvgDisplayOptions = options=> setSvgDisplayOptions({...svgDisplayOptions, ...options})
@@ -118,6 +118,13 @@ const App = ()=>{
             edgeThickness: 5,
             centerThickness: 50
         }),
+        new Rectangle("rect prism", {
+            x: 500,
+            y: 250,
+            width: 150,
+            height: 150,
+            material: "glass"
+        }),
         // new Circle("mirror ball", {
         //     x: 200, 
         //     y:220, 
@@ -129,12 +136,12 @@ const App = ()=>{
             Ay: 450, 
             Bx: 462, 
             By: 450, 
-            material: "diffuse"
+            material: "mirror"
         }),
 
         // new PointLight("lamp", {x: 50, y: 150, angle:0}),
         new DirectionalLight("sun", {x:50, y: 250, width: 80, angle: 0}),
-        new LaserLight("laser", {x:150, y: 350, angle: 0}),
+        // new LaserLight("laser", {x:150, y: 150, angle: 0.5}),
     ]);
 
     const updateSceneObject = (key, newAttributes)=>{
@@ -212,7 +219,7 @@ const App = ()=>{
     const randomRaytraceResults = updateRaytraceRandom();
 
     /* step rayrace on animation frame */
-    const [animate, setAnimate] = React.useState(false)
+    const [animate, setAnimate] = React.useState(true)
     const [count, setCount] = React.useState(0);
     const requestRef = React.useRef();
 
@@ -520,21 +527,19 @@ const App = ()=>{
     }
 
     return h("div", null,
-        // h(GLViewport,  {
-        //     className:"viewport",
-        //     viewBox: viewBox,
-        //     scene: scene,
-        //     paths: randomRaytraceResults.lightPaths
-        // }),
-        h(SVGViewport, {
-            // style: {opacity: "0.2"},
+        h(GLViewport,  {
             className:"viewport",
             viewBox: viewBox,
-
+            scene: scene,
+            paths: randomRaytraceResults.lightPaths
+        }),
+        h(SVGViewport, {
+            className:"viewport",
+            viewBox: viewBox,
+            onViewChange: viewBox=>setViewBox(viewBox),
             rays: svgDisplayOptions.lightrays?uniformRaytraceResults.lightrays:[],
             hitPoints: svgDisplayOptions.hitPoints?uniformRaytraceResults.hitPoints:[], 
             paths:svgDisplayOptions.lightPaths?uniformRaytraceResults.lightPaths:[], 
-            // onSceneObject: (oldObject, newObject)=>updateSceneObject(oldObject, newObject),
 
             onMouseDown: e=>{
                 if(currentToolName)

@@ -29,27 +29,41 @@ function sampleTransparent(V, N, ior=1.440)
     }
 }
 
-function calculateRefraction(V, N, refractiveIndex1=1.0, refractiveIndex2=1.440) {
-    // Calculate the angle of incidence
-    var dotProduct = V.x * N.x + V.y * N.y;
+function calculateRefraction(V, N, refractiveIndex1=1.0, refractiveIndex2=1.44)
+{
+    V = V.normalized();
+    N = N.normalized();
+    var cosI = V.dotProduct(N);
+    var refractiveIndexRatio = refractiveIndex1 / refractiveIndex2;
 
-    // if(dotProduct<0){
-    //     [refractiveIndex2, refractiveIndex1] = [refractiveIndex1, refractiveIndex2];
-    // } this seems unnecessart with this approach
+    var exitVectorX, exitVectorY;
 
-    var cosTheta = dotProduct;
-    var angleOfIncidence = Math.acos(cosTheta);
+    if (cosI < 0) {
+        // Ray is entering the water
+        var sinT2 = refractiveIndexRatio * refractiveIndexRatio * (1.0 - cosI * cosI);
+        if (sinT2 > 1.0) {
+            // Total internal reflection
+            exitVectorX = -V.x;
+            exitVectorY = -V.y;
+        } else {
+            var cosT = Math.sqrt(1.0 - sinT2);
+            exitVectorX = refractiveIndexRatio * V.x + (refractiveIndexRatio * cosI - cosT) * N.x;
+            exitVectorY = refractiveIndexRatio * V.y + (refractiveIndexRatio * cosI - cosT) * N.y;
+        }
+    } else {
+        // Ray is exiting the water
+        var sinT2 = refractiveIndexRatio * refractiveIndexRatio * (1.0 - cosI * cosI);
+        if (sinT2 > 1.0) {
+            // Total internal reflection
+            exitVectorX = -V.x;
+            exitVectorY = -V.y;
+        } else {
+            var cosT = Math.sqrt(1.0 - sinT2);
+            exitVectorX = refractiveIndexRatio * V.x + (refractiveIndexRatio * cosI - cosT) * N.x;
+            exitVectorY = refractiveIndexRatio * V.y + (refractiveIndexRatio * cosI - cosT) * N.y;
+        }
+    }
 
-    // Calculate the angle of refraction using Snell's Law
-    var angleOfRefraction = Math.asin((refractiveIndex1 / refractiveIndex2) * Math.sin(angleOfIncidence));
-
-    // Calculate the exit vector components
-    var exitVectorX = refractiveIndex1 / refractiveIndex2 * V.x + 
-                      (refractiveIndex1 / refractiveIndex2 * Math.cos(angleOfIncidence) - Math.cos(angleOfRefraction)) * N.x;
-    var exitVectorY = refractiveIndex1 / refractiveIndex2 * V.y + 
-                      (refractiveIndex1 / refractiveIndex2 * Math.cos(angleOfIncidence) - Math.cos(angleOfRefraction)) * N.y;
-
-    // Return the exit vector
     return new Vector(exitVectorX, exitVectorY);
 }
 

@@ -16,7 +16,7 @@ class Rectangle extends Shape
     
     copy(other)
     {
-        return new Rectangle({
+        return new Rectangle(this.key, {
             x: this.x, 
             y: this.y, 
             material:this.material, 
@@ -60,10 +60,10 @@ class Rectangle extends Shape
         const bottomLeft = new Point(left, bottom)
         
         const sides = [
-            new LineSegment(topLeft, topRight),
-            new LineSegment(topRight, bottomRight),
-            new LineSegment(bottomRight, bottomLeft),
-            new LineSegment(bottomLeft, topLeft)
+            new LineSegment(null, {Ax:left, Ay: top, Bx:right, By:top}),
+            new LineSegment(null, {Bx:right, By: bottom, Ax:right, Ay:top}),
+            new LineSegment(null, {Ax:right, Ay: bottom, Bx:left, By:bottom}),
+            new LineSegment(null, {Ax:left, Ay: bottom, Bx:left, By:top}),
         ];
         
         let hits = []
