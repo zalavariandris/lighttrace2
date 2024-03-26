@@ -220,7 +220,7 @@ const App = ()=>{
     const randomRaytraceResults = updateRaytraceRandom();
 
     /* step rayrace on animation frame */
-    const [animate, setAnimate] = React.useState(true)
+    const [animate, setAnimate] = React.useState(true);
     const [currentSampleStep, setCurrentSampleStep] = React.useState(0);
     const requestRef = React.useRef();
 
@@ -229,11 +229,13 @@ const App = ()=>{
         requestRef.current = requestAnimationFrame(onAnimationTick);
     }
 
-    React.useEffect(()=>{
-        if(currentSampleStep>raytraceOptions.maxSampleSteps){
-            setAnimate(false);
-        }
-    }, [currentSampleStep])
+    // TODO: move this and the whole animation to the GLVewiprot component
+    // stop animation when max samples reached 
+    // React.useEffect(()=>{
+    //     if(currentSampleStep>raytraceOptions.maxSampleSteps){
+    //         setAnimate(false);
+    //     }
+    // }, [currentSampleStep])
 
     React.useEffect(() => {
         if(animate)
@@ -244,6 +246,7 @@ const App = ()=>{
         }
     }, [animate]); // Make sure the effect runs only once
 
+    /* MOUSE TOOLS */
     const [currentToolName, setCurrentToolName] = React.useState(null);
 
     const tools = [

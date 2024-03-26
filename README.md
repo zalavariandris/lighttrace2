@@ -24,10 +24,13 @@ https://zalavariandris.github.io/lighttrace2/
 - [x] mousetools to create scene objects
 - [x] rewrite mousetools to a single mouseDown function. to keep track dragStartPosition.
 - [x] fix selection when when scene updates.
+
+- [ ] move animation, iterative rendering to the GLViewport component
+
 - [ ] support light frequency
 - [ ] support light distribution
 
-- [ ] refactor SVGViewport to accept children components, to populate the scene
+- [x] refactor SVGViewport to accept children components, to populate the scene
 
 - [ ] support light source intensity
 - [ ] simulate light as wave

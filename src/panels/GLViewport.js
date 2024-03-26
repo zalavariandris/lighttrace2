@@ -422,8 +422,9 @@ function GLViewport({
     scene,
     paths,
     style, 
+    onDidRender=(sample)=>{},
     ...props
-})
+}={})
 {
     const canvasRef = React.useRef(null);
     const reglRef = React.useRef(null);
