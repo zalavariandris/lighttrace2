@@ -23,7 +23,7 @@ class LineSegment extends Shape
             Ay:this.Ay, 
             Bx:this.Bx, 
             By:this.By, 
-            material:this.material.copy()
+            material:this.material
         })
     }
 

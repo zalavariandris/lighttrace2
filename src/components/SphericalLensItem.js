@@ -7,8 +7,6 @@ import Manipulator from "../manipulators/Manipulator.js";
 const h = React.createElement;
 
 
-
-
 function arcFromThreePoints({Sx, Sy, Mx, My, Ex, Ey})
 {
     const circle = Circle.fromThreePoints("temp", {x:Sx, y:Sy}, {x:Mx, y:My}, {x:Ex, y:Ey})

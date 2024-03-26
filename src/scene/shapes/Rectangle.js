@@ -16,7 +16,14 @@ class Rectangle extends Shape
     
     copy(other)
     {
-        return new Rectangle({x: this.x, y: this.y, material:this.material, width: this.width, height: this.height, angle: this.angle});
+        return new Rectangle({
+            x: this.x, 
+            y: this.y, 
+            material:this.material, 
+            width: this.width, 
+            height: this.height, 
+            angle: this.angle
+        });
     }
 
     toString()

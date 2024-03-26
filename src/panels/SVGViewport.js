@@ -1,11 +1,6 @@
 import React, {useState} from "react"
 
 
-/*viewport Items*/
-import SceneItem from "../components/SceneItem.js"
-
-
-
 
 function viewboxString(viewBox)
 {
@@ -107,8 +102,6 @@ function SVGViewport({
         let path = "M" + points.map(p => `${p.x},${p.y}`).join(" L");
         return path;
     }
-
-    console.log("render SVGViewport", props.children)
 
     return h('svg', {
             xmlns:"http://www.w3.org/2000/svg",

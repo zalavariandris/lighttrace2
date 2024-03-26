@@ -1,11 +1,12 @@
 class Material{
-    constructor()
+    constructor(key)
     {
+        this.key = key
     }
 
     copy()
     {
-        return new Material()
+        return new Material(this.key)
     }
 
     sample(V, N)

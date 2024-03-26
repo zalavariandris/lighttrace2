@@ -3,6 +3,14 @@
     100% {  }
   }
 
+a{
+    text-decoration: none;
+    color: inherit
+}   
+a:hover{
+text-decoration: underline;
+}
+
 canvas{
     width: 512px;
     height: 512px;
@@ -62,12 +70,6 @@ svg *{
     left: 0;
     top: 50%;
     transform: translate(0, -50%);
-    pointer-events: none;
-}
-
-#sceneInfo input,
-#sceneInfo button{
-    pointer-events: auto;
 }
 
 #settings{

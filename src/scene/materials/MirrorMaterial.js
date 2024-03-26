@@ -9,14 +9,14 @@ function sampleMirror(V, N)
 
 class MirrorMaterial extends Material
 {
-    constructor()
+    constructor(key)
     {
-        super()
+        super(key)
     }
 
     copy()
     {
-        return new MirrorMaterial()
+        return new MirrorMaterial(this.key)
     }
 
     sample(V, N)

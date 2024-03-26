@@ -19,15 +19,15 @@ function sampleTransparent(V, N, ior=1.440)
 
 class TransparentMaterial extends Material
 {
-    constructor(ior=1.440)
+    constructor(key, {ior=1.440}={})
     {
-        super()
+        super(key)
         this.ior = ior
     }
 
     copy()
     {
-        return new TransparentMaterial()
+        return new TransparentMaterial(key, {ior: this.ior})
     }
 
     sample(V, N)

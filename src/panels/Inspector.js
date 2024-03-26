@@ -14,7 +14,7 @@ const h = React.createElement;
 
 function ShapeInspector({
     sceneObject, 
-    onChange=(oldSceneObject, newSceneObject)=>{},
+    onChange=(key, newAttributes)=>{},
     ...props
 })
 {
@@ -23,21 +23,21 @@ function ShapeInspector({
         // set scene object material;
         const newMaterialName = e.target.value
         if(newMaterialName == TransparentMaterial.name){
-            let newSceneObject = sceneObject.copy()
-            newSceneObject.material = new TransparentMaterial()
-            onChange(sceneObject, newSceneObject)
+            onChange(sceneObject.key, {
+                material: new TransparentMaterial()
+            })
         }
         else if(newMaterialName == MirrorMaterial.name)
         {
-            let newSceneObject = sceneObject.copy()
-            newSceneObject.material = new MirrorMaterial()
-            onChange(sceneObject, newSceneObject)
+            onChange(sceneObject.key, {
+                material: new MirrorMaterial()
+            });
         }
         else if(newMaterialName == DiffuseMaterial.name)
         {
-            let newSceneObject = sceneObject.copy()
-            newSceneObject.material = new DiffuseMaterial()
-            onChange(sceneObject, newSceneObject)
+            onChange(sceneObject.key, {
+                material: new DiffuseMaterial()
+            });
         }
         else
         {
@@ -83,15 +83,12 @@ function LightInspector({
     {   
         e.stopPropagation();
         e.preventDefault();
-        const newSceneObject = sceneObject.copy();
-        newSceneObject.wavelength = e.target.value;
-        onChange(sceneObject, newSceneObject)
+        onChange(sceneObject.key, {wavelength: e.target.value})
     }
 
     function colorFromWavelength(wavelength)
     {
         const [R,G,B] = wavelengthToRGB(wavelength);
-        console.log(R,G,B)
         return `rgb(${R.toFixed(0)}, ${G.toFixed()}, ${B.toFixed(0)})`
     }
 
@@ -126,6 +123,11 @@ function Inspector({
 {
     function getObjectInspector(sceneObject)
     {
+        if(!sceneObject)
+        {
+            return null;
+        }
+        
         if(sceneObject instanceof Shape){
             return ShapeInspector({sceneObject, onChange, ...props})
         }
@@ -145,7 +147,8 @@ function Inspector({
         },
             
             h("header", null, 
-                h("h2", null, `Inspector ${sceneObject}`),
+                h("h2", null, `Inspector`),
+                h("div", null, sceneObject?`${sceneObject.constructor.name} ${sceneObject.key}`:""),
                 getObjectInspector(sceneObject)
             )
         )

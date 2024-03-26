@@ -70,7 +70,7 @@ class Circle extends Shape
         return new Circle(this.key, {
             x: this.x, 
             y: this.y, 
-            material: this.material.copy(), 
+            material: this.material, 
             radius: this.radius
         });
     }

@@ -17,18 +17,21 @@ import PointLight from "./scene/lights/PointLight.js"
 import LaserLight from "./scene/lights/LaserLight.js"
 import DirectionalLight from "./scene/lights/DirectionalLight.js"
 
-import Material from "./scene/materials/Material.js"
-import MirrorMaterial from "./scene/materials/MirrorMaterial.js"
-import TransparentMaterial from "./scene/materials/TransparentMaterial.js"
-import DiffuseMaterial from "./scene/materials/DiffuseMaterial.js"
+import DiffuseMaterial from "./scene/materials/DiffuseMaterial.js";
+import TransparentMaterial from "./scene/materials/TransparentMaterial.js";
+import MirrorMaterial from "./scene/materials/MirrorMaterial.js";
 
+import {colorFromRGB, wavelengthToRGB} from "./colorUtils.js"
 
 import {Lightray, makeRaysFromLights, raytrace, SamplingMethod} from "./raytrace.js"
 import Inspector from "./panels/Inspector.js"
-import CircleItem from "./components/CircleItem.js";
-import SceneItem from "./components/SceneItem.js"
+
+import Manipulator from "./manipulators/Manipulator.js";
+import ShapeView from "./components/ShapeView.js";
 
 const h = React.createElement;
+
+
 function RaytraceStats({
     scene=[],
     lightRays=[],
@@ -70,25 +73,6 @@ function RaytraceStats({
     )
 }
 
-function Outliner({scene=[], selection=[]}={})
-{
-    function isSelected(obj){
-        return selection.indexOf(obj.key)>=0;
-    }
-    return h("section", null,
-        h("h3", null, "Outliner"),
-        h("ul", null, 
-            ...scene.map((sceneObject)=>{
-                return h("li", {
-                    style: {fontStyle: isSelected(sceneObject)?"italic":"normal"}
-                }, 
-                        `${sceneObject}`
-                    )
-            })
-        )
-    )
-}
-
 function cursorPoint(svg, {x, y}){
     let pt = svg.createSVGPoint();
     pt.x =x; pt.y = y;
@@ -97,7 +81,6 @@ function cursorPoint(svg, {x, y}){
 }
 
 const App = ()=>{
-    console.log("render App")
     /* STATE */
     const [raytraceOptions, setRaytraceOptions] = React.useState({
         maxBounce: 9,
@@ -119,29 +102,44 @@ const App = ()=>{
 
     // SCENE MODEL
     const [scene, setScene] = useState([
-        new SphericalLens("concave lens", {x: 150, y:250, material: new TransparentMaterial(), 
+        new SphericalLens("concave lens", {
+            x: 150, 
+            y:250, 
+            material: "glass", 
             diameter: 140,
             edgeThickness: 60,
             centerThickness:5
         }),
-        new SphericalLens("convex lens", {x: 230, y: 250, material: new TransparentMaterial(), 
+        new SphericalLens("convex lens", {
+            x: 230, 
+            y: 250, 
+            material: "glass", 
             diameter: 100,
             edgeThickness: 5,
             centerThickness: 50
         }),
-        new Circle("mirror ball", {x: 400, y:220, material: new MirrorMaterial(), radius: 50}),
-        new LineSegment("floor line", {Ax: 50, Ay: 450, Bx: 462, By: 450, material: new DiffuseMaterial()}),
+        new Circle("mirror ball", {
+            x: 400, 
+            y:220, 
+            radius: 50, 
+            material: "mirror"
+        }),
+        new LineSegment("floor line", {
+            Ax: 50, 
+            Ay: 450, 
+            Bx: 462, 
+            By: 450, 
+            material: "diffuse"
+        }),
+
         new PointLight("lamp", {x: 50, y: 150, angle:0}),
         new DirectionalLight("sun", {x:50, y: 250, width: 80, angle: 0}),
         new LaserLight("laser", {x:50, y: 200, angle: 0}),
     ]);
 
-    const [selection, setSelection] = useState([])
-
     const updateSceneObject = (key, newAttributes)=>{
         setScene( scene => {
-            // update objects
-            
+            // update objects            
             const objectsIdx = scene.findIndex(obj=>obj.key == key);
             if(objectsIdx<0)
             {
@@ -156,65 +154,38 @@ const App = ()=>{
         });
     };
 
-    const removeSelectedObjects = ()=>{
-        setSceneModel(sceneModel=>{
-            const selectedKeys = new Set( sceneModel.selection.map(obj=>obj.key) );
-            return {
-                objects: sceneModel.objects.filter(obj=>!selectedKeys.has(obj.key)).map(obj=>obj.copy()),
-                selection: []
-            }
+    const [materials, setMaterials] = React.useState([
+        new TransparentMaterial("glass"),
+        new DiffuseMaterial("diffuse"),
+        new MirrorMaterial("mirror")
+    ])
+
+    const [selectionKeys, setSelectionKeys] = useState([])
+
+    const getSelectedSceneObject=()=>
+    {
+        return scene.find(obj=>selectionKeys.indexOf(obj.key)>=0);
+    }
+
+    const addSceneObject = (newSceneObject)=>{
+        setScene(scene=>{
+            return [...scene, newSceneObject]
         })
     }
-    
-    // const [scene, setScene] = React.useState([      
-    //     new DirectionalLight({x:50, y: 250, width: 80, angle: 0}),
-    //     new PointLight({x: 50, y: 150, angle:0}),
-    //     new LaserLight({x:50, y: 200, angle: 0}),
-    //     new SphericalLens({x: 150, y:250, material: new TransparentMaterial(), 
-    //         diameter: 140,
-    //         edgeThickness: 60,
-    //         centerThickness:5
-    //     }),
-    //     new SphericalLens({x: 230, y: 250, material: new TransparentMaterial(), 
-    //         diameter: 100,
-    //         edgeThickness: 5,
-    //         centerThickness: 50
-    //     }),
-    //     new Circle({x: 400, y:220, material: new MirrorMaterial(), radius: 50}),
-    //     new LineSegment({Ax: 50, Ay: 450, Bx: 462, By: 450, material: new DiffuseMaterial()}),
-    // ]);
 
-    // const [selection, setSelection] = React.useState([])
-    // const updateSceneObject = (oldObject, newObject)=>{
-    //     const sceneIdx = scene.indexOf(oldObject);
-
-    //     if(sceneIdx<0) {
-    //         console.warn("scenr object is not in Scene", oldObject)
-    //         return scene;
-    //     }
-    //     const newScene = scene.toSpliced(sceneIdx, 1, newObject)
-
-    //     setScene(newScene);
-    //     // setSelection(selection=>[])
-    // }
-
-    // const addSceneObject = (sceneObject)=>{
-    //     console.log("addSceneObject", sceneObject)
-    //     setScene(scene=>[...scene, sceneObject])
-    //     setSelection(selection=>[sceneObject])
-    // }
-
-    // const removeSelectedObjects=()=>{
-    //     setScene(scene=>scene.filter(sceneObject=>selection.indexOf(sceneObject)<0));
-    //     setSelection(selection=>[]);
-    // }
+    const removeSceneObject = (sceneObject)=>{
+        setScene(scene.filter(obj=>obj.key!=sceneObject.key))
+        setSelectionKeys([])
+    }
 
     // RAYTRACE
     function updateRaytraceUniform()
     {
-        const lights = scene.filter(obj=>obj instanceof Light)
-        const shapes = scene.filter(obj=>obj instanceof Shape)
-        const newRaytraceResults = raytrace(lights, [shapes, shapes.map(shp=>shp.material)], {
+        const lights = scene.filter(obj=>obj instanceof Light);
+        const shapes = scene.filter(obj=>obj instanceof Shape);
+        const shapesMaterials = shapes.map(s=>materials.find(m=>m.key==s.material));
+
+        const newRaytraceResults = raytrace(lights, [shapes, shapesMaterials], {
             maxBounce:raytraceOptions.maxBounce, 
             samplingMethod: raytraceOptions.samplingMethod, 
             lightSamples: raytraceOptions.lightSamples
@@ -226,9 +197,11 @@ const App = ()=>{
 
     function updateRaytraceRandom()
     {
-        const lights = scene.filter(obj=>obj instanceof Light)
-        const shapes = scene.filter(obj=>obj instanceof Shape)
-        const newRaytraceResults = raytrace(lights, [shapes, shapes.map(shp=>shp.material)], {
+        const lights = scene.filter(obj=>obj instanceof Light);
+        const shapes = scene.filter(obj=>obj instanceof Shape);
+        const shapesMaterials = shapes.map(s=>materials.find(m=>m.key==s.material));
+
+        const newRaytraceResults = raytrace(lights, [shapes, shapesMaterials], {
             maxBounce:raytraceOptions.maxBounce, 
             samplingMethod: SamplingMethod.Random, 
             lightSamples: raytraceOptions.lightSamples
@@ -271,7 +244,7 @@ const App = ()=>{
                     x: beginSceneX, 
                     y: beginSceneY, 
                     radius:5, 
-                    material: new TransparentMaterial()
+                    material: "glass"
                 });
     
                 addSceneObject(sceneObject);
@@ -310,7 +283,7 @@ const App = ()=>{
                     y: beginSceneY, 
                     width: 5,
                     height: 5,
-                    material: new DiffuseMaterial()
+                    material: "diffuse"
                 });
     
                 addSceneObject(sceneObject);
@@ -351,7 +324,7 @@ const App = ()=>{
                     Ay: beginSceneY, 
                     Bx: beginSceneX+5,
                     By: beginSceneY,
-                    material: new DiffuseMaterial()
+                    material: "diffuse"
                 });
     
                 addSceneObject(sceneObject);
@@ -390,7 +363,7 @@ const App = ()=>{
                     y: beginSceneY, 
                     centerThickness: 5,
                     edgeThickness: 0,
-                    material: new DiffuseMaterial()
+                    material: "glass"
                 });
     
                 addSceneObject(sceneObject);
@@ -434,8 +407,7 @@ const App = ()=>{
                 let sceneObject = new PointLight({
                     x: beginSceneX, 
                     y: beginSceneY, 
-                    angle: 0,
-                    material: new DiffuseMaterial()
+                    angle: 0
                 });
     
                 addSceneObject(sceneObject);
@@ -472,8 +444,7 @@ const App = ()=>{
                 let sceneObject = new DirectionalLight({
                     x: beginSceneX, 
                     y: beginSceneY, 
-                    angle: 0,
-                    material: new DiffuseMaterial()
+                    angle: 0
                 });
     
                 addSceneObject(sceneObject);
@@ -511,8 +482,7 @@ const App = ()=>{
                 let sceneObject = new LaserLight({
                     x: beginSceneX, 
                     y: beginSceneY, 
-                    angle: 0,
-                    material: new DiffuseMaterial()
+                    angle: 0
                 });
     
                 addSceneObject(sceneObject);
@@ -560,13 +530,7 @@ const App = ()=>{
             // style: {opacity: "0.2"},
             className:"viewport",
             viewBox: viewBox,
-            onViewChange: (value) => setViewBox(value),
-            scene: scene,
-            selection: scene.filter(obj=>selection.indexOf(obj.key)>=0),
-            onSelection: (newSelection)=>{
-                console.log("main->setSelection", newSelection)
-                setSelection(newSelection);
-            },
+
             rays: svgDisplayOptions.lightrays?uniformRaytraceResults.lightrays:[],
             hitPoints: svgDisplayOptions.hitPoints?uniformRaytraceResults.hitPoints:[], 
             paths:svgDisplayOptions.lightPaths?uniformRaytraceResults.lightPaths:[], 
@@ -579,18 +543,23 @@ const App = ()=>{
                 }
             }
         },
-            scene.map((sceneObject, idx)=>{
-                // return h('g', {}, )
-
-                return h(SceneItem, {
-                    sceneObject: sceneObject,
-                    onChange: (key, newProps)=>updateSceneObject(key, newProps),
-                    // className: selection.indexOf(sceneObject)>=0 ? "selected" : "not-selected",
-                    // onClick: (e)=>onSelection([sceneObject]),
-                    // isSelected: selection.indexOf(sceneObject)>=0
+            h("g", null, 
+                scene.map(sceneObject=>{
+                    return h(Manipulator, {
+                        className: selectionKeys.indexOf(sceneObject.key)>=0 ? "sceneItem selected" : "sceneItem not-selected",
+                        onDrag: e=>updateSceneObject(sceneObject.key, {x: e.sceneX, y: e.sceneY}),
+                        onClick: e=>setSelectionKeys([sceneObject.key])
+                    }, 
+                        h(ShapeView, {
+                            sceneObject, 
+                            updateSceneObject, 
+                            selectionKeys
+                        })
+                    )
                 })
-            })
+            )
         ),
+
         h("div", {
             id: "toolbar", className: "panel"
         },
@@ -608,7 +577,13 @@ const App = ()=>{
             }),
             h("hr"),
             h("button", {
-                onClick: (e)=>removeSelectedObjects(),
+                onClick: (e)=>{
+                    const selectedObject = getSelectedSceneObject();
+                    if(selectedObject)
+                    {
+                        removeSceneObject(selectedObject)
+                    }
+                },
                 className: "danger"
             }, "delete")
         ),
@@ -617,137 +592,156 @@ const App = ()=>{
             className: "panel", 
             style: {right: "0px", top:"0px", position: "fixed"}
         }, 
-            // (Inspector, {
-            //     sceneObject: null,
-            //     onChange: (oldObject, newObject)=>updateSceneObject(oldObject, newObject)
-            // }),
-            h(Collapsable, {title: h("h2", null, "Settings")},
-                h('div', null, 
-                    h("section", null,
-                        h("h2", null, "Raytrace otions"),
-                        h("table", null,
-                            h("tr", null,
-                                h("td", null, "animate"),
-                                h("td", null,
-                                    h('label', null,
-                                        h('input', {
-                                            name: "animate",
-                                            type: 'checkbox', 
-                                            checked:animate, 
-                                            onChange:(e)=>setAnimate(e.target.checked)
-                                        }),
-                                        `animate №${count}`
-                                    )
-                                )
-                            ),
-                            h("tr", null, 
-                                h("td", null, "light samples"),
-                                h("td", null, 
-                                    h("input", {
-                                        type:"range", 
-                                        name: "light samples",
-                                        value:raytraceOptions.lightSamples, 
-                                        onInput:(e)=>updateRaytraceOptions({lightSamples: e.target.value}),
-                                        min: 1, 
-                                        max:200}, 
-                                        null),
-                                    `${raytraceOptions.lightSamples}`
-                                )
-                            ),
-                            h("tr", null, 
-                                h("td", null, "max bounce"),
-                                h("td", null, 
-                                    h("input", {
-                                        type:"range", 
-                                        name: "max bounce",
-                                        value:raytraceOptions.maxBounce, 
-                                        onInput:(e)=>updateRaytraceOptions({maxBounce: e.target.value}), 
-                                        min: 0, 
-                                        max:16
-                                    }, null),
-                                    `${raytraceOptions.maxBounce}`
-                                )
-                            ),
-                            h("tr", null,
-                                h("td", null, "sampling method"),
-                                h("td", null, 
-                                    h("input", {
-                                        name: "sampling", 
-                                        checked: raytraceOptions.samplingMethod == SamplingMethod.Random,
-                                        onChange: (e)=>updateRaytraceOptions({samplingMethod: e.target.value}),
-                                        id:SamplingMethod.Random, 
-                                        type:"radio", 
-                                        value:SamplingMethod.Random}),
-                                    h("label", {for: SamplingMethod.Random}, SamplingMethod.Random),
-                                    h("input", {
-                                        name: "sampling",
-                                        checked: raytraceOptions.samplingMethod == SamplingMethod.Uniform,
-                                        onChange: (e)=>updateRaytraceOptions({samplingMethod: e.target.value}),
-                                        id: SamplingMethod.Uniform,
-                                        type:"radio",
-                                        value:SamplingMethod.Uniform}),
-                                    h("label", {for: SamplingMethod.Uniform}, SamplingMethod.Uniform)
-                                )
-                            )
-                        )
-                    ),
-                    h("section", null,
-                        h("h2", null, "Display options"),
-                        h("form", {
-                            onSubmit: (e)=>{
-                                //TODO: use form submission istead of each input change to update settings
+        //     // h(Inspector, {
+        //     //     sceneObject: scene.find(obj=>selectionKeys.indexOf(obj.key)>=0),
+        //     //     onChange: (key, newAttributes)=>updateSceneObject(key, newAttributes)
+        //     // }),
+        //     h(Collapsable, {title: h("h2", null, "Settings")},
+        //         h('div', null, 
+        //             h("section", null,
+        //                 h("h2", null, "Raytrace otions"),
+        //                 h("table", null,
+        //                     h("tr", null,
+        //                         h("td", null, "animate"),
+        //                         h("td", null,
+        //                             h('label', null,
+        //                                 h('input', {
+        //                                     name: "animate",
+        //                                     type: 'checkbox', 
+        //                                     checked:animate, 
+        //                                     onChange:(e)=>setAnimate(e.target.checked)
+        //                                 }),
+        //                                 `animate №${count}`
+        //                             )
+        //                         )
+        //                     ),
+        //                     h("tr", null, 
+        //                         h("td", null, "light samples"),
+        //                         h("td", null, 
+        //                             h("input", {
+        //                                 type:"range", 
+        //                                 name: "light samples",
+        //                                 value:raytraceOptions.lightSamples, 
+        //                                 onInput:(e)=>updateRaytraceOptions({lightSamples: e.target.value}),
+        //                                 min: 1, 
+        //                                 max:200}, 
+        //                                 null),
+        //                             `${raytraceOptions.lightSamples}`
+        //                         )
+        //                     ),
+        //                     h("tr", null, 
+        //                         h("td", null, "max bounce"),
+        //                         h("td", null, 
+        //                             h("input", {
+        //                                 type:"range", 
+        //                                 name: "max bounce",
+        //                                 value:raytraceOptions.maxBounce, 
+        //                                 onInput:(e)=>updateRaytraceOptions({maxBounce: e.target.value}), 
+        //                                 min: 0, 
+        //                                 max:16
+        //                             }, null),
+        //                             `${raytraceOptions.maxBounce}`
+        //                         )
+        //                     ),
+        //                     h("tr", null,
+        //                         h("td", null, "sampling method"),
+        //                         h("td", null, 
+        //                             h("input", {
+        //                                 name: "sampling", 
+        //                                 checked: raytraceOptions.samplingMethod == SamplingMethod.Random,
+        //                                 onChange: (e)=>updateRaytraceOptions({samplingMethod: e.target.value}),
+        //                                 id:SamplingMethod.Random, 
+        //                                 type:"radio", 
+        //                                 value:SamplingMethod.Random}),
+        //                             h("label", {for: SamplingMethod.Random}, SamplingMethod.Random),
+        //                             h("input", {
+        //                                 name: "sampling",
+        //                                 checked: raytraceOptions.samplingMethod == SamplingMethod.Uniform,
+        //                                 onChange: (e)=>updateRaytraceOptions({samplingMethod: e.target.value}),
+        //                                 id: SamplingMethod.Uniform,
+        //                                 type:"radio",
+        //                                 value:SamplingMethod.Uniform}),
+        //                             h("label", {for: SamplingMethod.Uniform}, SamplingMethod.Uniform)
+        //                         )
+        //                     )
+        //                 )
+        //             ),
+        //             h("section", null,
+        //                 h("h2", null, "Display options"),
+        //                 h("form", {
+        //                     onSubmit: (e)=>{
+        //                         //TODO: use form submission istead of each input change to update settings
+        //                         e.preventDefault();
+        //                         const formData = new FormData(e.target)
+        //                         const newData = Object.fromEntries(myFormData.entries());
+        //                         setSvgDisplayOptions(newData);
+        //                         return false;
+        //                     }
+        //                 }, 
+        //                     h("label", null,
+        //                         h("input", {
+        //                             name:"rays",
+        //                             checked: svgDisplayOptions.lightrays, 
+        //                             onChange: (e)=>updateSvgDisplayOptions({lightrays: e.target.checked}),
+        //                             type: "checkbox"
+        //                         }),
+        //                         "show lightrays"
+        //                     ),
+        //                     h("br"),
+        //                     h("label", null,
+        //                         h("input", {
+        //                             name:"hitPoints",
+        //                             checked: svgDisplayOptions.hitPoints, 
+        //                             onChange: (e)=>updateSvgDisplayOptions({hitPoints: e.target.checked}),
+        //                             type: "checkbox"
+        //                         }),
+        //                         "show hitpoints"
+        //                     ),
+        //                     h("br"),
+        //                     h("label", null,
+        //                         h("input", {
+        //                             name:"lightPaths",
+        //                             checked: svgDisplayOptions.lightPaths, 
+        //                             onChange: (e)=>updateSvgDisplayOptions({lightPaths: e.target.checked}),
+        //                             type: "checkbox"
+        //                         }),
+        //                         "show lightpaths"
+        //                     )
+        //                 )
+        //             )
+        //         )
+        //     ),
+        //     h(Collapsable, {defaultOpen: true, title: h("h2", null, "Scene Info")}, null,
+
+        h("section", null,
+            h("h3", null, "Outliner"),
+            h("ul", null, 
+                ...scene.map((sceneObject)=>{
+                    return h("li", {
+                        style: {fontStyle: selectionKeys.indexOf(sceneObject.key)>=0?"italic":"normal"}
+                    }, 
+                        h("a", {
+                            href:"#", 
+                            onClick:(e)=>{
                                 e.preventDefault();
-                                const formData = new FormData(e.target)
-                                const newData = Object.fromEntries(myFormData.entries());
-                                setSvgDisplayOptions(newData);
-                                return false;
+
+                                setSelectionKeys([sceneObject.key]);
+
                             }
                         }, 
-                            h("label", null,
-                                h("input", {
-                                    name:"rays",
-                                    checked: svgDisplayOptions.lightrays, 
-                                    onChange: (e)=>updateSvgDisplayOptions({lightrays: e.target.checked}),
-                                    type: "checkbox"
-                                }),
-                                "show lightrays"
-                            ),
-                            h("br"),
-                            h("label", null,
-                                h("input", {
-                                    name:"hitPoints",
-                                    checked: svgDisplayOptions.hitPoints, 
-                                    onChange: (e)=>updateSvgDisplayOptions({hitPoints: e.target.checked}),
-                                    type: "checkbox"
-                                }),
-                                "show hitpoints"
-                            ),
-                            h("br"),
-                            h("label", null,
-                                h("input", {
-                                    name:"lightPaths",
-                                    checked: svgDisplayOptions.lightPaths, 
-                                    onChange: (e)=>updateSvgDisplayOptions({lightPaths: e.target.checked}),
-                                    type: "checkbox"
-                                }),
-                                "show lightpaths"
-                            )
+                            `${sceneObject}`
                         )
                     )
-                )
-            ),
-            h(Collapsable, {defaultOpen: true, title: h("h2", null, "Scene Info")}, null,
-                h(Outliner, {
-                    scene: scene,
-                    selection: selection
-                }),
-                // h(RaytraceStats, {
-                //     scene: sceneModel.objects, 
-                //     lightRays: uniformRaytraceResults.rays, 
-                //     hitPoints: uniformRaytraceResults.hitPoints, 
-                //     lightPaths: uniformRaytraceResults.lightPaths
-                // })
+                })
             )
+        ),
+
+            h(RaytraceStats, {
+                scene: scene, 
+                lightRays: uniformRaytraceResults.rays, 
+                hitPoints: uniformRaytraceResults.hitPoints, 
+                lightPaths: uniformRaytraceResults.lightPaths
+            })
         )
     )
 }
