@@ -85,7 +85,8 @@ const App = ()=>{
     const [raytraceOptions, setRaytraceOptions] = React.useState({
         maxBounce: 9,
         lightSamples: 7,
-        samplingMethod: SamplingMethod.Uniform
+        samplingMethod: SamplingMethod.Uniform,
+        maxSampleSteps:1024
     })
     const updateRaytraceOptions = options=>setRaytraceOptions({...raytraceOptions, ...options})
 
@@ -220,16 +221,24 @@ const App = ()=>{
 
     /* step rayrace on animation frame */
     const [animate, setAnimate] = React.useState(true)
-    const [count, setCount] = React.useState(0);
+    const [currentSampleStep, setCurrentSampleStep] = React.useState(0);
     const requestRef = React.useRef();
 
     const onAnimationTick = timeStamp => {
-        setCount(prevCount => prevCount + 1);
+        setCurrentSampleStep(prevCount => prevCount + 1);
         requestRef.current = requestAnimationFrame(onAnimationTick);
     }
 
+    React.useEffect(()=>{
+        if(currentSampleStep>raytraceOptions.maxSampleSteps){
+            setAnimate(false);
+        }
+    }, [currentSampleStep])
+
     React.useEffect(() => {
-        if(animate){
+        if(animate)
+        {
+            setCurrentSampleStep(0)
             requestRef.current = requestAnimationFrame(onAnimationTick);
             return () => cancelAnimationFrame(requestRef.current);
         }
@@ -616,7 +625,7 @@ const App = ()=>{
                                             checked:animate, 
                                             onChange:(e)=>setAnimate(e.target.checked)
                                         }),
-                                        `animate №${count}`
+                                        `animate №${currentSampleStep}`
                                     )
                                 )
                             ),

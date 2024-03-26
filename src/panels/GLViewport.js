@@ -483,7 +483,6 @@ function GLViewport({
 
     React.useEffect(()=>{
         rendererRef.current.reset(reglRef.current);
-        
         renderStartTime.current = Date.now()
     },[scene, viewBox])
 
