@@ -1,5 +1,5 @@
 import React, {useState} from "react"
-import Manipulator from "./Manipulator.js"
+import Manipulator from "../manipulators/Manipulator.js"
 
 
 const h = React.createElement;
@@ -13,10 +13,10 @@ function RectangleItem({
 {
     const grabOffset = React.useRef();
     const setPos = (x, y)=>{
-        const newRectangle = rectangle.copy()
-        newRectangle.x = x
-        newRectangle.y = y
-        onChange(rectangle, newRectangle)
+        onChange(rectangle.key, {
+            x: x,
+            y:y
+        })
     }
 
     const materialName = rectangle.material.constructor.name;

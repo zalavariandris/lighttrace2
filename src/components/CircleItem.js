@@ -1,5 +1,5 @@
 import React, {useState} from "react"
-import Manipulator from "./Manipulator.js";
+import Manipulator from "../manipulators/Manipulator.js";
 
 const h = React.createElement;
 
@@ -11,10 +11,7 @@ function CircleItem({
 })
 {
     const setPos = (x, y)=>{
-        const newCircle = circle.copy()
-        newCircle.x = x
-        newCircle.y = y
-        onChange(circle, newCircle)
+        onChange(circle.key, {x:x, y:y})
     }
 
     const grabOffset = React.useRef();
@@ -33,10 +30,7 @@ function CircleItem({
         const dx = e.sceneX-circle.x;
         const dy = e.sceneY-circle.y;
         const d = Math.sqrt(dx**2+dy**2);
-
-        const newCircle = circle.copy()
-        newCircle.radius = d;
-        onChange(circle, newCircle)
+        onChange(circle.key, {radius: d})
     }
 
     return h(Manipulator, {

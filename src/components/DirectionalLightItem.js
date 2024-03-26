@@ -1,5 +1,5 @@
 import React, {useState} from "react"
-import Manipulator from "./Manipulator.js";
+import Manipulator from "../manipulators/Manipulator.js";
 import {colorFromRGB, wavelengthToRGB} from "../colorUtils.js"
 
 const h = React.createElement;
@@ -13,16 +13,11 @@ function DirectionalLightItem({
 {
     const grabOffset = React.useRef();
     const setPos = (x, y)=>{
-        const newLight = light.copy()
-        newLight.x = x;
-        newLight.y = y;
-        onChange(light, newLight)
+        onChange(light.key, {x:x, y:y})
     }
 
     const setRadians = (newRadians)=>{
-        const newSceneObject = light.copy()
-        newSceneObject.angle = newRadians;
-        onChange(light, newSceneObject)
+        onChange(light.key, {angle: newRadians})
     }
 
     const grabWidthOffset = React.useRef();
@@ -37,20 +32,14 @@ function DirectionalLightItem({
         const dx = e.sceneX-light.x;
         const dy = e.sceneY-light.y;
         const d = Math.sqrt(dx**2+dy**2);
-
-        const newSceneObject = light.copy()
-        newSceneObject.width = d*2;
-        onChange(light, newSceneObject)
+        onChange(light.key, {width: d*2})
     }
 
     const handleAngleDrag = e=>{
         const dx = e.sceneX-light.x;
         const dy = e.sceneY-light.y;
         const newAngle = Math.atan2(dy, dx);
-
-        const newSceneObject = light.copy()
-        newSceneObject.angle = newAngle;
-        onChange(light, newSceneObject);
+        onChange(light.key, {angle: newAngle});
     }
 
     return h(Manipulator, {

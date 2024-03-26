@@ -1,6 +1,6 @@
 import React, {useState} from "react"
 import {Point, Vector} from "../geo.js"
-import Manipulator from "./Manipulator.js";
+import Manipulator from "../manipulators/Manipulator.js";
 
 const h = React.createElement;
 
@@ -13,19 +13,6 @@ function LineSegmentItem({
     const grabOffsetP1 = React.useRef();
     const grabOffsetP2 = React.useRef();
 
-    
-    const setP1 = (Px, Py)=>{
-        const newLineSegment = lineSegment.copy()
-        newLineSegment.Ax = Px;
-        newLineSegment.Ay = Py;
-        onChange(lineSegment, newLineSegment)
-    }
-    const setP2 = (Px, Py)=>{
-        const newLineSegment = lineSegment.copy()
-        newLineSegment.Bx = Px;
-        newLineSegment.By = Py;
-        onChange(lineSegment, newLineSegment)
-    }
 
     const handleShapeDragStart = (e)=>{
         grabOffsetP1.current = {x: e.sceneX-lineSegment.Ax, y: e.sceneY-lineSegment.Ay};
@@ -33,32 +20,32 @@ function LineSegmentItem({
     }
 
     const handleShapeDrag = (e)=>{
-        const newLineSegment = lineSegment.copy()
-        newLineSegment.Ax = e.sceneX-grabOffsetP1.current.x;
-        newLineSegment.Ay = e.sceneY-grabOffsetP1.current.y;
-        newLineSegment.Bx = e.sceneX-grabOffsetP2.current.x;
-        newLineSegment.By = e.sceneY-grabOffsetP2.current.y;
-        onChange(lineSegment, newLineSegment)
+        onChange(lineSegment.key, {
+            Ax: e.sceneX-grabOffsetP1.current.x,
+            Ay: e.sceneY-grabOffsetP1.current.y,
+            Bx: e.sceneX-grabOffsetP2.current.x,
+            By: e.sceneY-grabOffsetP2.current.y
+        });
     }
 
     const handleP1DragStart = e=>{
         grabOffsetP1.current = {x: e.sceneX-lineSegment.Ax, y: e.sceneY-lineSegment.Ay};
     }
     const handleP1Drag = e=>{
-        const newLineSegment = lineSegment.copy()
-        newLineSegment.Ax = e.sceneX-grabOffsetP1.current.x;
-        newLineSegment.Ay = e.sceneY-grabOffsetP1.current.y;
-        onChange(lineSegment, newLineSegment)
+        onChange(lineSegment.key, {
+            Ax: e.sceneX-grabOffsetP1.current.x,
+            Ay: e.sceneY-grabOffsetP1.current.y
+        });
     }
 
     const handleP2DragStart = e=>{
         grabOffsetP2.current = {x: e.sceneX-lineSegment.Bx, y: e.sceneY-lineSegment.By};
     }
     const handleP2Drag = e=>{
-        const newLineSegment = lineSegment.copy()
-        newLineSegment.Bx = e.sceneX-grabOffsetP2.current.x;
-        newLineSegment.By = e.sceneY-grabOffsetP2.current.y;
-        onChange(lineSegment, newLineSegment)
+        onChange(lineSegment.key, {
+            Bx: e.sceneX-grabOffsetP2.current.x,
+            By: e.sceneY-grabOffsetP2.current.y
+        });
     }
 
     const materialName = lineSegment.material.constructor.name;

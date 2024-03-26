@@ -3,7 +3,7 @@ import {Point, Vector} from "../geo.js"
 import {P, V} from "../geo.js"
 import Circle from "../scene/shapes/Circle.js"
 import SphericalLens from "../scene/shapes/SphericalLens.js"
-import Manipulator from "./Manipulator.js";
+import Manipulator from "../manipulators/Manipulator.js";
 const h = React.createElement;
 
 
@@ -40,34 +40,32 @@ function SphericalLensItem({
 {
     const grabOffset = React.useRef();
     const setPos = (x, y)=>{
-        const newLens = lens.copy()
-        newLens.x = x
-        newLens.y = y
-        onChange(lens, newLens)
+        onChange(lens.key, {
+            x:x, y:y
+        })
     }
 
     const handleCenterManip = (e)=>{
-        const newLens = lens.copy()
-
         const newCenterThickness = Math.max(1, (e.sceneX - lens.x)*2);
-        newLens.centerThickness = newCenterThickness;
-        onChange(lens, newLens)
+        onChange(lens.key, {
+            centerThickness: newCenterThickness
+        });
     }
 
     const handleCornerManip = (e)=>{
-        const newLens = lens.copy()
+
         const newEdgeThickness = Math.max(1, (e.sceneX-lens.x)*2);
         const newDiameter = Math.max(1, (e.sceneY-lens.y)*2);
 
 
-        newLens.edgeThickness = newEdgeThickness;
-        newLens.diameter = newDiameter;
-
         // update centerThickness to scale respectively
         const newCenterThickness = Math.max(1, newEdgeThickness-lens.edgeThickness + lens.centerThickness);
-        newLens.centerThickness = newCenterThickness
 
-        onChange(lens, newLens)
+        onChange(lens.key, {
+            edgeThickness: newEdgeThickness,
+            centerThickness: newCenterThickness,
+            diameter: newDiameter
+        })
     }
 
     const leftCirlce = lens.getLeftCircle();

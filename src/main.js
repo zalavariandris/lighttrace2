@@ -1,9 +1,9 @@
 import ReactDOM from "react-dom"
 import React, {useState} from "react"
 
-import SVGViewport from "./components/SVGViewport.js";
-import GLViewport from "./components/GLViewport.js";
-import Collapsable from "./components/Collapsable.js";
+import SVGViewport from "./panels/SVGViewport.js";
+import GLViewport from "./panels/GLViewport.js";
+import Collapsable from "./widgets/Collapsable.js";
 import {Point, Vector, P, V} from "./geo.js"
 
 import Shape from "./scene/shapes/Shape.js";
@@ -24,9 +24,9 @@ import DiffuseMaterial from "./scene/materials/DiffuseMaterial.js"
 
 
 import {Lightray, makeRaysFromLights, raytrace, SamplingMethod} from "./raytrace.js"
-import Inspector from "./components/Inspector.js"
+import Inspector from "./panels/Inspector.js"
 import CircleItem from "./components/CircleItem.js";
-
+import SceneItem from "./components/SceneItem.js"
 
 const h = React.createElement;
 function RaytraceStats({
@@ -70,13 +70,18 @@ function RaytraceStats({
     )
 }
 
-function Outliner({sceneModel={objects: [], selection:[]}}={})
+function Outliner({scene=[], selection=[]}={})
 {
+    function isSelected(obj){
+        return selection.indexOf(obj.key)>=0;
+    }
     return h("section", null,
         h("h3", null, "Outliner"),
         h("ul", null, 
-            ...sceneModel.objects.map((sceneObject)=>{
-                return h("li", null, 
+            ...scene.map((sceneObject)=>{
+                return h("li", {
+                    style: {fontStyle: isSelected(sceneObject)?"italic":"normal"}
+                }, 
                         `${sceneObject}`
                     )
             })
@@ -94,8 +99,6 @@ function cursorPoint(svg, {x, y}){
 const App = ()=>{
     console.log("render App")
     /* STATE */
-    const [showSettings, setShowSettings] = React.useState(true)
-    const [showSceneInfo, setShowSceneInfo] = React.useState(false)
     const [raytraceOptions, setRaytraceOptions] = React.useState({
         maxBounce: 9,
         lightSamples: 7,
@@ -115,63 +118,41 @@ const App = ()=>{
     });
 
     // SCENE MODEL
-    const [sceneModel, setSceneModel] = useState({
-        objects: [
-            
+    const [scene, setScene] = useState([
+        new SphericalLens("concave lens", {x: 150, y:250, material: new TransparentMaterial(), 
+            diameter: 140,
+            edgeThickness: 60,
+            centerThickness:5
+        }),
+        new SphericalLens("convex lens", {x: 230, y: 250, material: new TransparentMaterial(), 
+            diameter: 100,
+            edgeThickness: 5,
+            centerThickness: 50
+        }),
+        new Circle("mirror ball", {x: 400, y:220, material: new MirrorMaterial(), radius: 50}),
+        new LineSegment("floor line", {Ax: 50, Ay: 450, Bx: 462, By: 450, material: new DiffuseMaterial()}),
+        new PointLight("lamp", {x: 50, y: 150, angle:0}),
+        new DirectionalLight("sun", {x:50, y: 250, width: 80, angle: 0}),
+        new LaserLight("laser", {x:50, y: 200, angle: 0}),
+    ]);
 
-            new SphericalLens("concave lens", {x: 150, y:250, material: new TransparentMaterial(), 
-                diameter: 140,
-                edgeThickness: 60,
-                centerThickness:5
-            }),
-            new SphericalLens("convex lens", {x: 230, y: 250, material: new TransparentMaterial(), 
-                diameter: 100,
-                edgeThickness: 5,
-                centerThickness: 50
-            }),
-            new Circle("mirror ball", {x: 400, y:220, material: new MirrorMaterial(), radius: 50}),
-            new LineSegment("floor line", {Ax: 50, Ay: 450, Bx: 462, By: 450, material: new DiffuseMaterial()}),
-            new PointLight("lamp", {x: 50, y: 150, angle:0}),
-            new DirectionalLight("sun", {x:50, y: 250, width: 80, angle: 0}),
-            new LaserLight("laser", {x:50, y: 200, angle: 0}),
-        ],
-        selection: []
-    });
+    const [selection, setSelection] = useState([])
 
-    const setSelection = newSelection=>{
-        setSceneModel(sceneModel=>{
-            return {
-                objects: [...sceneModel.objects],
-                selection: newSelection
-            }
-        });
-        return newSelection;
-    };
-
-    const updateSceneObject = (oldSceneObject, newSceneObject)=>{
-        setSceneModel( sceneModel => {
+    const updateSceneObject = (key, newAttributes)=>{
+        setScene( scene => {
             // update objects
             
-            const objectsIdx = sceneModel.objects.findIndex(obj=>obj.key == oldSceneObject.key);
+            const objectsIdx = scene.findIndex(obj=>obj.key == key);
             if(objectsIdx<0)
             {
                 console.warn("old scene object not in current scene")
-                return sceneModel;
+                return scene;
             }
-            const newObjects = sceneModel.objects.toSpliced(objectsIdx, 1, newSceneObject);
-
-            // update selection
-            const selectionIdx = sceneModel.selection.findIndex(obj=>obj.key == oldSceneObject.key);
-            const newSelection = [...sceneModel.selection]
-            if(selectionIdx>=0)
-            {
-                newSelection.splice(selectionIdx, 1, newSceneObject)
+            const newSceneObject = scene[objectsIdx].copy()
+            for(let [attr, value] of Object.entries(newAttributes)){
+                newSceneObject[attr] = value;
             }
-            
-            return {
-                objects: newObjects.map(obj=>obj.copy()),
-                selection: newSelection.map(obj=>obj.copy())
-            }
+            return scene.toSpliced(objectsIdx, 1, newSceneObject);
         });
     };
 
@@ -231,8 +212,8 @@ const App = ()=>{
     // RAYTRACE
     function updateRaytraceUniform()
     {
-        const lights = sceneModel.objects.filter(obj=>obj instanceof Light)
-        const shapes = sceneModel.objects.filter(obj=>obj instanceof Shape)
+        const lights = scene.filter(obj=>obj instanceof Light)
+        const shapes = scene.filter(obj=>obj instanceof Shape)
         const newRaytraceResults = raytrace(lights, [shapes, shapes.map(shp=>shp.material)], {
             maxBounce:raytraceOptions.maxBounce, 
             samplingMethod: raytraceOptions.samplingMethod, 
@@ -245,8 +226,8 @@ const App = ()=>{
 
     function updateRaytraceRandom()
     {
-        const lights = sceneModel.objects.filter(obj=>obj instanceof Light)
-        const shapes = sceneModel.objects.filter(obj=>obj instanceof Shape)
+        const lights = scene.filter(obj=>obj instanceof Light)
+        const shapes = scene.filter(obj=>obj instanceof Shape)
         const newRaytraceResults = raytrace(lights, [shapes, shapes.map(shp=>shp.material)], {
             maxBounce:raytraceOptions.maxBounce, 
             samplingMethod: SamplingMethod.Random, 
@@ -580,8 +561,8 @@ const App = ()=>{
             className:"viewport",
             viewBox: viewBox,
             onViewChange: (value) => setViewBox(value),
-            scene: sceneModel.objects,
-            selection: sceneModel.selection,
+            scene: scene,
+            selection: scene.filter(obj=>selection.indexOf(obj.key)>=0),
             onSelection: (newSelection)=>{
                 console.log("main->setSelection", newSelection)
                 setSelection(newSelection);
@@ -589,7 +570,7 @@ const App = ()=>{
             rays: svgDisplayOptions.lightrays?uniformRaytraceResults.lightrays:[],
             hitPoints: svgDisplayOptions.hitPoints?uniformRaytraceResults.hitPoints:[], 
             paths:svgDisplayOptions.lightPaths?uniformRaytraceResults.lightPaths:[], 
-            onSceneObject: (oldObject, newObject)=>updateSceneObject(oldObject, newObject),
+            // onSceneObject: (oldObject, newObject)=>updateSceneObject(oldObject, newObject),
 
             onMouseDown: e=>{
                 if(currentToolName)
@@ -597,7 +578,19 @@ const App = ()=>{
                     handleMouseDownTools(e);
                 }
             }
-        }),
+        },
+            scene.map((sceneObject, idx)=>{
+                // return h('g', {}, )
+
+                return h(SceneItem, {
+                    sceneObject: sceneObject,
+                    onChange: (key, newProps)=>updateSceneObject(key, newProps),
+                    // className: selection.indexOf(sceneObject)>=0 ? "selected" : "not-selected",
+                    // onClick: (e)=>onSelection([sceneObject]),
+                    // isSelected: selection.indexOf(sceneObject)>=0
+                })
+            })
+        ),
         h("div", {
             id: "toolbar", className: "panel"
         },
@@ -624,10 +617,10 @@ const App = ()=>{
             className: "panel", 
             style: {right: "0px", top:"0px", position: "fixed"}
         }, 
-            sceneModel.selection[0]?h(Inspector, {
-                sceneObject: sceneModel.selection[0],
-                onChange: (oldObject, newObject)=>updateSceneObject(oldObject, newObject)
-            }):null,
+            // (Inspector, {
+            //     sceneObject: null,
+            //     onChange: (oldObject, newObject)=>updateSceneObject(oldObject, newObject)
+            // }),
             h(Collapsable, {title: h("h2", null, "Settings")},
                 h('div', null, 
                     h("section", null,
@@ -743,8 +736,11 @@ const App = ()=>{
                     )
                 )
             ),
-            h(Collapsable, {title: h("h2", null, "Scene Info")}, null,
-                h(Outliner, {sceneModel: sceneModel}),
+            h(Collapsable, {defaultOpen: true, title: h("h2", null, "Scene Info")}, null,
+                h(Outliner, {
+                    scene: scene,
+                    selection: selection
+                }),
                 // h(RaytraceStats, {
                 //     scene: sceneModel.objects, 
                 //     lightRays: uniformRaytraceResults.rays, 

@@ -1,8 +1,8 @@
 import React, {useState} from "react"
 const h = React.createElement;
 
-const Collapsable = ({...props})=>{
-    const [isOpen, setOpen] = React.useState(false);
+const Collapsable = ({defaultOpen=false, ...props})=>{
+    const [isOpen, setOpen] = React.useState(defaultOpen);
     return h("section", {
         ...props,
         className: ["collapsable", props.className].join(" "),

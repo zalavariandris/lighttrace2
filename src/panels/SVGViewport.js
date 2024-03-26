@@ -2,7 +2,7 @@ import React, {useState} from "react"
 
 
 /*viewport Items*/
-import SceneItem from "./SceneItem.js"
+import SceneItem from "../components/SceneItem.js"
 
 
 
@@ -108,6 +108,8 @@ function SVGViewport({
         return path;
     }
 
+    console.log("render SVGViewport", props.children)
+
     return h('svg', {
             xmlns:"http://www.w3.org/2000/svg",
             width: props.width,
@@ -191,18 +193,10 @@ function SVGViewport({
                 )
             )
         ),
+        
         h('g', {className: "scene"},
-            scene.map((sceneObject, idx)=>{
-                // return h('g', {}, )
+                    props.children
 
-                return h(SceneItem, {
-                    sceneObject: sceneObject,
-                    onChange: (oldSceneObject, newSceneObject)=>onSceneObject(sceneObject, newSceneObject),
-                    className: selection.indexOf(sceneObject)>=0 ? "selected" : "not-selected",
-                    onClick: (e)=>onSelection([sceneObject]),
-                    isSelected: selection.indexOf(sceneObject)>=0
-                })
-            })
         ),
     );
 }

@@ -1,6 +1,6 @@
 import React, {useState} from "react"
 import {Point, Vector} from "../geo.js"
-import Manipulator from "./Manipulator.js";
+import Manipulator from "../manipulators/Manipulator.js";
 import {colorFromRGB, wavelengthToRGB} from "../colorUtils.js"
 
 const h = React.createElement;
@@ -14,20 +14,19 @@ function PointLightItem({
 {
     const grabOffset = React.useRef();
     const setPos = (Px, Py)=>{
-        const newLight = light.copy()
-        newLight.x = Px;
-        newLight.y = Py;
-        onChange(light, newLight)
+        onChange(light.key, {
+            x: Px,
+            y: Py
+        })
     }
 
     const handleAngleDrag = e=>{
         const dx = e.sceneX-light.x;
         const dy = e.sceneY-light.y;
         const newAngle = Math.atan2(dy, dx);
-
-        const newSceneObject = light.copy()
-        newSceneObject.angle = newAngle;
-        onChange(light, newSceneObject);
+        onChange(light.key, {
+            angle: newAngle
+        });
     }
 
 

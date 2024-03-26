@@ -26,7 +26,7 @@ const h = React.createElement;
 
 function SceneItem({
     sceneObject, 
-    onChange=(oldSceneObject, newSceneObject)=>{},
+    onChange=(key, newAttributes)=>{},
     ...props
 })
 {
