@@ -592,156 +592,153 @@ const App = ()=>{
             className: "panel", 
             style: {right: "0px", top:"0px", position: "fixed"}
         }, 
-        //     // h(Inspector, {
-        //     //     sceneObject: scene.find(obj=>selectionKeys.indexOf(obj.key)>=0),
-        //     //     onChange: (key, newAttributes)=>updateSceneObject(key, newAttributes)
-        //     // }),
-        //     h(Collapsable, {title: h("h2", null, "Settings")},
-        //         h('div', null, 
-        //             h("section", null,
-        //                 h("h2", null, "Raytrace otions"),
-        //                 h("table", null,
-        //                     h("tr", null,
-        //                         h("td", null, "animate"),
-        //                         h("td", null,
-        //                             h('label', null,
-        //                                 h('input', {
-        //                                     name: "animate",
-        //                                     type: 'checkbox', 
-        //                                     checked:animate, 
-        //                                     onChange:(e)=>setAnimate(e.target.checked)
-        //                                 }),
-        //                                 `animate №${count}`
-        //                             )
-        //                         )
-        //                     ),
-        //                     h("tr", null, 
-        //                         h("td", null, "light samples"),
-        //                         h("td", null, 
-        //                             h("input", {
-        //                                 type:"range", 
-        //                                 name: "light samples",
-        //                                 value:raytraceOptions.lightSamples, 
-        //                                 onInput:(e)=>updateRaytraceOptions({lightSamples: e.target.value}),
-        //                                 min: 1, 
-        //                                 max:200}, 
-        //                                 null),
-        //                             `${raytraceOptions.lightSamples}`
-        //                         )
-        //                     ),
-        //                     h("tr", null, 
-        //                         h("td", null, "max bounce"),
-        //                         h("td", null, 
-        //                             h("input", {
-        //                                 type:"range", 
-        //                                 name: "max bounce",
-        //                                 value:raytraceOptions.maxBounce, 
-        //                                 onInput:(e)=>updateRaytraceOptions({maxBounce: e.target.value}), 
-        //                                 min: 0, 
-        //                                 max:16
-        //                             }, null),
-        //                             `${raytraceOptions.maxBounce}`
-        //                         )
-        //                     ),
-        //                     h("tr", null,
-        //                         h("td", null, "sampling method"),
-        //                         h("td", null, 
-        //                             h("input", {
-        //                                 name: "sampling", 
-        //                                 checked: raytraceOptions.samplingMethod == SamplingMethod.Random,
-        //                                 onChange: (e)=>updateRaytraceOptions({samplingMethod: e.target.value}),
-        //                                 id:SamplingMethod.Random, 
-        //                                 type:"radio", 
-        //                                 value:SamplingMethod.Random}),
-        //                             h("label", {for: SamplingMethod.Random}, SamplingMethod.Random),
-        //                             h("input", {
-        //                                 name: "sampling",
-        //                                 checked: raytraceOptions.samplingMethod == SamplingMethod.Uniform,
-        //                                 onChange: (e)=>updateRaytraceOptions({samplingMethod: e.target.value}),
-        //                                 id: SamplingMethod.Uniform,
-        //                                 type:"radio",
-        //                                 value:SamplingMethod.Uniform}),
-        //                             h("label", {for: SamplingMethod.Uniform}, SamplingMethod.Uniform)
-        //                         )
-        //                     )
-        //                 )
-        //             ),
-        //             h("section", null,
-        //                 h("h2", null, "Display options"),
-        //                 h("form", {
-        //                     onSubmit: (e)=>{
-        //                         //TODO: use form submission istead of each input change to update settings
-        //                         e.preventDefault();
-        //                         const formData = new FormData(e.target)
-        //                         const newData = Object.fromEntries(myFormData.entries());
-        //                         setSvgDisplayOptions(newData);
-        //                         return false;
-        //                     }
-        //                 }, 
-        //                     h("label", null,
-        //                         h("input", {
-        //                             name:"rays",
-        //                             checked: svgDisplayOptions.lightrays, 
-        //                             onChange: (e)=>updateSvgDisplayOptions({lightrays: e.target.checked}),
-        //                             type: "checkbox"
-        //                         }),
-        //                         "show lightrays"
-        //                     ),
-        //                     h("br"),
-        //                     h("label", null,
-        //                         h("input", {
-        //                             name:"hitPoints",
-        //                             checked: svgDisplayOptions.hitPoints, 
-        //                             onChange: (e)=>updateSvgDisplayOptions({hitPoints: e.target.checked}),
-        //                             type: "checkbox"
-        //                         }),
-        //                         "show hitpoints"
-        //                     ),
-        //                     h("br"),
-        //                     h("label", null,
-        //                         h("input", {
-        //                             name:"lightPaths",
-        //                             checked: svgDisplayOptions.lightPaths, 
-        //                             onChange: (e)=>updateSvgDisplayOptions({lightPaths: e.target.checked}),
-        //                             type: "checkbox"
-        //                         }),
-        //                         "show lightpaths"
-        //                     )
-        //                 )
-        //             )
-        //         )
-        //     ),
-        //     h(Collapsable, {defaultOpen: true, title: h("h2", null, "Scene Info")}, null,
-
-        h("section", null,
-            h("h3", null, "Outliner"),
-            h("ul", null, 
-                ...scene.map((sceneObject)=>{
-                    return h("li", {
-                        style: {fontStyle: selectionKeys.indexOf(sceneObject.key)>=0?"italic":"normal"}
-                    }, 
-                        h("a", {
-                            href:"#", 
-                            onClick:(e)=>{
+            // h(Inspector, {
+            //     sceneObject: scene.find(obj=>selectionKeys.indexOf(obj.key)>=0),
+            //     onChange: (key, newAttributes)=>updateSceneObject(key, newAttributes)
+            // }),
+            h(Collapsable, {title: h("h2", null, "Settings")},
+                h('div', null, 
+                    h("section", null,
+                        h("h2", null, "Raytrace otions"),
+                        h("table", null,
+                            h("tr", null,
+                                h("td", null, "animate"),
+                                h("td", null,
+                                    h('label', null,
+                                        h('input', {
+                                            name: "animate",
+                                            type: 'checkbox', 
+                                            checked:animate, 
+                                            onChange:(e)=>setAnimate(e.target.checked)
+                                        }),
+                                        `animate №${count}`
+                                    )
+                                )
+                            ),
+                            h("tr", null, 
+                                h("td", null, "light samples"),
+                                h("td", null, 
+                                    h("input", {
+                                        type:"range", 
+                                        name: "light samples",
+                                        value:raytraceOptions.lightSamples, 
+                                        onInput:(e)=>updateRaytraceOptions({lightSamples: e.target.value}),
+                                        min: 1, 
+                                        max:200}, 
+                                        null),
+                                    `${raytraceOptions.lightSamples}`
+                                )
+                            ),
+                            h("tr", null, 
+                                h("td", null, "max bounce"),
+                                h("td", null, 
+                                    h("input", {
+                                        type:"range", 
+                                        name: "max bounce",
+                                        value:raytraceOptions.maxBounce, 
+                                        onInput:(e)=>updateRaytraceOptions({maxBounce: e.target.value}), 
+                                        min: 0, 
+                                        max:16
+                                    }, null),
+                                    `${raytraceOptions.maxBounce}`
+                                )
+                            ),
+                            h("tr", null,
+                                h("td", null, "sampling method"),
+                                h("td", null, 
+                                    h("input", {
+                                        name: "sampling", 
+                                        checked: raytraceOptions.samplingMethod == SamplingMethod.Random,
+                                        onChange: (e)=>updateRaytraceOptions({samplingMethod: e.target.value}),
+                                        id:SamplingMethod.Random, 
+                                        type:"radio", 
+                                        value:SamplingMethod.Random}),
+                                    h("label", {for: SamplingMethod.Random}, SamplingMethod.Random),
+                                    h("input", {
+                                        name: "sampling",
+                                        checked: raytraceOptions.samplingMethod == SamplingMethod.Uniform,
+                                        onChange: (e)=>updateRaytraceOptions({samplingMethod: e.target.value}),
+                                        id: SamplingMethod.Uniform,
+                                        type:"radio",
+                                        value:SamplingMethod.Uniform}),
+                                    h("label", {for: SamplingMethod.Uniform}, SamplingMethod.Uniform)
+                                )
+                            )
+                        )
+                    ),
+                    h("section", null,
+                        h("h2", null, "Display options"),
+                        h("form", {
+                            onSubmit: (e)=>{
+                                //TODO: use form submission istead of each input change to update settings
                                 e.preventDefault();
-
-                                setSelectionKeys([sceneObject.key]);
-
+                                const formData = new FormData(e.target)
+                                const newData = Object.fromEntries(myFormData.entries());
+                                setSvgDisplayOptions(newData);
+                                return false;
                             }
                         }, 
-                            `${sceneObject}`
+                            h("label", null,
+                                h("input", {
+                                    name:"rays",
+                                    checked: svgDisplayOptions.lightrays, 
+                                    onChange: (e)=>updateSvgDisplayOptions({lightrays: e.target.checked}),
+                                    type: "checkbox"
+                                }),
+                                "show lightrays"
+                            ),
+                            h("br"),
+                            h("label", null,
+                                h("input", {
+                                    name:"hitPoints",
+                                    checked: svgDisplayOptions.hitPoints, 
+                                    onChange: (e)=>updateSvgDisplayOptions({hitPoints: e.target.checked}),
+                                    type: "checkbox"
+                                }),
+                                "show hitpoints"
+                            ),
+                            h("br"),
+                            h("label", null,
+                                h("input", {
+                                    name:"lightPaths",
+                                    checked: svgDisplayOptions.lightPaths, 
+                                    onChange: (e)=>updateSvgDisplayOptions({lightPaths: e.target.checked}),
+                                    type: "checkbox"
+                                }),
+                                "show lightpaths"
+                            )
                         )
                     )
+                )
+            ),
+            h(Collapsable, {title: h("h2", null, "Outliner"), defaultOpen: true},
+                    h("ul", null, 
+                        ...scene.map((sceneObject)=>{
+                            return h("li", {
+                                style: {fontStyle: selectionKeys.indexOf(sceneObject.key)>=0?"italic":"normal"}
+                            }, 
+                                h("a", {
+                                    href:"#", 
+                                    onClick:(e)=>{
+                                        e.preventDefault();
+                                        setSelectionKeys([sceneObject.key]);
+    
+                                    }
+                                }, 
+                                    `${sceneObject}`
+                                )
+                            )
+                        })
+                    )
+            ),
+            h(Collapsable, {title: h("h2", null, "Raytrace shapes")},
+                h(RaytraceStats, {
+                    scene: scene, 
+                    lightRays: uniformRaytraceResults.rays, 
+                    hitPoints: uniformRaytraceResults.hitPoints, 
+                    lightPaths: uniformRaytraceResults.lightPaths
                 })
             )
-        ),
-
-            h(RaytraceStats, {
-                scene: scene, 
-                lightRays: uniformRaytraceResults.rays, 
-                hitPoints: uniformRaytraceResults.hitPoints, 
-                lightPaths: uniformRaytraceResults.lightPaths
-            })
         )
     )
 }
