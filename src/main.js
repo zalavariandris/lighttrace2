@@ -31,6 +31,9 @@ import ShapeView from "./components/ShapeView.js";
 
 const h = React.createElement;
 
+const generateId = ()=>{
+    return Math.random().toString(32).substring(2, 9);
+};
 
 function RaytraceStats({
     scene=[],
@@ -259,27 +262,23 @@ const App = ()=>{
                 const [beginSceneX, beginSceneY] = [loc.x, loc.y];
     
                 // create circle
-                let sceneObject = new Circle({
+                const key = generateId();
+                addSceneObject(new Circle(key, {
                     x: beginSceneX, 
                     y: beginSceneY, 
                     radius:5, 
                     material: "glass"
-                });
-    
-                addSceneObject(sceneObject);
+                }));
+
                 const handleDrag = e=>{
                     // var svg  = e.target.closest("SVG");
                     let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
                     const [sceneX, sceneY] = [loc.x, loc.y]
                     const [dx, dy] = [sceneX-beginSceneX, sceneY-beginSceneY];
     
-                    const newSceneObject = sceneObject.copy(); 
-                    newSceneObject.radius = Math.hypot(dx, dy);
-                    setScene(scene=>{
-                        const idx = scene.indexOf(sceneObject);
-                        sceneObject = newSceneObject;
-                        return scene.toSpliced(idx, 1, newSceneObject);
-                    })
+                    updateSceneObject(key, {
+                        radius: Math.hypot(dx, dy)
+                    });
                 }
     
                 window.addEventListener("mousemove", handleDrag);
@@ -297,30 +296,26 @@ const App = ()=>{
                 let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
                 const [beginSceneX, beginSceneY] = [loc.x, loc.y];
     
-                let sceneObject = new Rectangle({
+                const key = generateId();
+    
+                addSceneObject(new Rectangle(key, {
                     x: beginSceneX, 
                     y: beginSceneY, 
                     width: 5,
                     height: 5,
                     material: "diffuse"
-                });
-    
-                addSceneObject(sceneObject);
+                }));
+
                 const handleDrag = e=>{
                     // var svg  = e.target.closest("SVG");
                     let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
                     const [sceneX, sceneY] = [loc.x, loc.y]
                     const [dx, dy] = [sceneX-beginSceneX, sceneY-beginSceneY];
     
-                    const newSceneObject = sceneObject.copy(); 
-                    newSceneObject.width = Math.abs(dx)*2;
-                    newSceneObject.height = Math.abs(dy)*2;
-
-                    setScene(scene=>{
-                        const idx = scene.indexOf(sceneObject);
-                        sceneObject = newSceneObject;
-                        return scene.toSpliced(idx, 1, newSceneObject);
-                    })
+                    updateSceneObject(key, {
+                        width: Math.abs(dx)*2,
+                        height: Math.abs(dy)*2
+                    });
                 }
     
                 window.addEventListener("mousemove", handleDrag);
@@ -338,29 +333,24 @@ const App = ()=>{
                 let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
                 const [beginSceneX, beginSceneY] = [loc.x, loc.y];
     
-                let sceneObject = new LineSegment({
+                const key = generateId();
+                addSceneObject(new LineSegment(key, {
                     Ax: beginSceneX, 
                     Ay: beginSceneY, 
                     Bx: beginSceneX+5,
                     By: beginSceneY,
                     material: "diffuse"
-                });
+                }));
     
-                addSceneObject(sceneObject);
                 const handleDrag = e=>{
                     // var svg  = e.target.closest("SVG");
                     let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
-                    const [sceneX, sceneY] = [loc.x, loc.y]
-                    const [dx, dy] = [sceneX-beginSceneX, sceneY-beginSceneY];
+                    const [sceneX, sceneY] = [loc.x, loc.y];
     
-                    const newSceneObject = sceneObject.copy(); 
-                    newSceneObject.Bx = sceneX;
-                    newSceneObject.By = sceneY;
-                    setScene(scene=>{
-                        const idx = scene.indexOf(sceneObject);
-                        sceneObject = newSceneObject;
-                        return scene.toSpliced(idx, 1, newSceneObject);
-                    })
+                    updateSceneObject(key, {
+                        Bx: sceneX, 
+                        By: sceneY
+                    });
                 }
     
                 window.addEventListener("mousemove", handleDrag);
@@ -377,35 +367,27 @@ const App = ()=>{
                 var svg  = e.target.closest("SVG");
                 let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
                 const [beginSceneX, beginSceneY] = [loc.x, loc.y];
-                let sceneObject = new SphericalLens({
+
+                const key = generateId();
+                addSceneObject(new SphericalLens(key, {
                     x: beginSceneX, 
                     y: beginSceneY, 
                     centerThickness: 5,
                     edgeThickness: 0,
                     material: "glass"
-                });
+                }));
     
-                addSceneObject(sceneObject);
                 const handleDrag = e=>{
                     // var svg  = e.target.closest("SVG");
                     let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
                     const [sceneX, sceneY] = [loc.x, loc.y]
                     const [dx, dy] = [sceneX-beginSceneX, sceneY-beginSceneY];
-    
-                    const newSceneObject = sceneObject.copy(); 
-                    newSceneObject.diameter = Math.abs(dy*2)
-                    if(dx>0){
-                        newSceneObject.edgeThickness = 1;
-                        newSceneObject.centerThickness = dx*2;
-                    }else{
-                        newSceneObject.edgeThickness = dx*2;
-                        newSceneObject.centerThickness = 1;
-                    }
-                    setScene(scene=>{
-                        const idx = scene.indexOf(sceneObject);
-                        sceneObject = newSceneObject;
-                        return scene.toSpliced(idx, 1, newSceneObject);
-                    })
+
+                    updateSceneObject(key, {
+                        diameter: Math.abs(dy*2),
+                        edgeThickness:   dx>0 ?    1 : dx*2,
+                        centerThickness: dx>0 ? dx*2 : 0
+                    });
                 }
     
                 window.addEventListener("mousemove", handleDrag);
@@ -423,26 +405,22 @@ const App = ()=>{
                 let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
                 const [beginSceneX, beginSceneY] = [loc.x, loc.y];
     
-                let sceneObject = new PointLight({
+                const key = generateId();
+                addSceneObject(new PointLight(key, {
                     x: beginSceneX, 
                     y: beginSceneY, 
                     angle: 0
-                });
+                }));
     
-                addSceneObject(sceneObject);
                 const handleDrag = e=>{
                     // var svg  = e.target.closest("SVG");
                     let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
                     const [sceneX, sceneY] = [loc.x, loc.y]
                     const [dx, dy] = [sceneX-beginSceneX, sceneY-beginSceneY];
-    
-                    const newSceneObject = sceneObject.copy(); 
-                    newSceneObject.angle = Math.atan2(dy, dx);
-                    setScene(scene=>{
-                        const idx = scene.indexOf(sceneObject);
-                        sceneObject = newSceneObject;
-                        return scene.toSpliced(idx, 1, newSceneObject);
-                    })
+
+                    updateSceneObject(key, {
+                        angle: Math.atan2(dy, dx)
+                    });
                 }
     
                 window.addEventListener("mousemove", handleDrag);
@@ -460,27 +438,23 @@ const App = ()=>{
                 let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
                 const [beginSceneX, beginSceneY] = [loc.x, loc.y];
                 
-                let sceneObject = new DirectionalLight({
+                const key = generateId();
+                addSceneObject(new DirectionalLight(key, {
                     x: beginSceneX, 
                     y: beginSceneY, 
                     angle: 0
-                });
+                }));
     
-                addSceneObject(sceneObject);
                 const handleDrag = e=>{
                     // var svg  = e.target.closest("SVG");
                     let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
                     const [sceneX, sceneY] = [loc.x, loc.y]
                     const [dx, dy] = [sceneX-beginSceneX, sceneY-beginSceneY];
-    
-                    const newSceneObject = sceneObject.copy(); 
-                    newSceneObject.angle = Math.atan2(dy, dx);
-                    newSceneObject.width = Math.hypot(dx, dy)/2;
-                    setScene(scene=>{
-                        const idx = scene.indexOf(sceneObject);
-                        sceneObject = newSceneObject;
-                        return scene.toSpliced(idx, 1, newSceneObject);
-                    })
+
+                    updateSceneObject(key, {
+                        angle: Math.atan2(dy, dx),
+                        width: Math.hypot(dx, dy)/2
+                    });
                 }
     
                 window.addEventListener("mousemove", handleDrag);
@@ -498,26 +472,22 @@ const App = ()=>{
                 let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
                 const [beginSceneX, beginSceneY] = [loc.x, loc.y];
     
-                let sceneObject = new LaserLight({
+                const key = generateId();
+                addSceneObject(new LaserLight(key, {
                     x: beginSceneX, 
                     y: beginSceneY, 
                     angle: 0
-                });
+                }));
     
-                addSceneObject(sceneObject);
                 const handleDrag = e=>{
                     // var svg  = e.target.closest("SVG");
                     let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
                     const [sceneX, sceneY] = [loc.x, loc.y]
                     const [dx, dy] = [sceneX-beginSceneX, sceneY-beginSceneY];
-    
-                    const newSceneObject = sceneObject.copy(); 
-                    newSceneObject.angle = Math.atan2(dy, dx);
-                    setScene(scene=>{
-                        const idx = scene.indexOf(sceneObject);
-                        sceneObject = newSceneObject;
-                        return scene.toSpliced(idx, 1, newSceneObject);
-                    })
+                    
+                    updateSceneObject(key, {
+                        angle: Math.atan2(dy, dx)
+                    });
                 }
     
                 window.addEventListener("mousemove", handleDrag);

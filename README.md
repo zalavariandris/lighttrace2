@@ -26,7 +26,7 @@ https://zalavariandris.github.io/lighttrace2/
 - [x] fix selection when when scene updates.
 
 - [ ] move animation, iterative rendering to the GLViewport component
-
+- [ ] refactor mouse tools. Move to their own js file.
 - [ ] support light frequency
 - [ ] support light distribution
 
