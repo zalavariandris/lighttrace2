@@ -45,8 +45,7 @@ const SphericalLensView = ({
 
     return h("g", null, 
         h("path", {
-            // d: makePathFromLens(lens),
-            d: "M20 20 L50 50",
+            d: makePathFromLens(lens),
             className: "shape"
         }),
         h(Manipulator, {
