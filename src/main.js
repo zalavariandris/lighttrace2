@@ -118,12 +118,12 @@ const App = ()=>{
             edgeThickness: 5,
             centerThickness: 50
         }),
-        new Circle("mirror ball", {
-            x: 400, 
-            y:220, 
-            radius: 50, 
-            material: "mirror"
-        }),
+        // new Circle("mirror ball", {
+        //     x: 200, 
+        //     y:220, 
+        //     radius: 150, 
+        //     material: "glass"
+        // }),
         new LineSegment("floor line", {
             Ax: 50, 
             Ay: 450, 
@@ -132,9 +132,9 @@ const App = ()=>{
             material: "diffuse"
         }),
 
-        new PointLight("lamp", {x: 50, y: 150, angle:0}),
+        // new PointLight("lamp", {x: 50, y: 150, angle:0}),
         new DirectionalLight("sun", {x:50, y: 250, width: 80, angle: 0}),
-        new LaserLight("laser", {x:50, y: 200, angle: 0}),
+        new LaserLight("laser", {x:150, y: 350, angle: 0}),
     ]);
 
     const updateSceneObject = (key, newAttributes)=>{

@@ -100,15 +100,15 @@ class Circle extends Shape
 
         
         let t=-1;
-        if(t1>EPSILON && t2>EPSILON)
+        if(t1>0 && t2>0)
         {
             t = Math.min(t1, t2)
         }
-        else if(t1>EPSILON)
+        else if(t1>0)
         {
             t = t1
         }
-        else if(t2>EPSILON)
+        else if(t2>0)
         {
             t = t2
         }
@@ -117,11 +117,11 @@ class Circle extends Shape
             return []
         }
 
-        return [t1, t2].filter(t=>t>EPSILON).map(t=>{
+        return [t1, t2].filter(t=>t>EPSILON).map( t => {
             const hitPosition = P(ray.origin.x + t * ray.direction.x, ray.origin.y + t * ray.direction.y);
             const surfaceNormal = V(hitPosition.x - this.x, hitPosition.y - this.y).normalized();
             
-            return new HitPoint(hitPosition, surfaceNormal.multiply(1));
+            return new HitPoint(hitPosition, surfaceNormal);
         })
     }
 }
