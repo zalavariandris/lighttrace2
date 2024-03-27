@@ -27,6 +27,8 @@ https://zalavariandris.github.io/lighttrace2/
 - [x] refactor SVGViewport to accept children components, to populate the scene
 
 - [x] add ReferencePoint and referenceOffset ot ManipulatorEvent, to simplify grabbing objects
+- [x] seperate model from viewmodel, by switching _scene_ to PlainJavascriptObject
+
 - [ ] refactor GLViewport, and lift the rendering code to a child "entity" component.
 
 - [ ] support light source intensity
@@ -34,7 +36,7 @@ https://zalavariandris.github.io/lighttrace2/
 - [ ] support light wavelength distribution
 
 - [ ] show manipulators when object is selected.
-- [ ] seperate model from viewmodel, by switching _scene_ to OrderedDict
+
 
 - [ ] simulate light as wave
 

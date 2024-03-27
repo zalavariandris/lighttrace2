@@ -3,6 +3,7 @@ import Manipulator from "./Manipulator.js";
 const h = React.createElement;
 
 const CircleView = ({
+    key,
     circle,
     updateSceneObject
 })=>{
@@ -14,7 +15,7 @@ const CircleView = ({
             r: circle.radius
         }),
         h(Manipulator, {
-            onDrag: e=>updateSceneObject(circle.key, {
+            onDrag: e=>updateSceneObject(key, {
                 radius: Math.hypot(e.sceneX-circle.x, e.sceneY-circle.y)
             })
         }, 

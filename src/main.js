@@ -107,8 +107,8 @@ const App = ()=>{
     });
 
     // SCENE OBJECTS
-    const [scene, setScene] = useState([
-        new SphericalLens("concave lens", {
+    const [scene, setScene] = useState({
+        "concave lens": new SphericalLens("concave lens", {
             x: 150, 
             y:250, 
             material: "glass", 
@@ -116,7 +116,7 @@ const App = ()=>{
             edgeThickness: 60,
             centerThickness:5
         }),
-        new SphericalLens("convex lens", {
+        "convex lens": new SphericalLens("convex lens", {
             x: 230, 
             y: 250, 
             material: "glass", 
@@ -124,7 +124,7 @@ const App = ()=>{
             edgeThickness: 5,
             centerThickness: 50
         }),
-        new Rectangle("rect prism", {
+        "rect prism": new Rectangle("rect prism", {
             x: 500,
             y: 250,
             width: 150,
@@ -137,7 +137,7 @@ const App = ()=>{
         //     radius: 150, 
         //     material: "glass"
         // }),
-        new LineSegment("floor line", {
+        "floor line": new LineSegment("floor line", {
             Ax: 50, 
             Ay: 450, 
             Bx: 462, 
@@ -146,24 +146,24 @@ const App = ()=>{
         }),
 
         // new PointLight("lamp", {x: 50, y: 150, angle:0}),
-        new DirectionalLight("sun", {x:50, y: 250, width: 80, angle: 0}),
+        "sun": new DirectionalLight("sun", {x:50, y: 250, width: 80, angle: 0}),
         // new LaserLight("laser", {x:150, y: 150, angle: 0.5}),
-    ]);
+});
 
     const updateSceneObject = (key, newAttributes)=>{
         setScene( scene => {
             // update objects            
-            const objectsIdx = scene.findIndex(obj=>obj.key == key);
-            if(objectsIdx<0)
+            if(!scene.hasOwnProperty(key))
             {
                 console.warn("old scene object not in current scene")
                 return scene;
             }
-            const newSceneObject = scene[objectsIdx].copy()
+            const newSceneObject = scene[key].copy()
             for(let [attr, value] of Object.entries(newAttributes)){
                 newSceneObject[attr] = value;
             }
-            return scene.toSpliced(objectsIdx, 1, newSceneObject);
+            
+            return {...scene, [key]: newSceneObject};
         });
     };
 
@@ -179,25 +179,31 @@ const App = ()=>{
 
     const getSelectedSceneObject=()=>
     {
-        return scene.find(obj=>selectionKeys.indexOf(obj.key)>=0);
+        const key = selectionKeys[0];
+        if(key && scene.hasOwnProperty(key)){
+            return scene[key]
+        }
+        return null;
     }
 
-    const addSceneObject = (newSceneObject)=>{
+    const addSceneObject = (key, newSceneObject)=>{
         setScene(scene=>{
-            return [...scene, newSceneObject]
+            return {...scene, [key]: newSceneObject}
         })
     }
 
-    const removeSceneObject = (sceneObject)=>{
-        setScene(scene.filter(obj=>obj.key!=sceneObject.key))
-        setSelectionKeys([])
+    const removeSceneObject = (key, sceneObject)=>{ 
+        setScene(Object.fromEntries(Object.entries(scene).filter(([k, v]) =>{
+            return k!== key;
+        })));
+        setSelectionKeys([]);
     }
 
     // 
     function calcRaytraceUniform()
     {
-        const lights = scene.filter(obj=>obj instanceof Light);
-        const shapes = scene.filter(obj=>obj instanceof Shape);
+        const lights = Object.values(scene).filter(obj=>obj instanceof Light);
+        const shapes = Object.values(scene).filter(obj=>obj instanceof Shape);
         const shapesMaterials = shapes.map(s=>materials.find(m=>m.key==s.material));
 
         const newRaytraceResults = raytrace(lights, [shapes, shapesMaterials], {
@@ -212,8 +218,8 @@ const App = ()=>{
 
     function calcRaytraceRandom()
     {
-        const lights = scene.filter(obj=>obj instanceof Light);
-        const shapes = scene.filter(obj=>obj instanceof Shape);
+        const lights = Object.values(scene).filter(obj=>obj instanceof Light);
+        const shapes = Object.values(scene).filter(obj=>obj instanceof Shape);
         const shapesMaterials = shapes.map(s=>materials.find(m=>m.key==s.material));
 
         const newRaytraceResults = raytrace(lights, [shapes, shapesMaterials], {
@@ -543,18 +549,19 @@ const App = ()=>{
             }
         },
             h("g", null, 
-                scene.map(sceneObject=>{
+                Object.entries(scene).map( ([key, sceneObject])=>{
                     return h(Manipulator, {
-                        className: selectionKeys.indexOf(sceneObject.key)>=0 ? "sceneItem selected" : "sceneItem not-selected",
+                        className: selectionKeys.indexOf(key)>=0 ? "sceneItem selected" : "sceneItem not-selected",
                         referenceX: sceneObject.x,
                         referenceY: sceneObject.y,
-                        onDrag: e=>updateSceneObject(sceneObject.key, {
+                        onDrag: e=>updateSceneObject(key, {
                             x: e.sceneX+e.referenceOffsetX, 
                             y: e.sceneY+e.referenceOffsetY
                         }),
-                        onClick: e=>setSelectionKeys([sceneObject.key])
+                        onClick: e=>setSelectionKeys([key])
                     }, 
                         h(ShapeView, {
+                            objKey: key,
                             sceneObject, 
                             updateSceneObject, 
                             selectionKeys
@@ -714,19 +721,19 @@ const App = ()=>{
             ),
             h(Collapsable, {title: h("h2", null, "Outliner"), defaultOpen: false},
                     h("ul", null, 
-                        ...scene.map((sceneObject)=>{
+                        ...Object.entries(scene).map(([key, sceneObject])=>{
                             return h("li", {
-                                style: {fontStyle: selectionKeys.indexOf(sceneObject.key)>=0?"italic":"normal"}
+                                style: {fontStyle: selectionKeys.indexOf(key)>=0?"italic":"normal"}
                             }, 
                                 h("a", {
                                     href:"#", 
                                     onClick:(e)=>{
                                         e.preventDefault();
-                                        setSelectionKeys([sceneObject.key]);
+                                        setSelectionKeys([key]);
     
                                     }
                                 }, 
-                                    `${sceneObject}`
+                                    `${key}`
                                 )
                             )
                         })
@@ -734,7 +741,7 @@ const App = ()=>{
             ),
             h(Collapsable, {title: h("h2", null, "Raytrace shapes"), defaultOpen:false},
                 h(RaytraceStats, {
-                    scene: scene, 
+                    scene: Object.values(scene), 
                     lightRays: uniformRaytraceResults.rays, 
                     hitPoints: uniformRaytraceResults.hitPoints, 
                     lightPaths: uniformRaytraceResults.lightPaths

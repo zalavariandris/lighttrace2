@@ -7,7 +7,7 @@ import Circle from "../scene/shapes/Circle.js"
 
 
 const SphericalLensView = ({
-    lens, updateSceneObject
+    objKey, lens, updateSceneObject
 })=>{
     function arcFromThreePoints({Sx, Sy, Mx, My, Ex, Ey})
     {
@@ -50,7 +50,7 @@ const SphericalLensView = ({
         }),
         h(Manipulator, {
             onDrag: e=>{
-                updateSceneObject(lens.key, {
+                updateSceneObject(objKey, {
                     centerThickness: (e.sceneX-lens.x)*2
                 })
             }
@@ -65,7 +65,7 @@ const SphericalLensView = ({
         h(Manipulator, {
             onDrag: e=>{
                 const newEdgeThickness = Math.max(1, (e.sceneX-lens.x)*2);
-                updateSceneObject(lens.key, {
+                updateSceneObject(objKey, {
                     edgeThickness: newEdgeThickness,
                     centerThickness: Math.max(1, newEdgeThickness-lens.edgeThickness + lens.centerThickness),
                     diameter: Math.max(1, (e.sceneY-lens.y)*2),

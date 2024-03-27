@@ -27,37 +27,38 @@ import SphericalLensView from "./SphericalLensView.js"
 
 
 const ShapeView = ({
+    objKey, 
     sceneObject,
     updateSceneObject
 })=>{
     if(sceneObject instanceof Circle)
     {
-        return h(CircleView, {circle: sceneObject, updateSceneObject});
+        return h(CircleView, {objKey, circle: sceneObject, updateSceneObject});
     }
     else if(sceneObject instanceof DirectionalLight)
     {
-        return h(DirectionalLightView, {light: sceneObject, updateSceneObject});
+        return h(DirectionalLightView, {objKey, light: sceneObject, updateSceneObject});
     }
     else if(sceneObject instanceof LaserLight)
     {
-        return h(LaserLightView, {light: sceneObject, updateSceneObject});
+        return h(LaserLightView, {objKey, light: sceneObject, updateSceneObject});
 
     }
     else if(sceneObject instanceof PointLight)
     {
-        return h(PointLightView, {light: sceneObject, updateSceneObject});
+        return h(PointLightView, {objKey, light: sceneObject, updateSceneObject});
     }
     else if(sceneObject instanceof Rectangle)
     {
-        return h(RectangleView, {rectangle: sceneObject, updateSceneObject});
+        return h(RectangleView, {objKey, rectangle: sceneObject, updateSceneObject});
     }
     else if(sceneObject instanceof LineSegment)
     {
-        return h(LineSegmentView, {lineSegment:sceneObject, updateSceneObject});
+        return h(LineSegmentView, {objKey, lineSegment:sceneObject, updateSceneObject});
     }
     else if(sceneObject instanceof SphericalLens)
     {
-        return h(SphericalLensView, {lens: sceneObject, updateSceneObject});
+        return h(SphericalLensView, {objKey, lens: sceneObject, updateSceneObject});
     }
     else
     {
@@ -65,7 +66,7 @@ const ShapeView = ({
             className: "shape",
             x: sceneObject.x,
             y: sceneObject.y
-        }, `${sceneObject.key}`)
+        }, `${objKey}`)
     }
 };
 
