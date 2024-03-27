@@ -3,7 +3,7 @@ import Manipulator from "./Manipulator.js";
 const h = React.createElement;
 
 const RectangleView = ({
-    rectangle, updateSceneObject
+    objKey, rectangle, updateSceneObject
 })=>{
     return h("g", null, 
         h('rect', {

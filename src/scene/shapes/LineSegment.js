@@ -7,9 +7,9 @@ import { HitPoint } from "../../raytrace.js";
 
 class LineSegment extends Shape
 {
-    constructor(key, {Ax, Ay, Bx, By, material})
+    constructor({Ax, Ay, Bx, By, material})
     {
-        super(key, {x:0,y:0, material})
+        super({x:0,y:0, material})
         this.Ax = Ax;
         this.Ay = Ay;
         this.Bx = Bx;
@@ -18,7 +18,7 @@ class LineSegment extends Shape
 
     copy(other)
     {
-        return new LineSegment(this.key, {
+        return new LineSegment({
             Ax:this.Ax, 
             Ay:this.Ay, 
             Bx:this.Bx, 
@@ -29,7 +29,7 @@ class LineSegment extends Shape
 
     toString()
     {
-        return `LineSegment ${this.key}, (${this.Ax.toFixed(1)}, ${this.Ay.toFixed(1)}), P(${this.Bx.toFixed(1)}, ${this.By.toFixed(1)})`
+        return `LineSegment (${this.Ax.toFixed(1)}, ${this.Ay.toFixed(1)}), P(${this.Bx.toFixed(1)}, ${this.By.toFixed(1)})`
     }
 
     hitTest(ray)

@@ -11,7 +11,7 @@ const SphericalLensView = ({
 })=>{
     function arcFromThreePoints({Sx, Sy, Mx, My, Ex, Ey})
     {
-        const circle = Circle.fromThreePoints("temp", {x:Sx, y:Sy}, {x:Mx, y:My}, {x:Ex, y:Ey})
+        const circle = Circle.fromThreePoints({x:Sx, y:Sy}, {x:Mx, y:My}, {x:Ex, y:Ey})
         const r = circle.radius;
         const [SEx, SEy] = [Ex - Sx, Ey - Sy];
         const [SMx, SMy] = [Mx - Sx, My - Sy];

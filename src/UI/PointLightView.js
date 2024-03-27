@@ -5,7 +5,7 @@ import {colorFromRGB, wavelengthToRGB} from "../colorUtils.js"
 const h = React.createElement;
 
 const PointLightView = ({
-    light, updateSceneObject
+    objKey, light, updateSceneObject
 })=>{
     return h("g", null, 
         h('circle', {
@@ -19,7 +19,7 @@ const PointLightView = ({
             }
         }),
         h(Manipulator, {
-            onDrag: (e)=>updateSceneObject(light.key, {
+            onDrag: (e)=>updateSceneObject(objKey, {
                 angle: Math.atan2(e.sceneY-light.y, e.sceneX-light.x)
             }),
             className:"manip",

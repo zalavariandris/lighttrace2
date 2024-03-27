@@ -6,6 +6,7 @@ const h = React.createElement;
 import {colorFromRGB, wavelengthToRGB} from "../colorUtils.js"
 
 const DirectionalLightView = ({
+    objKey,
     light,
     updateSceneObject
 })=>{
@@ -26,7 +27,7 @@ const DirectionalLightView = ({
         h(Manipulator, {
             referenceX: light.x+Math.cos(light.angle)*50,
             referenceY: light.y+Math.sin(light.angle)*50,
-            onDrag: (e)=>updateSceneObject(light.key, {
+            onDrag: (e)=>updateSceneObject(objKey, {
                 angle: Math.atan2(e.sceneY+e.referenceOffsetY-light.y, e.sceneX+e.referenceOffsetX-light.x)
             }),
             className:"manip",
@@ -39,7 +40,7 @@ const DirectionalLightView = ({
         })),
         h(Manipulator, {
             onDragStart: e=>console.log(e),
-            onDrag: e=>updateSceneObject(light.key, {
+            onDrag: e=>updateSceneObject(objKey, {
                 width: Math.hypot(e.sceneX-light.x, e.sceneY-light.y)*2
             }),
             className:"manip"

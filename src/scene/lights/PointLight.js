@@ -6,14 +6,14 @@ import { Lightray } from "../../raytrace.js";
 
 class PointLight extends Light
 {
-    constructor(key, {x, y, angle=0, wavelength=590}={}){
-        super(key, {x, y, wavelength})
+    constructor({x, y, angle=0, wavelength=590}={}){
+        super({x, y, wavelength})
         this.angle = angle
     }
 
     copy()
     {
-        return new PointLight(this.key, {
+        return new PointLight({
             x: this.x, 
             y:this.y, 
             angle: this.angle,
@@ -23,7 +23,7 @@ class PointLight extends Light
 
     toString()
     {
-        return `Pointlight ${this.key} (${this.key}, ${this.x}, ${this.y} ${this.angle.toFixed(0)})`
+        return `Pointlight (${this.key}, ${this.x}, ${this.y} ${this.angle.toFixed(0)})`
     }
 
     sampleRays({sampleCount, samplingMethod=SamplingMethod.Uniform}={})

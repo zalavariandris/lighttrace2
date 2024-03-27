@@ -5,16 +5,16 @@ import { Lightray } from "../../raytrace.js";
 
 class DirectionalLight extends Light
 {
-    constructor(key, {x, y, width, angle=0, wavelength=590}={})
+    constructor({x, y, width, angle=0, wavelength=590}={})
     {
-        super(key, {x, y, wavelength})
+        super({x, y, wavelength})
         this.width = width;
         this.angle = angle;
     }
 
     copy()
     {
-        return new DirectionalLight(this.key, {
+        return new DirectionalLight({
             x:this.x, 
             y:this.y,
             width: this.width, 
@@ -25,7 +25,7 @@ class DirectionalLight extends Light
 
     toString()
     {
-        return `DirectionalLight ${this.key}, (${this.x} ${this.y}, ${this.angle})`
+        return `DirectionalLight (${this.x} ${this.y}, ${this.angle})`
     }
 
     sampleRays({sampleCount=9, samplingMethod=SamplingMethod.Uniform}={})

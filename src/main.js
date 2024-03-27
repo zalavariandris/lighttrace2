@@ -108,7 +108,7 @@ const App = ()=>{
 
     // SCENE OBJECTS
     const [scene, setScene] = useState({
-        "concave lens": new SphericalLens("concave lens", {
+        "concave lens": new SphericalLens({
             x: 150, 
             y:250, 
             material: "glass", 
@@ -116,7 +116,7 @@ const App = ()=>{
             edgeThickness: 60,
             centerThickness:5
         }),
-        "convex lens": new SphericalLens("convex lens", {
+        "convex lens": new SphericalLens({
             x: 230, 
             y: 250, 
             material: "glass", 
@@ -124,7 +124,7 @@ const App = ()=>{
             edgeThickness: 5,
             centerThickness: 50
         }),
-        "rect prism": new Rectangle("rect prism", {
+        "rect prism": new Rectangle({
             x: 500,
             y: 250,
             width: 150,
@@ -137,7 +137,7 @@ const App = ()=>{
         //     radius: 150, 
         //     material: "glass"
         // }),
-        "floor line": new LineSegment("floor line", {
+        "floor line": new LineSegment({
             Ax: 50, 
             Ay: 450, 
             Bx: 462, 
@@ -146,7 +146,7 @@ const App = ()=>{
         }),
 
         // new PointLight("lamp", {x: 50, y: 150, angle:0}),
-        "sun": new DirectionalLight("sun", {x:50, y: 250, width: 80, angle: 0}),
+        "sun": new DirectionalLight({x:50, y: 250, width: 80, angle: 0}),
         // new LaserLight("laser", {x:150, y: 150, angle: 0.5}),
 });
 
@@ -277,7 +277,7 @@ const App = ()=>{
     
                 // create circle
                 const key = generateId();
-                addSceneObject(new Circle(key, {
+                addSceneObject(key, new Circle({
                     x: beginSceneX, 
                     y: beginSceneY, 
                     radius:5, 
@@ -312,7 +312,7 @@ const App = ()=>{
     
                 const key = generateId();
     
-                addSceneObject(new Rectangle(key, {
+                addSceneObject(key, new Rectangle({
                     x: beginSceneX, 
                     y: beginSceneY, 
                     width: 5,
@@ -348,7 +348,7 @@ const App = ()=>{
                 const [beginSceneX, beginSceneY] = [loc.x, loc.y];
     
                 const key = generateId();
-                addSceneObject(new LineSegment(key, {
+                addSceneObject(key, new LineSegment({
                     Ax: beginSceneX, 
                     Ay: beginSceneY, 
                     Bx: beginSceneX+5,
@@ -383,7 +383,7 @@ const App = ()=>{
                 const [beginSceneX, beginSceneY] = [loc.x, loc.y];
 
                 const key = generateId();
-                addSceneObject(new SphericalLens(key, {
+                addSceneObject(key, new SphericalLens({
                     x: beginSceneX, 
                     y: beginSceneY, 
                     centerThickness: 5,
@@ -420,7 +420,7 @@ const App = ()=>{
                 const [beginSceneX, beginSceneY] = [loc.x, loc.y];
     
                 const key = generateId();
-                addSceneObject(new PointLight(key, {
+                addSceneObject(key, new PointLight({
                     x: beginSceneX, 
                     y: beginSceneY, 
                     angle: 0
@@ -432,7 +432,7 @@ const App = ()=>{
                     const [sceneX, sceneY] = [loc.x, loc.y]
                     const [dx, dy] = [sceneX-beginSceneX, sceneY-beginSceneY];
 
-                    updateSceneObject(key, {
+                    updateSceneObject({
                         angle: Math.atan2(dy, dx)
                     });
                 }
@@ -453,7 +453,7 @@ const App = ()=>{
                 const [beginSceneX, beginSceneY] = [loc.x, loc.y];
                 
                 const key = generateId();
-                addSceneObject(new DirectionalLight(key, {
+                addSceneObject(key, new DirectionalLight({
                     x: beginSceneX, 
                     y: beginSceneY, 
                     angle: 0
@@ -487,7 +487,7 @@ const App = ()=>{
                 const [beginSceneX, beginSceneY] = [loc.x, loc.y];
     
                 const key = generateId();
-                addSceneObject(new LaserLight(key, {
+                addSceneObject(key, new LaserLight({
                     x: beginSceneX, 
                     y: beginSceneY, 
                     angle: 0

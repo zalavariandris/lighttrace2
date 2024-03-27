@@ -6,9 +6,9 @@ import { HitPoint } from "../../raytrace.js";
 
 class Rectangle extends Shape
 {
-    constructor(key, {x, y, material, width, height, angle=0}={})
+    constructor({x, y, material, width, height, angle=0}={})
     {
-        super(key, {x, y, material});
+        super({x, y, material});
         this.width = width;
         this.height = height;
         this.angle = angle
@@ -16,7 +16,7 @@ class Rectangle extends Shape
     
     copy(other)
     {
-        return new Rectangle(this.key, {
+        return new Rectangle({
             x: this.x, 
             y: this.y, 
             material:this.material, 
@@ -60,10 +60,10 @@ class Rectangle extends Shape
         const bottomLeft = new Point(left, bottom)
         
         const sides = [
-            new LineSegment(null, {Ax:left, Ay: top, Bx:right, By:top}),
-            new LineSegment(null, {Bx:right, By: bottom, Ax:right, Ay:top}),
-            new LineSegment(null, {Ax:right, Ay: bottom, Bx:left, By:bottom}),
-            new LineSegment(null, {Ax:left, Ay: bottom, Bx:left, By:top}),
+            new LineSegment({Ax:left, Ay: top, Bx:right, By:top}),
+            new LineSegment({Bx:right, By: bottom, Ax:right, Ay:top}),
+            new LineSegment({Ax:right, Ay: bottom, Bx:left, By:bottom}),
+            new LineSegment({Ax:left, Ay: bottom, Bx:left, By:top}),
         ];
         
         let hits = []

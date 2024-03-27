@@ -5,7 +5,7 @@ const h = React.createElement;
 
 
 const LineSegmentView = ({
-    lineSegment, updateSceneObject
+    objKey, lineSegment, updateSceneObject
 })=>{
         return h("g", null, 
             h('line', {
@@ -18,7 +18,7 @@ const LineSegmentView = ({
             }),
             h(Manipulator, {
                 onDragStart: (e)=>console.log(e),
-                onDrag: (e)=>updateSceneObject(lineSegment.key, {
+                onDrag: (e)=>updateSceneObject(objKey, {
                     Ax: e.sceneX,
                     Ay: e.sceneY
                 })
@@ -30,7 +30,7 @@ const LineSegmentView = ({
             })),
             h(Manipulator, {
                 onDragStart: (e)=>console.log(e),
-                onDrag: (e)=>updateSceneObject(lineSegment.key, {
+                onDrag: (e)=>updateSceneObject(objKey, {
                     Bx: e.sceneX,
                     By: e.sceneY
                 })

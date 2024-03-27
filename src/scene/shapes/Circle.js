@@ -6,13 +6,13 @@ const EPSILON=1e-6;
 
 class Circle extends Shape
 {
-    constructor(key, {x, y, material, radius})
+    constructor({x, y, material, radius})
     {
-        super(key, {x, y, material})
+        super({x, y, material})
         this.radius=radius;
     }
 
-    static fromThreePoints(key, S, M, E) {
+    static fromThreePoints(S, M, E) {
 
         var Sx = S.x;
         var Sy = S.y;
@@ -34,7 +34,7 @@ class Circle extends Shape
         var x = -b / (2 * a);
         var y = -c / (2 * a);
       
-        return new Circle(key, {
+        return new Circle({
             x:x, 
             y:y, 
             material:null, 
@@ -42,7 +42,7 @@ class Circle extends Shape
         })
       }
 
-      static fromRadiusAndTwoPoints(key, r, A, B, flip=false) {
+      static fromRadiusAndTwoPoints(r, A, B, flip=false) {
             const [Ax, Ay] = [A.x, A.y];
             const [Bx, By] = [B.x, B.y];
 
@@ -57,7 +57,7 @@ class Circle extends Shape
             Cy+=By;
 
             // Create a new Circle instance using the intersection point as the center
-            return new Circle(key, {
+            return new Circle({
                 x: Cx, 
                 y: Cy, 
                 material: null, 
@@ -67,7 +67,7 @@ class Circle extends Shape
     
     copy(other)
     {
-        return new Circle(this.key, {
+        return new Circle({
             x: this.x, 
             y: this.y, 
             material: this.material, 
