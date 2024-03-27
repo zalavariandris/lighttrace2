@@ -7,9 +7,9 @@ const SamplingMethod = Object.freeze({
 
 class Light extends SceneObject
 {
-    constructor({x, y, wavelength=590}={})
+    constructor({Cx, Cy, wavelength=590}={})
     {
-        super({x, y});
+        super({Cx, Cy});
         this.wavelength = wavelength;
     }
 

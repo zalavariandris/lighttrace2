@@ -1,5 +1,5 @@
 import {Point, Vector, P, V} from "./geo.js"
-import {SamplingMethod} from "./scene/lights/Light.js"
+import {SamplingMethod} from "./lights/Light.js"
 
 class Lightray
 {

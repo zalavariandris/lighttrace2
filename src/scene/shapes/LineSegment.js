@@ -1,15 +1,15 @@
 import Shape from "./Shape.js"
 const EPSILON=1e-6;
-import {Point, Vector} from "../../geo.js"
-import {P, V} from "../../geo.js"
-import { HitPoint } from "../../raytrace.js";
+import {Point, Vector} from "../geo.js"
+import {P, V} from "../geo.js"
+import { HitPoint } from "../raytrace.js";
 
 
 class LineSegment extends Shape
 {
     constructor({Ax, Ay, Bx, By, material})
     {
-        super({x:0,y:0, material})
+        super({Cx:0,Cy:0, material})
         this.Ax = Ax;
         this.Ay = Ay;
         this.Bx = Bx;

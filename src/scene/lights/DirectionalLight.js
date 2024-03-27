@@ -1,13 +1,13 @@
 import Light from "./Light.js";
 import { SamplingMethod } from "./Light.js";
-import {P, V} from "../../geo.js"
-import { Lightray } from "../../raytrace.js";
+import {P, V} from "../geo.js"
+import { Lightray } from "../raytrace.js";
 
 class DirectionalLight extends Light
 {
-    constructor({x, y, width, angle=0, wavelength=590}={})
+    constructor({Cx, Cy, width, angle=0, wavelength=590}={})
     {
-        super({x, y, wavelength})
+        super({Cx, Cy, wavelength})
         this.width = width;
         this.angle = angle;
     }
@@ -15,8 +15,8 @@ class DirectionalLight extends Light
     copy()
     {
         return new DirectionalLight({
-            x:this.x, 
-            y:this.y,
+            Cx:this.Cx, 
+            Cy:this.Cy,
             width: this.width, 
             angle: this.angle,
             wavelength: this.wavelength
@@ -34,7 +34,7 @@ class DirectionalLight extends Light
         const y = Math.sin(this.angle);
         const dir = V(x,y);
         const offset = V(Math.cos(this.angle+Math.PI/2), Math.sin(this.angle+Math.PI/2))
-        const center = V(this.x,this.y)
+        const center = V(this.Cx,this.Cy)
         return Array.from({length: sampleCount}).map((_, i)=>{
 
             const randomRayOffset = this.width*Math.random()-this.width/2

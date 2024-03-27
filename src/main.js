@@ -2,9 +2,9 @@ import ReactDOM from "react-dom"
 import React, {useState} from "react"
 
 import SVGViewport from "./UI/SVGViewport.js";
-import GLViewport from "./UI/GLViewport.js";
-import Collapsable from "./widgets/Collapsable.js";
-import {Point, Vector, P, V} from "./geo.js"
+import GLViewport from "./ModelView/GLViewport.js";
+import Collapsable from "./UI/Collapsable.js";
+import {Point, Vector, P, V} from "./scene/geo.js"
 
 import Shape from "./scene/shapes/Shape.js";
 import Circle from "./scene/shapes/Circle.js"
@@ -21,13 +21,13 @@ import DiffuseMaterial from "./scene/materials/DiffuseMaterial.js";
 import TransparentMaterial from "./scene/materials/TransparentMaterial.js";
 import MirrorMaterial from "./scene/materials/MirrorMaterial.js";
 
-import {colorFromRGB, wavelengthToRGB} from "./colorUtils.js"
+import {colorFromRGB, wavelengthToRGB} from "./scene/colorUtils.js"
 
-import {Lightray, makeRaysFromLights, raytrace, SamplingMethod} from "./raytrace.js"
-import Inspector from "./UI/Inspector.js"
+import {Lightray, makeRaysFromLights, raytrace, SamplingMethod} from "./scene/raytrace.js"
+import Inspector from "./ModelView/Inspector.js"
 
 import Manipulator from "./UI/Manipulator.js";
-import ShapeView from "./UI/ShapeView.js";
+import ShapeModelView from "./ModelView/ShapeModelView.js";
 
 const h = React.createElement;
 
@@ -108,35 +108,19 @@ const App = ()=>{
 
     // SCENE OBJECTS
     const [scene, setScene] = useState({
-        "concave lens": new SphericalLens({
-            x: 150, 
-            y:250, 
-            material: "glass", 
-            diameter: 140,
-            edgeThickness: 60,
-            centerThickness:5
-        }),
-        "convex lens": new SphericalLens({
-            x: 230, 
-            y: 250, 
-            material: "glass", 
-            diameter: 100,
-            edgeThickness: 5,
-            centerThickness: 50
+        "mirror ball" :new Circle({
+            Cx:360, 
+            Cy:200, 
+            radius: 50, 
+            material: "mirror"
         }),
         "rect prism": new Rectangle({
-            x: 500,
-            y: 250,
+            Cx: 500,
+            Cy: 250,
             width: 150,
             height: 150,
             material: "glass"
         }),
-        // new Circle("mirror ball", {
-        //     x: 200, 
-        //     y:220, 
-        //     radius: 150, 
-        //     material: "glass"
-        // }),
         "floor line": new LineSegment({
             Ax: 50, 
             Ay: 450, 
@@ -144,9 +128,25 @@ const App = ()=>{
             By: 450, 
             material: "mirror"
         }),
+        "concave lens": new SphericalLens({
+            Cx: 150, 
+            Cy:250, 
+            diameter: 140,
+            edgeThickness: 60,
+            centerThickness:5,
+            material: "glass" 
+        }),
+        "convex lens": new SphericalLens({
+            Cx: 230, 
+            Cy: 250,
+            diameter: 100,
+            edgeThickness: 5,
+            centerThickness: 50, 
+            material: "glass", 
+        }),
+        "sun": new DirectionalLight({Cx:50, Cy: 250, width: 80, angle: 0}),
+        "lamp": new PointLight({Cx: 50, Cy: 150, angle:0}),
 
-        // new PointLight("lamp", {x: 50, y: 150, angle:0}),
-        "sun": new DirectionalLight({x:50, y: 250, width: 80, angle: 0}),
         // new LaserLight("laser", {x:150, y: 150, angle: 0.5}),
 });
 
@@ -550,23 +550,12 @@ const App = ()=>{
         },
             h("g", null, 
                 Object.entries(scene).map( ([key, sceneObject])=>{
-                    return h(Manipulator, {
+                    return h(ShapeModelView, {
                         className: selectionKeys.indexOf(key)>=0 ? "sceneItem selected" : "sceneItem not-selected",
-                        referenceX: sceneObject.x,
-                        referenceY: sceneObject.y,
-                        onDrag: e=>updateSceneObject(key, {
-                            x: e.sceneX+e.referenceOffsetX, 
-                            y: e.sceneY+e.referenceOffsetY
-                        }),
+                        sceneObject, 
+                        onChange: (value)=>updateSceneObject(key, value),
                         onClick: e=>setSelectionKeys([key])
-                    }, 
-                        h(ShapeView, {
-                            objKey: key,
-                            sceneObject, 
-                            updateSceneObject, 
-                            selectionKeys
-                        })
-                    )
+                    })
                 })
             )
         ),

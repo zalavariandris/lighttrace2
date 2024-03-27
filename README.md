@@ -28,6 +28,7 @@ https://zalavariandris.github.io/lighttrace2/
 
 - [x] add ReferencePoint and referenceOffset ot ManipulatorEvent, to simplify grabbing objects
 - [x] seperate model from viewmodel, by switching _scene_ to PlainJavascriptObject
+- [x] rewrite Shape modelViews to independent Editable SVG Element components.
 
 - [ ] refactor GLViewport, and lift the rendering code to a child "entity" component.
 

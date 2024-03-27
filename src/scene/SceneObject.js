@@ -1,9 +1,9 @@
 class SceneObject
 {
-    constructor({x, y})
+    constructor({Cx, Cy})
     {
-        this.x = x;
-        this.y = y;
+        this.Cx = Cx;
+        this.Cy = Cy;
     }
 }
 

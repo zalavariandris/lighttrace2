@@ -7,7 +7,7 @@ import MirrorMaterial from "../scene/materials/MirrorMaterial.js";
 import TransparentMaterial from "../scene/materials/TransparentMaterial.js";
 import DiffuseMaterial from "../scene/materials/DiffuseMaterial.js";
 
-import {wavelengthToRGB} from "../colorUtils.js"
+import {wavelengthToRGB} from "../scene/colorUtils.js"
 
 const h = React.createElement;
 

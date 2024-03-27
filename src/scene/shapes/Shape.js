@@ -2,9 +2,9 @@ import SceneObject from "../SceneObject.js";
 
 class Shape extends SceneObject
 {
-    constructor({x, y, material})
+    constructor({Cx, Cy, material})
     {
-        super({x, y})
+        super({Cx, Cy})
         this.material = material;
     }
 

@@ -1,22 +1,22 @@
 import Light from "./Light.js"
 import { SamplingMethod } from "./Light.js";
-import {P, V} from "../../geo.js"
-import { Lightray } from "../../raytrace.js";
+import {P, V} from "../geo.js"
+import { Lightray } from "../raytrace.js";
 
 
 class LaserLight extends Light
 {
-    constructor({x, y, angle=0, wavelength=590}={})
+    constructor({Cx, Cy, angle=0, wavelength=590}={})
     {
-        super({x, y, wavelength});
+        super({Cx, Cy, wavelength});
         this.angle = angle;
     }
 
     copy()
     {
         return new LaserLight({
-            x: this.x, 
-            y:this.y, 
+            Cx: this.Cx, 
+            Cy: this.Cy, 
             angle: this.angle,
             wavelength: this.wavelength
         });
@@ -24,7 +24,7 @@ class LaserLight extends Light
 
     toString()
     {
-        return `LaserLight(${this.key}, ${this.x}, ${this.y}, ${this.angle.toFixed()})`
+        return `LaserLight(${this.Cx}, ${this.Cy}, ${this.angle.toFixed()})`
     }
 
     sampleRays({sampleCount=9, samplingMethod=SamplingMethod.Uniform}={}){
@@ -32,7 +32,7 @@ class LaserLight extends Light
         const y = Math.sin(this.angle);
         const dir = V(x,y);
         return Array.from({length: sampleCount}).map((_, i)=>{
-            return new Lightray(P(this.x, this.y), dir.normalized(1), 1/sampleCount)
+            return new Lightray(P(this.Cx, this.Cy), dir.normalized(1), 1/sampleCount)
         })
     }
 }
