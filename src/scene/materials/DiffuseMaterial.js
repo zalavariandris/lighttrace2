@@ -11,13 +11,13 @@ function sampleDiffuse(V, N)
 
 class DiffuseMaterial extends Material
 {
-    constructor(key)
+    constructor()
     {
-        super(key)
+        super()
     }
 
     copy(){
-        return new DiffuseMaterial(this.key);
+        return new DiffuseMaterial();
     }
 
     sample(V, N)

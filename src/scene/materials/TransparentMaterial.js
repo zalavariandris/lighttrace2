@@ -71,15 +71,15 @@ function calculateRefraction(V, N, refractiveIndex1=1.0, refractiveIndex2=1.44)
 
 class TransparentMaterial extends Material
 {
-    constructor(key, {ior=1.440}={})
+    constructor({ior=1.440}={})
     {
-        super(key)
+        super()
         this.ior = ior
     }
 
     copy()
     {
-        return new TransparentMaterial(key, {ior: this.ior})
+        return new TransparentMaterial({ior: this.ior})
     }
 
     sample(V, N)

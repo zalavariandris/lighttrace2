@@ -168,11 +168,11 @@ const App = ()=>{
     };
 
     /* MATERIALS */
-    const [materials, setMaterials] = React.useState([
-        new TransparentMaterial("glass"),
-        new DiffuseMaterial("diffuse"),
-        new MirrorMaterial("mirror")
-    ])
+    const [materials, setMaterials] = React.useState({
+        "glass": new TransparentMaterial(),
+        "diffuse": new DiffuseMaterial(),
+        "mirror": new MirrorMaterial()
+    })
 
     /* SELECTION */
     const [selectionKeys, setSelectionKeys] = useState([])
@@ -204,7 +204,7 @@ const App = ()=>{
     {
         const lights = Object.values(scene).filter(obj=>obj instanceof Light);
         const shapes = Object.values(scene).filter(obj=>obj instanceof Shape);
-        const shapesMaterials = shapes.map(s=>materials.find(m=>m.key==s.material));
+        const shapesMaterials = shapes.map(s=>materials[s.material]);
 
         const newRaytraceResults = raytrace(lights, [shapes, shapesMaterials], {
             maxBounce:raytraceOptions.maxBounce, 
@@ -220,7 +220,7 @@ const App = ()=>{
     {
         const lights = Object.values(scene).filter(obj=>obj instanceof Light);
         const shapes = Object.values(scene).filter(obj=>obj instanceof Shape);
-        const shapesMaterials = shapes.map(s=>materials.find(m=>m.key==s.material));
+        const shapesMaterials = shapes.map(s=>materials[s.material]);
 
         const newRaytraceResults = raytrace(lights, [shapes, shapesMaterials], {
             maxBounce:raytraceOptions.maxBounce, 
