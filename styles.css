@@ -265,3 +265,10 @@ canvas.viewport, svg.viewport{
     /* width: 45vw;
     height: 512px; */
 }
+
+label{
+    display: block;
+}
+label label{
+    margin-left: 1em;
+}

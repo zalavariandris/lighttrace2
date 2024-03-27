@@ -1,8 +1,8 @@
 import ReactDOM from "react-dom"
 import React, {useState} from "react"
 
-import SVGViewport from "./panels/SVGViewport.js";
-import GLViewport from "./panels/GLViewport.js";
+import SVGViewport from "./UI/SVGViewport.js";
+import GLViewport from "./UI/GLViewport.js";
 import Collapsable from "./widgets/Collapsable.js";
 import {Point, Vector, P, V} from "./geo.js"
 
@@ -24,10 +24,10 @@ import MirrorMaterial from "./scene/materials/MirrorMaterial.js";
 import {colorFromRGB, wavelengthToRGB} from "./colorUtils.js"
 
 import {Lightray, makeRaysFromLights, raytrace, SamplingMethod} from "./raytrace.js"
-import Inspector from "./panels/Inspector.js"
+import Inspector from "./UI/Inspector.js"
 
-import Manipulator from "./manipulators/Manipulator.js";
-import ShapeView from "./components/ShapeView.js";
+import Manipulator from "./UI/Manipulator.js";
+import ShapeView from "./UI/ShapeView.js";
 
 const h = React.createElement;
 
@@ -84,19 +84,21 @@ function cursorPoint(svg, {x, y}){
 }
 
 const App = ()=>{
-    /* STATE */
+
+    /* STATE and Actions */
     const [raytraceOptions, setRaytraceOptions] = React.useState({
         maxBounce: 9,
         lightSamples: 7,
         samplingMethod: SamplingMethod.Uniform,
-        maxSampleSteps:1024
+        maxSampleSteps: 1024
     })
     const updateRaytraceOptions = options=>setRaytraceOptions({...raytraceOptions, ...options})
 
     const [svgDisplayOptions, setSvgDisplayOptions] = React.useState({
         lightrays: false,
         hitPoints: true,
-        lightPaths: true
+        lightPaths: true,
+        glPaint: true
     })
     const updateSvgDisplayOptions = options=> setSvgDisplayOptions({...svgDisplayOptions, ...options})
 
@@ -104,7 +106,7 @@ const App = ()=>{
         x:0,y:0,w:512,h:512
     });
 
-    // SCENE MODEL
+    // SCENE OBJECTS
     const [scene, setScene] = useState([
         new SphericalLens("concave lens", {
             x: 150, 
@@ -165,12 +167,14 @@ const App = ()=>{
         });
     };
 
+    /* MATERIALS */
     const [materials, setMaterials] = React.useState([
         new TransparentMaterial("glass"),
         new DiffuseMaterial("diffuse"),
         new MirrorMaterial("mirror")
     ])
 
+    /* SELECTION */
     const [selectionKeys, setSelectionKeys] = useState([])
 
     const getSelectedSceneObject=()=>
@@ -189,8 +193,8 @@ const App = ()=>{
         setSelectionKeys([])
     }
 
-    // RAYTRACE
-    function updateRaytraceUniform()
+    // 
+    function calcRaytraceUniform()
     {
         const lights = scene.filter(obj=>obj instanceof Light);
         const shapes = scene.filter(obj=>obj instanceof Shape);
@@ -199,14 +203,14 @@ const App = ()=>{
         const newRaytraceResults = raytrace(lights, [shapes, shapesMaterials], {
             maxBounce:raytraceOptions.maxBounce, 
             samplingMethod: raytraceOptions.samplingMethod, 
-            lightSamples: raytraceOptions.lightSamples
+            lightSamples: raytraceOptions.lightSample
+            
         });
 
         return newRaytraceResults
     }
-    const uniformRaytraceResults = updateRaytraceUniform();
 
-    function updateRaytraceRandom()
+    function calcRaytraceRandom()
     {
         const lights = scene.filter(obj=>obj instanceof Light);
         const shapes = scene.filter(obj=>obj instanceof Shape);
@@ -220,7 +224,9 @@ const App = ()=>{
 
         return newRaytraceResults
     }
-    const randomRaytraceResults = updateRaytraceRandom();
+
+    const uniformRaytraceResults = calcRaytraceUniform();
+    const randomRaytraceResults = calcRaytraceRandom();
 
     /* step rayrace on animation frame */
     const [animate, setAnimate] = React.useState(true);
@@ -234,11 +240,11 @@ const App = ()=>{
 
     // TODO: move this and the whole animation to the GLVewiprot component
     // stop animation when max samples reached 
-    // React.useEffect(()=>{
-    //     if(currentSampleStep>raytraceOptions.maxSampleSteps){
-    //         setAnimate(false);
-    //     }
-    // }, [currentSampleStep])
+    React.useEffect(()=>{
+        if(currentSampleStep>raytraceOptions.maxSampleSteps){
+            setAnimate(false);
+        }
+    }, [currentSampleStep])
 
     React.useEffect(() => {
         if(animate)
@@ -252,13 +258,15 @@ const App = ()=>{
     /* MOUSE TOOLS */
     const [currentToolName, setCurrentToolName] = React.useState(null);
 
-    const tools = [
+    const mouseTools = [
         {
             name: "circle",
             handler: e => {
                 e.preventDefault();
                 var svg  = e.target.closest("SVG");
                 let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
+
+
                 const [beginSceneX, beginSceneY] = [loc.x, loc.y];
     
                 // create circle
@@ -501,20 +509,24 @@ const App = ()=>{
 
     const handleMouseDownTools = e =>
     {
-        const toolIdx = tools.findIndex(tool=>tool.name==currentToolName);
+        const toolIdx = mouseTools.findIndex(tool=>tool.name==currentToolName);
         if(toolIdx>=0){
             e.preventDefault()
-            tools[toolIdx].handler(e)
+            mouseTools[toolIdx].handler(e)
         }
     }
 
     return h("div", null,
-        h(GLViewport,  {
+        svgDisplayOptions.glPaint?h(GLViewport,  {
             className:"viewport",
             viewBox: viewBox,
             scene: scene,
-            paths: randomRaytraceResults.lightPaths
-        }),
+            paths: randomRaytraceResults.lightPaths,
+            onReset: ()=>{
+                // TODO: this is temporary. rendering and raytacing should be seperated from this component.
+                setCurrentSampleStep(0); setAnimate(true);
+            }
+        }):null,
         h(SVGViewport, {
             className:"viewport",
             viewBox: viewBox,
@@ -534,7 +546,12 @@ const App = ()=>{
                 scene.map(sceneObject=>{
                     return h(Manipulator, {
                         className: selectionKeys.indexOf(sceneObject.key)>=0 ? "sceneItem selected" : "sceneItem not-selected",
-                        onDrag: e=>updateSceneObject(sceneObject.key, {x: e.sceneX, y: e.sceneY}),
+                        referenceX: sceneObject.x,
+                        referenceY: sceneObject.y,
+                        onDrag: e=>updateSceneObject(sceneObject.key, {
+                            x: e.sceneX+e.referenceOffsetX, 
+                            y: e.sceneY+e.referenceOffsetY
+                        }),
                         onClick: e=>setSelectionKeys([sceneObject.key])
                     }, 
                         h(ShapeView, {
@@ -555,7 +572,7 @@ const App = ()=>{
                 className: currentToolName == null ? "active" : null
             }, h("i", {className: "fa-solid fa-arrow-pointer"})),
 
-            tools.map(tool=>{
+            mouseTools.map(tool=>{
                 return h("button", {
                     onClick: e=>setCurrentToolName(tool.name),
                     title: tool.name,
@@ -583,122 +600,119 @@ const App = ()=>{
             //     sceneObject: scene.find(obj=>selectionKeys.indexOf(obj.key)>=0),
             //     onChange: (key, newAttributes)=>updateSceneObject(key, newAttributes)
             // }),
-            h(Collapsable, {title: h("h2", null, "Settings")},
-                h('div', null, 
-                    h("section", null,
-                        h("h2", null, "Raytrace otions"),
-                        h("table", null,
-                            h("tr", null,
-                                h("td", null, "animate"),
-                                h("td", null,
-                                    h('label', null,
-                                        h('input', {
-                                            name: "animate",
-                                            type: 'checkbox', 
-                                            checked:animate, 
-                                            onChange:(e)=>setAnimate(e.target.checked)
-                                        }),
-                                        `animate №${currentSampleStep}`
-                                    )
-                                )
-                            ),
-                            h("tr", null, 
-                                h("td", null, "light samples"),
-                                h("td", null, 
-                                    h("input", {
-                                        type:"range", 
-                                        name: "light samples",
-                                        value:raytraceOptions.lightSamples, 
-                                        onInput:(e)=>updateRaytraceOptions({lightSamples: e.target.value}),
-                                        min: 1, 
-                                        max:200}, 
-                                        null),
-                                    `${raytraceOptions.lightSamples}`
-                                )
-                            ),
-                            h("tr", null, 
-                                h("td", null, "max bounce"),
-                                h("td", null, 
-                                    h("input", {
-                                        type:"range", 
-                                        name: "max bounce",
-                                        value:raytraceOptions.maxBounce, 
-                                        onInput:(e)=>updateRaytraceOptions({maxBounce: e.target.value}), 
-                                        min: 0, 
-                                        max:16
-                                    }, null),
-                                    `${raytraceOptions.maxBounce}`
-                                )
-                            ),
-                            h("tr", null,
-                                h("td", null, "sampling method"),
-                                h("td", null, 
-                                    h("input", {
-                                        name: "sampling", 
-                                        checked: raytraceOptions.samplingMethod == SamplingMethod.Random,
-                                        onChange: (e)=>updateRaytraceOptions({samplingMethod: e.target.value}),
-                                        id:SamplingMethod.Random, 
-                                        type:"radio", 
-                                        value:SamplingMethod.Random}),
-                                    h("label", {for: SamplingMethod.Random}, SamplingMethod.Random),
-                                    h("input", {
-                                        name: "sampling",
-                                        checked: raytraceOptions.samplingMethod == SamplingMethod.Uniform,
-                                        onChange: (e)=>updateRaytraceOptions({samplingMethod: e.target.value}),
-                                        id: SamplingMethod.Uniform,
-                                        type:"radio",
-                                        value:SamplingMethod.Uniform}),
-                                    h("label", {for: SamplingMethod.Uniform}, SamplingMethod.Uniform)
-                                )
-                            )
-                        )
+            h(Collapsable, {title: h("h2", null, "Raytrace otions"), defaultOpen:false},
+                h("form", null,
+                    h("label", null, `Sampling steps: ${currentSampleStep}`,
+                        "/",
+                        h("input", {
+                            type: "number", 
+                            value: raytraceOptions.maxSampleSteps,
+                            onChange:e=>updateRaytraceOptions({maxSampleSteps: e.target.value})
+                        }),
+                        h("progress", {value: currentSampleStep, max:raytraceOptions.maxSampleSteps}),
                     ),
-                    h("section", null,
-                        h("h2", null, "Display options"),
-                        h("form", {
-                            onSubmit: (e)=>{
-                                //TODO: use form submission istead of each input change to update settings
-                                e.preventDefault();
-                                const formData = new FormData(e.target)
-                                const newData = Object.fromEntries(myFormData.entries());
-                                setSvgDisplayOptions(newData);
-                                return false;
-                            }
-                        }, 
-                            h("label", null,
-                                h("input", {
-                                    name:"rays",
-                                    checked: svgDisplayOptions.lightrays, 
-                                    onChange: (e)=>updateSvgDisplayOptions({lightrays: e.target.checked}),
-                                    type: "checkbox"
-                                }),
-                                "show lightrays"
-                            ),
-                            h("br"),
-                            h("label", null,
-                                h("input", {
-                                    name:"hitPoints",
-                                    checked: svgDisplayOptions.hitPoints, 
-                                    onChange: (e)=>updateSvgDisplayOptions({hitPoints: e.target.checked}),
-                                    type: "checkbox"
-                                }),
-                                "show hitpoints"
-                            ),
-                            h("br"),
-                            h("label", null,
-                                h("input", {
-                                    name:"lightPaths",
-                                    checked: svgDisplayOptions.lightPaths, 
-                                    onChange: (e)=>updateSvgDisplayOptions({lightPaths: e.target.checked}),
-                                    type: "checkbox"
-                                }),
-                                "show lightpaths"
-                            )
+
+                    h("label", null, "Light samples",
+                        h("input", {
+                            type:"range", 
+                            name: "light samples",
+                            value:raytraceOptions.lightSamples, 
+                            onInput:(e)=>updateRaytraceOptions({lightSamples: e.target.value}),
+                            min: 1, 
+                            max:200
+                        }),
+                        `${raytraceOptions.lightSamples}`
+                    ),
+                    h("label", null, "Max bounce",
+                        h("input", {
+                            type:"range", 
+                            name: "max bounce",
+                            value:raytraceOptions.maxBounce, 
+                            onInput:(e)=>updateRaytraceOptions({maxBounce: e.target.value}), 
+                            min: 0, 
+                            max:16
+                        }),
+                        `${raytraceOptions.maxBounce}`
+                    ),
+                    h("label", null, "Sampling method",
+                        h("label", null, 
+                            SamplingMethod.Random,
+                            h("input", {
+                                name: "sampling", 
+                                checked: raytraceOptions.samplingMethod == SamplingMethod.Random,
+                                onChange: (e)=>updateRaytraceOptions({samplingMethod: e.target.value}),
+                                id:SamplingMethod.Random, 
+                                type:"radio", 
+                                value:SamplingMethod.Random
+                            })
+                        ),
+                        h("label", null, 
+                            SamplingMethod.Uniform,
+                            h("input", {
+                                name: "sampling",
+                                checked: raytraceOptions.samplingMethod == SamplingMethod.Uniform,
+                                onChange: (e)=>updateRaytraceOptions({samplingMethod: e.target.value}),
+                                id: SamplingMethod.Uniform,
+                                type:"radio",
+                                value:SamplingMethod.Uniform
+                            })
                         )
                     )
+                ),
+            ),
+            h(Collapsable, {title: h("h2", null, "Display options"), defaultOpen:false},
+                h("form", {
+                    onSubmit: (e)=>{
+                        //TODO: use form submission istead of each input change to update settings
+                        e.preventDefault();
+                        const formData = new FormData(e.target)
+                        const newData = Object.fromEntries(myFormData.entries());
+                        setSvgDisplayOptions(newData);
+                        return false;
+                    }
+                }, 
+                    h("label", null,
+                        h("input", {
+                            name:"rays",
+                            checked: svgDisplayOptions.lightrays, 
+                            onChange: (e)=>updateSvgDisplayOptions({lightrays: e.target.checked}),
+                            type: "checkbox"
+                        }),
+                        "show lightrays"
+                    ),
+                    h("br"),
+                    h("label", null,
+                        h("input", {
+                            name:"hitPoints",
+                            checked: svgDisplayOptions.hitPoints, 
+                            onChange: (e)=>updateSvgDisplayOptions({hitPoints: e.target.checked}),
+                            type: "checkbox"
+                        }),
+                        "show hitpoints"
+                    ),
+                    h("br"),
+                    h("label", null,
+                        h("input", {
+                            name:"lightPaths",
+                            checked: svgDisplayOptions.lightPaths, 
+                            onChange: (e)=>updateSvgDisplayOptions({lightPaths: e.target.checked}),
+                            type: "checkbox"
+                        }),
+                        "show lightpaths"
+                    ),
+                    h("label", null,
+                    h("input", {
+                        name:"glPaint",
+                        checked: svgDisplayOptions.glPaint, 
+                        onChange: (e)=>updateSvgDisplayOptions({glPaint: e.target.checked}),
+                        type: "checkbox"
+                    }),
+                    "show gl paint"
+                )
+                
                 )
             ),
-            h(Collapsable, {title: h("h2", null, "Outliner"), defaultOpen: true},
+            h(Collapsable, {title: h("h2", null, "Outliner"), defaultOpen: false},
                     h("ul", null, 
                         ...scene.map((sceneObject)=>{
                             return h("li", {
@@ -718,7 +732,7 @@ const App = ()=>{
                         })
                     )
             ),
-            h(Collapsable, {title: h("h2", null, "Raytrace shapes")},
+            h(Collapsable, {title: h("h2", null, "Raytrace shapes"), defaultOpen:false},
                 h(RaytraceStats, {
                     scene: scene, 
                     lightRays: uniformRaytraceResults.rays, 

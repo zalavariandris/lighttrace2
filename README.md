@@ -24,15 +24,18 @@ https://zalavariandris.github.io/lighttrace2/
 - [x] mousetools to create scene objects
 - [x] rewrite mousetools to a single mouseDown function. to keep track dragStartPosition.
 - [x] fix selection when when scene updates.
-
-- [ ] move animation, iterative rendering to the GLViewport component
-- [ ] refactor mouse tools. Move to their own js file.
-- [ ] support light frequency
-- [ ] support light distribution
-
 - [x] refactor SVGViewport to accept children components, to populate the scene
 
+- [x] add ReferencePoint and referenceOffset ot ManipulatorEvent, to simplify grabbing objects
+- [ ] refactor GLViewport, and lift the rendering code to a child "entity" component.
+
 - [ ] support light source intensity
+- [ ] support light frequency
+- [ ] support light wavelength distribution
+
+- [ ] show manipulators when object is selected.
+- [ ] seperate model from viewmodel, by switching _scene_ to OrderedDict
+
 - [ ] simulate light as wave
 
 - [ ] ? refactor _sceneObject_ to sceneObject({shape, material})
@@ -45,9 +48,9 @@ https://zalavariandris.github.io/lighttrace2/
 - [ ] cant use manipulators under shapes: fix svg layering and interaction
 - [ ] rotate shapes
 - [x] fix selection when scene has changed -> unifiedScenemodel with selection
-- [ ] fix (potential) memory leak on long simulations.
-  - [ ] stop refining(rendering) after a number of samples!
-- [ ] concave lens inner corner does not refract properly
+- [x] fix (potential) memory leak on long simulations.
+  - [x] stop refining(rendering) after a number of samples!
+- [x] concave lens inner corner does not refract properly
 - [ ] when lens thickness is larger then the diameter, visuals are not in sync with the model. These lenses are not traditional lenses, so constrain the model itself. dont let thicknes to be wider then the lens diameter.
 
 

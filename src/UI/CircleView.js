@@ -1,5 +1,5 @@
 import React, {useState} from "react"
-import Manipulator from "../manipulators/Manipulator.js";
+import Manipulator from "./Manipulator.js";
 const h = React.createElement;
 
 const CircleView = ({

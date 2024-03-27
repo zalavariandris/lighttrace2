@@ -1,17 +1,17 @@
 import React, {useState} from "react"
-import Manipulator from "../manipulators/Manipulator.js";
+import Manipulator from "./Manipulator.js";
 import {colorFromRGB, wavelengthToRGB} from "../colorUtils.js"
 
 const h = React.createElement;
 
-const PointLightView = ({
+const LaserLightView = ({
     light, updateSceneObject
 })=>{
     return h("g", null, 
         h('circle', {
             cx: light.x,
             cy: light.y,
-            r: 6,
+            r: 2,
             vectorEffect: "non-scaling-stroke",
             className: "shape",
             style: {
@@ -30,7 +30,7 @@ const PointLightView = ({
             r: 5,
             className: "handle"
         }))
-    )
+    );
 }
 
-export default PointLightView;
+export default LaserLightView;

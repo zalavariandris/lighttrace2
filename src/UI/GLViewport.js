@@ -307,7 +307,7 @@ class GLRenderer{
                         },
                         color: [0, 0, 0, 0]
                     },
-            
+                    lineWidth:1,
                     count: lightpath.points.length,
                     primitive: "line strip"
                 }));
@@ -422,6 +422,7 @@ function GLViewport({
     scene,
     paths,
     style, 
+    onReset=()=>{},
     onDidRender=(sample)=>{},
     ...props
 }={})
@@ -468,7 +469,8 @@ function GLViewport({
             canvasRef.current.width=canvaswidth;
             canvasRef.current.height=canvasheight;
 
-            rendererRef.current.reset(reglRef.current)
+            rendererRef.current.reset(reglRef.current);
+            onReset()
             rendererRef.current.resizeGL(reglRef.current, canvasRef.current.offsetWidth, canvasRef.current.offsetHeight);
             rendererRef.current.renderGL(reglRef.current, paths, viewBox, canvasRef.current.offsetWidth, canvasRef.current.offsetHeight);
         }
@@ -484,6 +486,7 @@ function GLViewport({
 
     React.useEffect(()=>{
         rendererRef.current.reset(reglRef.current);
+        onReset()
         renderStartTime.current = Date.now()
     },[scene, viewBox])
 

@@ -1,6 +1,6 @@
 
 import React, {useState} from "react"
-import Manipulator from "../manipulators/Manipulator.js";
+import Manipulator from "./Manipulator.js";
 const h = React.createElement;
 
 import {colorFromRGB, wavelengthToRGB} from "../colorUtils.js"
@@ -24,8 +24,10 @@ const DirectionalLightView = ({
             }
         }),
         h(Manipulator, {
+            referenceX: light.x+Math.cos(light.angle)*50,
+            referenceY: light.y+Math.sin(light.angle)*50,
             onDrag: (e)=>updateSceneObject(light.key, {
-                angle: Math.atan2(e.sceneY-light.y, e.sceneX-light.x)
+                angle: Math.atan2(e.sceneY+e.referenceOffsetY-light.y, e.sceneX+e.referenceOffsetX-light.x)
             }),
             className:"manip",
             showGuide: false

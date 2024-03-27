@@ -11,7 +11,7 @@ import PointLight from "../scene/lights/PointLight.js"
 import LaserLight from "../scene/lights/LaserLight.js"
 import DirectionalLight from "../scene/lights/DirectionalLight.js"
 
-import Manipulator from "../manipulators/Manipulator.js";
+import Manipulator from "./Manipulator.js";
 
 import {colorFromRGB, wavelengthToRGB} from "../colorUtils.js"
 

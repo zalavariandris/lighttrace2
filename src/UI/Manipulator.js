@@ -4,13 +4,25 @@ import React, {useState} from "react"
 const h = React.createElement;
 
 class ManipEvent{
-    constructor({sceneX, sceneY, sceneStartX, sceneStartY, nativeEvent})
+    constructor({
+        sceneX, 
+        sceneY, 
+        sceneStartX, 
+        sceneStartY, 
+        nativeEvent,
+        referenceX,
+        referenceY
+    })
     {
         this.sceneX = sceneX;
         this.sceneY = sceneY;
         this.sceneStartX = sceneStartX;
         this.sceneStartY = sceneStartY
         this.nativeEvent = nativeEvent;
+        this.referenceX = referenceX?referenceX:sceneStartX;
+        this.referenceY = referenceY?referenceY:sceneStartY;
+        this.referenceOffsetX = referenceX?referenceX-sceneStartX:0;
+        this.referenceOffsetY = referenceY?referenceY-sceneStartY:0;
 
     }
 }
@@ -26,6 +38,8 @@ function Manipulator({
     onDragStart=(manipEvent)=>{},
     onDrag=(manipEvent)=>{},
     onDragEnd=(manipEvent)=>{},
+    referenceX=null,
+    referenceY=null,
     onClick=(e)=>{},
     showGuide=true,
     ...props
@@ -62,6 +76,8 @@ function Manipulator({
             sceneY: startLoc.y,
             sceneStartX: startLoc.x,
             sceneStartY: startLoc.y, 
+            referenceX: referenceX,
+            referenceY: referenceY,
             nativeEvent: e
         }));
 
@@ -73,6 +89,8 @@ function Manipulator({
                 sceneY: loc.y,
                 sceneStartX: startLoc.x,
                 sceneStartY: startLoc.y, 
+                referenceX: referenceX,
+                referenceY: referenceY,
                 nativeEvent: e
             }))
             setSceneMouse({x: loc.x, y: loc.y})
@@ -87,6 +105,8 @@ function Manipulator({
                 sceneY: loc.y,
                 sceneStartX: startLoc.x,
                 sceneStartY: startLoc.y, 
+                referenceX: referenceX,
+                referenceY: referenceY,
                 nativeEvent: e
             }))
             setActive(false)
