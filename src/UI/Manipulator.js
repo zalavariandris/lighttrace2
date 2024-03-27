@@ -42,6 +42,7 @@ function Manipulator({
     referenceY=null,
     onClick=(e)=>{},
     showGuide=true,
+    showReference=false,
     ...props
 }={})
 {
@@ -140,6 +141,13 @@ function Manipulator({
             y1: sceneStart.y,
             x2: sceneMouse.x,
             y2: sceneMouse.y,
+            vectorEffect: "non-scaling-stroke",
+        }):null,
+        (active&&showReference)?h("circle", {
+            className: "guide",
+            cx: referenceX,
+            cy: referenceY,
+            r:5,
             vectorEffect: "non-scaling-stroke",
         }):null,
         props.children

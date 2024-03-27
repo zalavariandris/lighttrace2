@@ -20,21 +20,26 @@ const CircleView = ({
             className: "shape ",
             cx: cx, 
             cy: cy, 
-            r: r
+            r: r,
+            vectorEffect: "non-scaling-stroke",
+
         }),
         h(Manipulator, {
-            onDrag: e=>{
-                onChange({cx,cy, 
-                    r: Math.hypot(e.sceneX-cx, e.sceneY-cy)
-                });
-        }
+            onDrag: e=>onChange({cx,cy, 
+                r: Math.hypot(e.sceneX-cx, e.sceneY-cy)
+            })
         }, 
             h("circle", {
                 cx, 
                 cy, 
                 r,
-                className: "shape ",
-                style: {fill: "none", cursor: "nw-resize"}
+                vectorEffect: "non-scaling-stroke",
+                style: {
+                    stroke: "transparent",
+                    strokeWidth: 10,
+                    fill: "none", 
+                    cursor: "nw-resize"
+                }
             })
         )
     )
