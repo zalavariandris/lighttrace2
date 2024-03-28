@@ -6,7 +6,9 @@ const CircleView = ({
     cx,
     cy,
     r,
-    onChange=(value)=>{}
+    onChange=(value)=>{},
+    className,
+    ...props
 })=>{
     return h(Manipulator, {           
         referenceX: cx,
@@ -15,13 +17,15 @@ const CircleView = ({
             cx: e.sceneX+e.referenceOffsetX, 
             cy: e.sceneY+e.referenceOffsetY
         }),
+        className: [className].filter(v=>v?true:false).join(" "),
     },
         h("circle", {
-            className: "shape ",
+            className: "shape",
             cx: cx, 
             cy: cy, 
             r: r,
             vectorEffect: "non-scaling-stroke",
+            ...props
 
         }),
         h(Manipulator, {

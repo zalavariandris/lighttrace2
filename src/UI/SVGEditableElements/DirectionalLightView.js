@@ -9,7 +9,9 @@ const DirectionalLightView = ({
     angle,
     width,
     style,
-    onChange=(value)=>{}
+    onChange=(value)=>{},
+    className,
+    ...props
 })=>{
     return h(Manipulator, {           
         referenceX: x,
@@ -18,6 +20,7 @@ const DirectionalLightView = ({
             x: e.sceneX+e.referenceOffsetX, 
             y: e.sceneY+e.referenceOffsetY
         }),
+        className: [className].filter(v=>v?true:false).join(" "),
     },
         h('rect', {
             x: x-6,
@@ -31,7 +34,8 @@ const DirectionalLightView = ({
                 transformOrigin: `${x}px ${y}px`,
                 fill: style.fill,
                 ...style
-            }
+            },
+            ...props
         }),
         h(Manipulator, {
             referenceX: x+Math.cos(angle)*50,

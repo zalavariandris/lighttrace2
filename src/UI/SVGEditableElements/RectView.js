@@ -4,7 +4,9 @@ const h = React.createElement;
 
 const RectView = ({
     x,y, width, height, 
-    onChange=()=>{}
+    onChange=()=>{},
+    className,
+    ...props
 })=>{
     return h(Manipulator, {           
         referenceX: x,
@@ -13,6 +15,7 @@ const RectView = ({
             x: e.sceneX+e.referenceOffsetX, 
             y: e.sceneY+e.referenceOffsetY
         }),
+        className: [className].filter(v=>v?true:false).join(" "),
     },
         h('rect', {
             x: x,
@@ -20,7 +23,8 @@ const RectView = ({
             width: width,
             height: height,
             vectorEffect: "non-scaling-stroke",
-            className: "handle shape"
+            className: "handle shape",
+            ...props
         }),
         h(Manipulator, {
             referenceX: x+width/2,

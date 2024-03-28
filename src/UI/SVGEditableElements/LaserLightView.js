@@ -6,7 +6,9 @@ const h = React.createElement;
 
 const LaserLightView = ({
     light,
-    onChange=(value)=>{}
+    onChange=(value)=>{},
+    className,
+    ...props
 })=>{
     return h(Manipulator, {           
         referenceX: light.x,
@@ -15,6 +17,7 @@ const LaserLightView = ({
             x: e.sceneX+e.referenceOffsetX, 
             y: e.sceneY+e.referenceOffsetY
         }),
+        className: [className].filter(v=>v?true:false).join(" "),
     },
         h('circle', {
             cx: light.x,
@@ -24,7 +27,8 @@ const LaserLightView = ({
             className: "shape",
             style: {
                 fill: colorFromRGB(wavelengthToRGB(light.wavelength))
-            }
+            },
+            ...props
         }),
         h(Manipulator, {
             onDrag: e=>{

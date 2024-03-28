@@ -522,6 +522,8 @@ const App = ()=>{
         }
     }
 
+    const svgRef = React.useRef(null)
+
     return h("div", null,
         svgDisplayOptions.glPaint?h(GLViewport,  {
             className:"viewport",
@@ -540,12 +542,20 @@ const App = ()=>{
             rays: svgDisplayOptions.lightrays?uniformRaytraceResults.lightrays:[],
             hitPoints: svgDisplayOptions.hitPoints?uniformRaytraceResults.hitPoints:[], 
             paths:svgDisplayOptions.lightPaths?uniformRaytraceResults.lightPaths:[], 
-
-            onMouseDown: e=>{
-                if(currentToolName)
+            ref: svgRef,
+            // onMouseDown: e=>{
+            //     if(currentToolName)
+            //     {
+            //         handleMouseDownTools(e);
+            //     }
+            // },
+            onClick:(e)=>{
+                // TODO check the actual element not just the type
+                if(e.target.tagName=="svg")
                 {
-                    handleMouseDownTools(e);
+                    setSelectionKeys([]);
                 }
+
             }
         },
             h("g", null, 
@@ -554,7 +564,9 @@ const App = ()=>{
                         className: selectionKeys.indexOf(key)>=0 ? "sceneItem selected" : "sceneItem not-selected",
                         sceneObject, 
                         onChange: (value)=>updateSceneObject(key, value),
-                        onClick: e=>setSelectionKeys([key])
+                        onClick: e=>{
+                            setSelectionKeys([key])
+                        }
                     })
                 })
             )

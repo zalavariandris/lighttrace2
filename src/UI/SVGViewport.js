@@ -116,12 +116,13 @@ function SVGViewport({
             onMouseMove: (e) => onmousemove(e),
             onMouseUp: (e) => onmouseup(e),
             onMouseLeave: (e) => onmouseleave(e),
-            onClick: (e)=>{
-                if(e.target==svgRef.current)
-                {
-                    onSelection([]); // clear selection
-                }
-            }
+            ...props
+            // onClick: (e)=>{
+            //     if(e.target==svgRef.current)
+            //     {
+            //         onSelection([]); // clear selection
+            //     }
+            // }
         },
         h('defs', null, 
             h('marker', {

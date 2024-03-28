@@ -6,7 +6,9 @@ const h = React.createElement;
 
 const PointLightView = ({
     cx, cy, angle, style,
-    onChange=(value)=>{}
+    onChange=(value)=>{},
+    className,
+    ...props
 })=>{
     return h(Manipulator, {           
         referenceX: cx,
@@ -16,6 +18,7 @@ const PointLightView = ({
             cy: e.sceneY+e.referenceOffsetY,
             angle
         }),
+        className: [className].filter(v=>v?true:false).join(" "),
     },
         h('circle', {
             cx: cx,
@@ -25,7 +28,8 @@ const PointLightView = ({
             className: "shape",
             style: {
                 ...style
-            }
+            },
+            ...props
         }),
         h(Manipulator, {
             onDrag: (e)=>{

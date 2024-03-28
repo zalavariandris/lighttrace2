@@ -8,7 +8,9 @@ import Circle from "../../scene/shapes/Circle.js"
 
 const SphericalLensView = ({
     cx, cy, diameter, edgeThickness, centerThickness,
-    onChange=(value)=>{}
+    onChange=(value)=>{},
+    className,
+    ...props
 })=>{
     function arcFromThreePoints({Sx, Sy, Mx, My, Ex, Ey})
     {
@@ -51,10 +53,12 @@ const SphericalLensView = ({
             cx: e.sceneX+e.referenceOffsetX, 
             cy: e.sceneY+e.referenceOffsetY
         }),
+        className: [className].filter(v=>v?true:false).join(" "),
     },
         h("path", {
             d: makePathFromLens({cx, cy, diameter, edgeThickness, centerThickness}),
-            className: "shape"
+            className: "shape",
+            ...props
         }),
         h(Manipulator, {
             onDrag: e=>{

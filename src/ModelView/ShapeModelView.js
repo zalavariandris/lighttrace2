@@ -24,12 +24,23 @@ const h = React.createElement;
 
 const ShapeModelView = ({
     sceneObject,
-    onChange=(value)=>{}
+    onChange=(value)=>{},
+    ...props
 })=>
 {
     if(sceneObject instanceof Circle)
     {
-        return h(CircleView, {cx:sceneObject.Cx, cy:sceneObject.Cy, r:sceneObject.radius,  onChange:(svgElement)=>onChange({Cx:svgElement.cx, Cy:svgElement.cy, radius:svgElement.r})});
+        return h(CircleView, {
+            cx:sceneObject.Cx, 
+            cy:sceneObject.Cy, 
+            r:sceneObject.radius,  
+            onChange:(svgElement)=>onChange({
+                Cx:svgElement.cx, 
+                Cy:svgElement.cy, 
+                radius:svgElement.r
+            }),
+            ...props
+        });
     }
     else if(sceneObject instanceof Rectangle)
     {
@@ -43,7 +54,9 @@ const ShapeModelView = ({
                 Cy: value.y+value.height/2, 
                 width: value.width, 
                 height: value.height
-            })});
+            }),
+            ...props
+        });
     }
     else if(sceneObject instanceof LineSegment)
     {
@@ -57,7 +70,9 @@ const ShapeModelView = ({
                 Ay:svgElement.y1, 
                 Bx:svgElement.x2, 
                 By:svgElement.y2
-            })});
+            }),
+            ...props
+        });
     }
     else if(sceneObject instanceof SphericalLens)
     {
@@ -73,7 +88,8 @@ const ShapeModelView = ({
                 diameter: value.diameter,
                 edgeThickness: value.edgeThickness,
                 centerThickness: value.centerThickness
-            })
+            }),
+            ...props
         });
     }
     else if(sceneObject instanceof DirectionalLight)
@@ -89,7 +105,8 @@ const ShapeModelView = ({
                 angle: value.angle,
                 width: value.width
             }),
-            style: {fill: colorFromRGB(wavelengthToRGB(sceneObject.wavelength))}
+            style: {fill: colorFromRGB(wavelengthToRGB(sceneObject.wavelength))},
+            ...props
         });
     }
 
@@ -111,7 +128,8 @@ const ShapeModelView = ({
                 Cx: value.cx,
                 Cy: value.cy,
                 angle: value.angle
-            })
+            }),
+            ...props
         });
     }
 
@@ -120,7 +138,8 @@ const ShapeModelView = ({
         return h("text", {
             className: "shape",
             x: sceneObject.Cx,
-            y: sceneObject.Cy
+            y: sceneObject.Cy,
+            ...props
         }, `shape`)
     }
 };

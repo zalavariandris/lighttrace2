@@ -6,7 +6,9 @@ const h = React.createElement;
 
 const LineView = ({
     x1,y1,x2,y2,
-    onChange=(value)=>{}
+    onChange=(value)=>{},
+    className,
+    ...props
 })=>{
         return h(Manipulator, {           
             referenceX: x1,
@@ -17,14 +19,15 @@ const LineView = ({
                 x2: e.sceneX+e.referenceOffsetX+x2-x1, 
                 y2: e.sceneY+e.referenceOffsetY+y2-y1, 
             }),
+            className: [className].filter(v=>v?true:false).join(" "),
         },
             h('line', {
                 x1,
                 y1,
                 x2,
                 y2,
-                className: 'shape'
-                // onMouseDown: ()=>this.selectObject(shape)
+                className: 'shape',
+                ...props
             }),
             h(Manipulator, {
                 onDragStart: (e)=>console.log(e),
