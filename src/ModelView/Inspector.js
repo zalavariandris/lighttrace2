@@ -82,7 +82,7 @@ function LightInspector({
     function colorFromWavelength(wavelength)
     {
         const [R,G,B] = wavelengthToRGB(wavelength);
-        return `rgb(${R.toFixed(0)}, ${G.toFixed()}, ${B.toFixed(0)})`
+        return `rgb(${(R).toFixed(0)}, ${(G).toFixed()}, ${(B).toFixed(0)})`
     }
 
     return h("form", null, 
@@ -112,6 +112,9 @@ function LightInspector({
             h("input", {
                 type: "range", 
                 value: sceneObject.intensity,
+                min: 0,
+                max: 10.0,
+                step: 0.01,
                 onChange: (e)=>handleIntensityChange(e)
             })
         )
