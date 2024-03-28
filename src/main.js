@@ -147,7 +147,7 @@ const App = ()=>{
         "sun": new DirectionalLight({Cx:50, Cy: 250, width: 80, angle: 0}),
         "lamp": new PointLight({Cx: 50, Cy: 150, angle:0}),
 
-        // new LaserLight("laser", {x:150, y: 150, angle: 0.5}),
+        "laser": new LaserLight({Cx:150, Cy: 150, angle: 0.5}),
 });
 
     const updateSceneObject = (key, newAttributes)=>{
@@ -278,8 +278,8 @@ const App = ()=>{
                 // create circle
                 const key = generateId();
                 addSceneObject(key, new Circle({
-                    x: beginSceneX, 
-                    y: beginSceneY, 
+                    Cx: beginSceneX, 
+                    Cy: beginSceneY, 
                     radius:5, 
                     material: "glass"
                 }));
@@ -313,8 +313,8 @@ const App = ()=>{
                 const key = generateId();
     
                 addSceneObject(key, new Rectangle({
-                    x: beginSceneX, 
-                    y: beginSceneY, 
+                    Cx: beginSceneX, 
+                    Cy: beginSceneY, 
                     width: 5,
                     height: 5,
                     material: "diffuse"
@@ -384,8 +384,8 @@ const App = ()=>{
 
                 const key = generateId();
                 addSceneObject(key, new SphericalLens({
-                    x: beginSceneX, 
-                    y: beginSceneY, 
+                    Cx: beginSceneX, 
+                    Cy: beginSceneY, 
                     centerThickness: 5,
                     edgeThickness: 0,
                     material: "glass"
@@ -421,8 +421,8 @@ const App = ()=>{
     
                 const key = generateId();
                 addSceneObject(key, new PointLight({
-                    x: beginSceneX, 
-                    y: beginSceneY, 
+                    Cx: beginSceneX, 
+                    Cy: beginSceneY, 
                     angle: 0
                 }));
     
@@ -432,7 +432,7 @@ const App = ()=>{
                     const [sceneX, sceneY] = [loc.x, loc.y]
                     const [dx, dy] = [sceneX-beginSceneX, sceneY-beginSceneY];
 
-                    updateSceneObject({
+                    updateSceneObject(key, {
                         angle: Math.atan2(dy, dx)
                     });
                 }
@@ -454,8 +454,8 @@ const App = ()=>{
                 
                 const key = generateId();
                 addSceneObject(key, new DirectionalLight({
-                    x: beginSceneX, 
-                    y: beginSceneY, 
+                    Cx: beginSceneX, 
+                    Cy: beginSceneY, 
                     angle: 0
                 }));
     
@@ -488,8 +488,8 @@ const App = ()=>{
     
                 const key = generateId();
                 addSceneObject(key, new LaserLight({
-                    x: beginSceneX, 
-                    y: beginSceneY, 
+                    Cx: beginSceneX, 
+                    Cy: beginSceneY, 
                     angle: 0
                 }));
     
@@ -515,6 +515,7 @@ const App = ()=>{
 
     const handleMouseDownTools = e =>
     {
+
         const toolIdx = mouseTools.findIndex(tool=>tool.name==currentToolName);
         if(toolIdx>=0){
             e.preventDefault()

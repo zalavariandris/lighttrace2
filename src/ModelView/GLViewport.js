@@ -1,6 +1,7 @@
 import React, {useState} from "react"
 import createREGL from "regl"
 import {mat4} from 'gl-matrix'
+import GLLightpathRenderer from "../GLLightpathRenderer2.js"
 
 /* Utilities */
 function makeCircle (N=36)
@@ -30,36 +31,6 @@ function makeTransform({position=[0,0,0],rotation=[0,0,0],scale=[1,1,1]}={}){
 }
 
 
-function fitViewboxInSize(viewBox, size)
-{
-    // adjust viewbox width to match resolution aspect "contain"
-    let size_aspect = size.width/size.height;
-    let view_aspect = viewBox.w/viewBox.h;
-    let newViewBox = viewBox;
-    if(size_aspect > view_aspect)
-    {
-        const new_view_width = viewBox.h * size_aspect;
-        newViewBox = {
-            x: viewBox.x+(viewBox.w-new_view_width)/2,
-            w: new_view_width,
-            y: viewBox.y,
-            h: viewBox.h
-        }
-    }
-    else
-    {
-        const new_view_height = viewBox.w / size_aspect;
-        newViewBox = {
-            x: viewBox.x,
-            w: viewBox.w,
-            y: viewBox.y+(viewBox.h-new_view_height)/2,
-            h: new_view_height
-        }
-    }
-
-    return newViewBox
-}
-
 function matchProjectionToSVGViewbox(svg_viewbox, win)
 {
 
@@ -86,316 +57,6 @@ function matchProjectionToSVGViewbox(svg_viewbox, win)
         return projection
     }
 }
-
-function makeProjectionFromViewbox(viewBox)
-{
-    const projection = mat4.identity([]);
-    mat4.ortho(projection, viewBox.x, viewBox.x+viewBox.w, viewBox.y+viewBox.h, viewBox.y, -1,1) //left, right, bottom, top, near, far
-    return projection;
-}
-
-class GLRenderer{
-    constructor(regl)
-    {
-        this.initGL(regl);
-    }
-
-    initGL(regl)
-    {
-        this.tick = 0;
-        // create fbos
-        this.sceneTexture = regl.texture({
-            width: 1,
-            height: 1,
-            wrap: 'clamp',
-            format: "rgba",
-            type: "float"
-        });
-
-        this.sceneFbo = regl.framebuffer({
-            color: this.sceneTexture,
-            depth: false
-        });
-
-        this.bufferTexture = regl.texture({
-            width: 1,
-            height: 1,
-            wrap: 'clamp',
-            format: "rgba",
-            type: "float"
-        });
-        this.bufferFbo = regl.framebuffer({
-            color: this.bufferTexture,
-            depth: false
-        });
-
-        this.compTexture = regl.texture({
-            width: 1,
-            height: 1,
-            wrap: 'clamp',
-            format: "rgba",
-            type: "float"
-        });
-        this.compFbo = regl.framebuffer({
-            color: this.compTexture,
-            depth: false
-        });
-
-        this.toneTexture = regl.texture({
-            width: 1,
-            height: 1,
-            wrap: 'clamp',
-            format: "rgba",
-            type: "float"
-        });
-
-        this.toneFbo = regl.framebuffer({
-            color: this.toneTexture,
-            depth: false
-        });
-
-        this.samples = 0;
-
-        // draw state setups
-        this.setupQuad = regl({
-            viewport: {x: 0, y: 0, w: 1, h: 1},
-            depth: { enable: false },
-            primitive: "triangle fan",
-            attributes: {
-            position: [
-                [ 0, 0],
-                [ 1, 0],
-                [ 1, 1],
-                [ 0, 1]
-            ],
-            uv:[
-                [ 0, 0],
-                [ 1, 0],
-                [ 1, 1],
-                [ 0, 1]
-                ]
-            },
-            count: 6,
-            uniforms: {
-                projection: mat4.ortho(mat4.identity([]), 0,1,0,1,-1,1)
-            },
-            vert: `
-                precision mediump float;
-                uniform mat4 projection;
-                attribute vec2 position;
-                attribute vec2 uv;
-                varying vec2 vUV;
-                void main() {
-                    vUV = uv;
-                    gl_Position = projection * vec4(position, 0, 1);
-                }`,
-
-            frag: `
-                precision mediump float;
-                varying vec2 vUV;
-                uniform sampler2D texture;
-            
-                void main() {
-                    vec4 tex = texture2D(texture, vUV).rgba;
-                    gl_FragColor = vec4(tex.r, tex.g, tex.b, 1.0);
-                }`
-        });
-
-        this.setupScene = regl({
-            viewport: {x: 0, y: 0, w: 512, h: 512},
-            vert: `precision mediump float;
-                attribute vec2 position;
-                uniform mat4 projection;
-                uniform mat4 view;
-                uniform mat4 model;
-                void main () {
-                    gl_Position = projection * view * model * vec4(position, 0, 1);
-                }`,
-
-            frag: `precision mediump float;
-                uniform vec4 color;
-                void main () {
-                    gl_FragColor = color;
-                }`,
-            uniforms: {
-                view: mat4.identity([]),
-                projection: mat4.ortho(mat4.identity([]), 0,512,0,512,-1,1) //left, right, bottom, top, near, far
-            }
-        });
-
-        this.drawToFbo = regl({
-            framebuffer: regl.prop("framebuffer")
-        })
-    }
-
-    resizeGL(regl, width, height){
-        const [canvaswidth, canvasheight] = [width, height]
-        this.sceneFbo.resize(canvaswidth, canvasheight);
-        this.bufferFbo.resize(canvaswidth, canvasheight);
-        this.compFbo.resize(canvaswidth, canvasheight);
-        this.toneFbo.resize(canvaswidth, canvasheight);
-    }
-
-    renderGL(regl, paths, viewBox, width, height)
-    {
-        const [canvaswidth, canvasheight] = [width, height]
-        viewBox = fitViewboxInSize(viewBox, {width: canvaswidth, height: canvasheight})
-        const projection = makeProjectionFromViewbox(viewBox)
-
-        // Draw Scene to fbo
-        this.drawToFbo({framebuffer: this.sceneFbo}, ()=>{
-            regl.clear({color: [0,0,0,0]});
-
-            for(let lightpath of paths){
-                const draw_lightpath = regl(({
-                    viewport: {x: 0, y:0, width: canvaswidth, height: canvasheight},
-                    vert: `
-                    precision mediump float;
-                    uniform mat4 projection;
-                    attribute vec2 position;
-                    
-                    void main () {
-                        gl_Position = projection * vec4(position, 0, 1);
-                    }`,
-    
-                    frag: `
-                    precision mediump float;
-                    uniform vec4 color;
-                    void main () {
-                        gl_FragColor = vec4(color.r,color.g,color.b,color.a);
-                    }`,
-                    attributes: {
-                        position: lightpath.points.map(point=>[point.x, point.y]).flat(),
-                    },
-            
-                    uniforms: {
-                        color: [1,1,1, lightpath.intensity],
-                        projection: projection
-                    },
-            
-                    blend: {
-                        enable: true,
-                        func: {
-                            srcRGB: 'src alpha',
-                            srcAlpha: 1,
-                            dstRGB: 'one minus src alpha',
-                            dstAlpha: 1
-                        },
-                        equation: {
-                            rgb: 'add',
-                            alpha: 'add'
-                        },
-                        color: [0, 0, 0, 0]
-                    },
-                    lineWidth:1,
-                    count: lightpath.points.length,
-                    primitive: "line strip"
-                }));
-                draw_lightpath()
-            }
-        });
-
-        // comp fbo with previous buffer
-        this.setupQuad({}, ()=>{
-            regl({
-                framebuffer: this.compFbo,
-                uniforms: {
-                    A: this.sceneTexture,
-                    B: this.bufferTexture
-                },
-                frag: `precision mediump float;
-                varying vec2 vUV;
-                uniform sampler2D A;
-                uniform sampler2D B;
-            
-                void main() {
-                    vec4 texA = texture2D(A, vUV).rgba;
-                    vec4 texB = texture2D(B, vUV).rgba;
-                    gl_FragColor = vec4(texA.rgb+texB.rgb, 1.0);
-                }`
-            })()
-        });
-        this.samples+=1;
-
-        // copy comp to buffer
-        this.setupQuad({}, ()=>{
-            regl({
-                framebuffer: this.bufferFbo,
-                uniforms: {
-                    texture: this.compTexture
-                },
-                frag: `precision mediump float;
-                varying vec2 vUV;
-                uniform sampler2D texture;
-
-                void main() {
-                    vec4 tex = texture2D(texture, vUV).rgba;
-                    gl_FragColor = vec4(tex.rgb, 1.0);
-                }`
-            })()
-        });
-
-        // tone down added light intensities
-        this.setupQuad({}, ()=>{
-            regl({
-                framebuffer: this.toneFbo,
-                uniforms: {
-                    texture: this.compTexture,
-                    exposure: 20/this.samples*Math.min(this.samples/30-0.1, 1.0)
-                },
-
-                frag: `
-                precision mediump float;
-                varying vec2 vUV;
-                uniform sampler2D texture;
-                uniform float exposure;
-            
-                vec3 filmic(vec3 x) {
-                    vec3 X = max(vec3(0.0), x - 0.004);
-                    vec3 result = (X * (6.2 * X + 0.5)) / (X * (6.2 * X + 1.7) + 0.06);
-                    return pow(result, vec3(2.2));
-                }
-
-                void main() {
-                    vec4 tex = texture2D(texture, vUV).rgba;
-                    vec3 color = tex.rgb*exposure;
-                    // color = filmic(color);
-                    gl_FragColor = vec4(color, 1.0);
-                }`
-            })();
-        });
-        
-        // render final comp to screen
-        this.setupQuad({}, ()=>{
-            regl.clear({color: [0,0,0,0]})
-            regl({
-                viewport: {x: 0, y:0, width: canvaswidth, height: canvasheight},
-                framebuffer: null,
-                uniforms: {
-                    texture: this.toneTexture
-                },
-                frag: `precision mediump float;
-                varying vec2 vUV;
-                uniform sampler2D texture;
-            
-                void main() {
-                    vec4 tex = texture2D(texture, vUV).rgba;
-                    gl_FragColor = vec4(tex.rgb, 1.0);
-                }`
-            })();
-        });
-        this.tick+=1;
-    }
-
-    reset(regl)
-    {
-        this.samples = 0;
-        this.drawToFbo({framebuffer: this.bufferFbo}, ()=>{
-            regl.clear({color: [0,0,0,0]})
-        })
-    }
-}
-
 
 function GLViewport({
     viewBox,
@@ -436,9 +97,17 @@ function GLViewport({
         console.assert(reglRef.current!=undefined, "cant create REGL context")
 
         // INITIAL
-        rendererRef.current = new GLRenderer(reglRef.current);
-        rendererRef.current.resizeGL(reglRef.current, canvasRef.current.offsetWidth, canvasRef.current.offsetHeight);
-        rendererRef.current.renderGL(reglRef.current, paths, viewBox, canvasRef.current.offsetWidth, canvasRef.current.offsetHeight);
+        rendererRef.current = new GLLightpathRenderer(reglRef.current);
+        rendererRef.current.resizeGL(reglRef.current, {
+            width: canvasRef.current.offsetWidth, 
+            height: canvasRef.current.offsetHeight
+        });
+        rendererRef.current.renderGL(reglRef.current, {
+            lightpaths: paths, 
+            viewBox: viewBox, 
+            width: canvasRef.current.offsetWidth, 
+            height: canvasRef.current.offsetHeight
+        });
         
         const [canvaswidth, canvasheight] = [canvasRef.current.offsetWidth, canvasRef.current.offsetHeight]
         canvasRef.current.width=canvaswidth;
@@ -451,8 +120,16 @@ function GLViewport({
 
             rendererRef.current.reset(reglRef.current);
             onReset()
-            rendererRef.current.resizeGL(reglRef.current, canvasRef.current.offsetWidth, canvasRef.current.offsetHeight);
-            rendererRef.current.renderGL(reglRef.current, paths, viewBox, canvasRef.current.offsetWidth, canvasRef.current.offsetHeight);
+            rendererRef.current.resizeGL(reglRef.current, {
+                width: canvasRef.current.offsetWidth, 
+                height: canvasRef.current.offsetHeight
+            });
+            rendererRef.current.renderGL(reglRef.current, {
+                lightpaths: paths, 
+                viewBox: viewBox, 
+                width: canvasRef.current.offsetWidth, 
+                height: canvasRef.current.offsetHeight
+            });
         }
         
         if(resizeHandlerRef.current){
@@ -474,7 +151,12 @@ function GLViewport({
     // console.log(opacity)
     if(reglRef.current && rendererRef.current)
     {
-        rendererRef.current.renderGL(reglRef.current, paths, viewBox, canvasRef.current.offsetWidth, canvasRef.current.offsetHeight);
+        rendererRef.current.renderGL(reglRef.current, { 
+            lightpaths: paths, 
+            viewBox: viewBox, 
+            width: canvasRef.current.offsetWidth, 
+            height: canvasRef.current.offsetHeight
+        });
     }
     const h = React.createElement
     return h("canvas", {

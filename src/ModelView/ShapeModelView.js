@@ -112,7 +112,20 @@ const ShapeModelView = ({
 
     else if(sceneObject instanceof LaserLight)
     {
-        return h(LaserLightView, {light: sceneObject, onChange});
+        return h(LaserLightView, {
+            x: sceneObject.Cx, 
+            y: sceneObject.Cy,
+            intensity: sceneObject.intensity,
+            wavelength: sceneObject.wavelength,
+            angle: sceneObject.angle,
+            onChange:(value)=>onChange({
+                Cx: value.x,
+                Cy: value.y,
+                angle: value.angle,
+                wavelength: value.wavelength,
+                intensity: value.intensity
+            })
+        });
 
     }
     else if(sceneObject instanceof PointLight)

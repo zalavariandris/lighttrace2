@@ -43,7 +43,7 @@ class DirectionalLight extends Light
 
             const origin = center.add(offset.multiply(samplingMethod==SamplingMethod.Random?randomRayOffset:uniformRayOffset))
             
-            return new Lightray(P(origin.x,origin.y), dir, this.intensity/sampleCount)
+            return new Lightray({origin: P(origin.x,origin.y), direction: dir, intensity: this.intensity/sampleCount})
         });
     }
 

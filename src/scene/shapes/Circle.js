@@ -121,7 +121,11 @@ class Circle extends Shape
             const hitPosition = P(ray.origin.x + t * ray.direction.x, ray.origin.y + t * ray.direction.y);
             const surfaceNormal = V(hitPosition.x - this.Cx, hitPosition.y - this.Cy).normalized();
             
-            return new HitPoint(hitPosition, surfaceNormal);
+            return new HitPoint({
+                position: hitPosition, 
+                surfaceNormal: surfaceNormal,
+                shape: this
+            });
         })
     }
 }

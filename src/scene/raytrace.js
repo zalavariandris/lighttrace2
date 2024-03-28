@@ -3,10 +3,10 @@ import {SamplingMethod} from "./lights/Light.js"
 
 class Lightray
 {
-    constructor(origin, direction, intensity=0.5, frequency=550)
+    constructor({origin, direction, intensity=0.5, frequency=550}={})
     {
-        console.assert(origin instanceof Point)
-        console.assert(direction instanceof Vector)
+        // console.assert(origin instanceof Point)
+        // console.assert(direction instanceof Vector)
         this.origin = origin;
         this.direction = direction;
         this.intensity = intensity;
@@ -15,7 +15,12 @@ class Lightray
 
     copy()
     {
-        return new Lightray(this.origin, this.direction, this.intensity, this.frequency);
+        return new Lightray({
+            origin: this.origin, 
+            direction: this.direction, 
+            intensity: this.intensity, 
+            frequency: this.frequency
+        });
     }
 
     toString()
@@ -24,26 +29,22 @@ class Lightray
     }
 }
 
-const Side = Object.freeze({
-    Outside: "Outside",
-    Inside: "Inside"
-})
-
 class HitPoint
 {
-     constructor(position, surfaceNormal, shape=null, side=Side.Outside)
+     constructor({position, surfaceNormal, shape=null}={})
     {
-        console.assert(position instanceof Point, "got:", position)
-        console.assert(surfaceNormal instanceof Vector, "got:", surfaceNormal)
         this.position = position;
         this.surfaceNormal = surfaceNormal;
         this.shape = shape;
-        this.side = side;
     }
 
     copy()
     {
-        return new HitPoint(this.position, this.surfaceNormal, this.shape, this.side);
+        return new HitPoint({
+            position: this.position, 
+            surfacenormal: this.surfaceNormal, 
+            shape: this.shape
+        });
     }
 
     toString(){
@@ -52,21 +53,25 @@ class HitPoint
 }
 
 class LightPath{
-    constructor(points, intensity=1.0, frequency=560)
+    constructor({points, intensities, frequency=560})
     {
         this.points = points;
-        this.intensity = intensity;
+        this.intensities = intensities;
         this.frequency = frequency;
     }
 
     copy()
     {
-        return new LightPath(this.points.map(P=>P.copy()), this.intensity, this.frequency)
+        return new LightPath({
+            points: this.points.map(P=>P.copy()),
+            intensities: this.intensities, 
+            frequency: this.frequency
+        });
     }
 
     toString()
     {
-        return `Lightpath(${this.intensity}, ${this.frequency})`
+        return `Lightpath`
     }
 }
 
@@ -128,17 +133,19 @@ function raytrace_pass(rays, [shapes, materials], {THRESHOLD=1e-6})
         else
         {
             // shortcuts
-            const rayDirection = rays[i].direction.normalized(1);
+            const incidentRay = rays[i];
+            const incidentDirection = incidentRay.direction.normalized(1);
             const surfaceNormal = hitPoint.surfaceNormal.normalized(1);
 
             // calculate hitNormal from surface normal and ray direction. 
-            const IsInside = rayDirection.dotProduct(hitPoint.surfaceNormal)>0;
+            const IsInside = incidentDirection.dotProduct(hitPoint.surfaceNormal)>0;
             const hitNormal = IsInside?surfaceNormal.negate():surfaceNormal;
 
             // sample material
             const material = materials[hitPoint.shapeIdx]
-            const bounceDirection = material.sample(rayDirection, surfaceNormal);
-            return new Lightray(hitPoint.position, bounceDirection);
+            const bounceDirection = material.sample(incidentDirection, surfaceNormal);
+            const bounceIntensity = incidentRay.intensity*1.0;
+            return new Lightray({origin: hitPoint.position, direction: bounceDirection, intensity: bounceIntensity});
         }
     });
 
@@ -154,7 +161,7 @@ function raytrace(lights, [shapes, materials], {maxBounce=3, samplingMethod="Uni
     let currentRays = initialLightrays;
     const raytraceSteps = [initialLightrays];
     const hitPointSteps = [];
-    const lightPaths = initialLightrays.map(r=>new LightPath([r.origin], r.intensity, 560));
+    const lightPaths = initialLightrays.map(r=>new LightPath({points: [r.origin], intensities:[r.intensity], frequency: 560}));
     for(let i=0; i<maxBounce; i++)
     {
         const [secondaries, hitPoints] = raytrace_pass(currentRays, [shapes, materials], {THRESHOLD:1e-6});
@@ -170,10 +177,12 @@ function raytrace(lights, [shapes, materials], {maxBounce=3, samplingMethod="Uni
             if(hitPoint && lightRay)
             {
                 lightPath.points.push(hitPoint.position);
+                lightPath.intensities.push(lightRay.intensity)
             }
             else if(lightRay)
             {
                 lightPath.points.push(P(lightRay.origin.x+lightRay.direction.x*1000, lightRay.origin.y+lightRay.direction.y*1000));
+                lightPath.intensities.push(lightRay.intensity)
             }
             else
             {

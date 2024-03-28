@@ -5,42 +5,46 @@ import {colorFromRGB, wavelengthToRGB} from "../../scene/colorUtils.js"
 const h = React.createElement;
 
 const LaserLightView = ({
-    light,
+    x, 
+    y,
+    wavelength, 
+    intensity,
+    angle,
     onChange=(value)=>{},
     className,
     ...props
 })=>{
     return h(Manipulator, {           
-        referenceX: light.x,
-        referenceY: light.y,
-        onDrag: e=>onChange({...light,
+        referenceX: x,
+        referenceY: y,
+        onDrag: e=>onChange({wavelength, intensity, angle,
             x: e.sceneX+e.referenceOffsetX, 
             y: e.sceneY+e.referenceOffsetY
         }),
         className: [className].filter(v=>v?true:false).join(" "),
     },
         h('circle', {
-            cx: light.x,
-            cy: light.y,
+            cx: x,
+            cy: y,
             r: 2,
             vectorEffect: "non-scaling-stroke",
             className: "shape",
             style: {
-                fill: colorFromRGB(wavelengthToRGB(light.wavelength))
+                fill: colorFromRGB(wavelengthToRGB(wavelength))
             },
             ...props
         }),
         h(Manipulator, {
             onDrag: e=>{
-                onChange({...light, 
-                    angle: Math.atan2(e.sceneY-light.y, e.sceneX-light.x)
+                onChange({x,y,wavelength, intensity, 
+                    angle: Math.atan2(e.sceneY-y, e.sceneX-x)
                 });
             },
             className: "manip",
             showGuide: false
         }, h("circle", {
-            cx: light.x+Math.cos(light.angle)*50,
-            cy: light.y+Math.sin(light.angle)*50,
+            cx: x+Math.cos(angle)*50,
+            cy: y+Math.sin(angle)*50,
             r: 5,
             className: "handle"
         }))

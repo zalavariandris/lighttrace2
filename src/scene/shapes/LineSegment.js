@@ -86,7 +86,11 @@ class LineSegment extends Shape
             //     N = N.negate()
             // }
             
-            return [new HitPoint(hitPosition, N)];
+            return [new HitPoint({
+                position: hitPosition, 
+                surfaceNormal: N,
+                shape: this
+            })];
         }
         
         // No intersection

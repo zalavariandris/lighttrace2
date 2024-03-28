@@ -32,7 +32,11 @@ class LaserLight extends Light
         const y = Math.sin(this.angle);
         const dir = V(x,y);
         return Array.from({length: sampleCount}).map((_, i)=>{
-            return new Lightray(P(this.Cx, this.Cy), dir.normalized(1), this.intensity/sampleCount)
+            return new Lightray({
+                origin: P(this.Cx, this.Cy), 
+                direction: dir.normalized(1), 
+                intensity: this.intensity/sampleCount
+            });
         })
     }
 }
