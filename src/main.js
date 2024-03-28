@@ -543,12 +543,12 @@ const App = ()=>{
             hitPoints: svgDisplayOptions.hitPoints?uniformRaytraceResults.hitPoints:[], 
             paths:svgDisplayOptions.lightPaths?uniformRaytraceResults.lightPaths:[], 
             ref: svgRef,
-            // onMouseDown: e=>{
-            //     if(currentToolName)
-            //     {
-            //         handleMouseDownTools(e);
-            //     }
-            // },
+            onMouseDown: e=>{
+                if(currentToolName)
+                {
+                    handleMouseDownTools(e);
+                }
+            },
             onClick:(e)=>{
                 // TODO check the actual element not just the type
                 if(e.target.tagName=="svg")
@@ -604,10 +604,10 @@ const App = ()=>{
             className: "panel", 
             style: {right: "0px", top:"0px", position: "fixed"}
         }, 
-            // h(Inspector, {
-            //     sceneObject: scene.find(obj=>selectionKeys.indexOf(obj.key)>=0),
-            //     onChange: (key, newAttributes)=>updateSceneObject(key, newAttributes)
-            // }),
+            h(Inspector, {
+                sceneObject: selectionKeys.length>0?scene[selectionKeys[0]]:null,
+                onChange: (newSceneObject)=>updateSceneObject(selectionKeys[0], newSceneObject)
+            }),
             h(Collapsable, {title: h("h2", null, "Raytrace otions"), defaultOpen:false},
                 h("form", null,
                     h("label", null, `Sampling steps: ${currentSampleStep}`,

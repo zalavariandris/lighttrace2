@@ -6,8 +6,8 @@ import { Lightray } from "../raytrace.js";
 
 class PointLight extends Light
 {
-    constructor({Cx, Cy, angle=0, wavelength=590}={}){
-        super({Cx, Cy, wavelength})
+    constructor({Cx, Cy, angle=0, intensity=1.0, wavelength=590}={}){
+        super({Cx, Cy, intensity, wavelength})
         this.angle = angle
     }
 
@@ -48,7 +48,7 @@ class PointLight extends Light
             const x = Math.cos(a);
             const y = Math.sin(a);
             const dir = V(x,y);
-            return new Lightray(P(this.Cx, this.Cy), dir.normalized(1), 1/sampleCount)
+            return new Lightray(P(this.Cx, this.Cy), dir.normalized(1), this.intensity/sampleCount)
         })
     }
 }

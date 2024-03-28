@@ -243,26 +243,6 @@ class GLRenderer{
         const projection = makeProjectionFromViewbox(viewBox)
 
         // Draw Scene to fbo
-        function makeAttributesFromPaths(paths)
-        {
-            const linesPoints = []
-            const colors = []
-            for(let path of paths)
-            {
-                const color = [path.intensity,path.intensity,path.intensity,1]
-                for(let i=0; i<path.points.length-1; i++)
-                {
-                    const line = [
-                        [path.points[i].x, path.points[i].y],
-                        [path.points[i+1].x, path.points[i+1].y]
-                    ]
-                    linesPoints.push(line);
-                }
-            }
-            return {positions: linesPoints.flat()};
-        }
-        const {positions} = makeAttributesFromPaths(paths);
-
         this.drawToFbo({framebuffer: this.sceneFbo}, ()=>{
             regl.clear({color: [0,0,0,0]});
 

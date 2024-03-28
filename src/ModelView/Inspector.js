@@ -14,7 +14,7 @@ const h = React.createElement;
 
 function ShapeInspector({
     sceneObject, 
-    onChange=(key, newAttributes)=>{},
+    onChange=(newSceneObject)=>{},
     ...props
 })
 {
@@ -22,27 +22,9 @@ function ShapeInspector({
     const onMaterialSelected = (e, v)=>{
         // set scene object material;
         const newMaterialName = e.target.value
-        if(newMaterialName == TransparentMaterial.name){
-            onChange(sceneObject.key, {
-                material: new TransparentMaterial()
-            })
-        }
-        else if(newMaterialName == MirrorMaterial.name)
-        {
-            onChange(sceneObject.key, {
-                material: new MirrorMaterial()
-            });
-        }
-        else if(newMaterialName == DiffuseMaterial.name)
-        {
-            onChange(sceneObject.key, {
-                material: new DiffuseMaterial()
-            });
-        }
-        else
-        {
-
-        }
+        onChange({...sceneObject,
+            material: newMaterialName
+        })
     }
 
     return h("label", null, 
@@ -51,22 +33,22 @@ function ShapeInspector({
             onChange: onMaterialSelected
         },
             h("option", {
-                value: TransparentMaterial.name, 
-                selected:material instanceof MirrorMaterial
+                value: "glass", 
+                selected:material=="glass"
             }, 
-                `${TransparentMaterial.name}`
+                "glass"
             ),
             h("option", {
-                value: MirrorMaterial.name, 
-                selected:material instanceof MirrorMaterial
+                value: "mirror", 
+                selected:material=="mirror"
             }, 
-                `${MirrorMaterial.name}`
+            "mirror"
             ),
             h("option", {
-                value: DiffuseMaterial.name, 
-                selected:material instanceof DiffuseMaterial
+                value: "diffuse", 
+                selected:material=="diffuse"
             }, 
-                `${DiffuseMaterial.name}`
+            "diffuse"
             )
         ),
         "Material"
@@ -75,7 +57,7 @@ function ShapeInspector({
 
 function LightInspector({
     sceneObject, 
-    onChange=(oldSceneObject, newSceneObject)=>{},
+    onChange=(newSceneObject)=>{},
     ...props
 })
 {
@@ -83,7 +65,18 @@ function LightInspector({
     {   
         e.stopPropagation();
         e.preventDefault();
-        onChange(sceneObject.key, {wavelength: e.target.value})
+        onChange({...sceneObject, 
+            wavelength: e.target.value
+        })
+    }
+
+    function handleIntensityChange(e)
+    {
+        e.stopPropagation();
+        e.preventDefault();
+        onChange({...sceneObject, 
+            intensity: e.target.value
+        })
     }
 
     function colorFromWavelength(wavelength)
@@ -92,26 +85,36 @@ function LightInspector({
         return `rgb(${R.toFixed(0)}, ${G.toFixed()}, ${B.toFixed(0)})`
     }
 
-    return h("label", null, 
-        h("input", {
-            type: "range", 
-            value:sceneObject.wavelength, 
-            min: 380, 
-            max: 780,
-            onChange: e=>handleWavelengthChange(e)
-        }),
-        `${sceneObject.wavelength}nm`,h("br"),
-        
-        h("svg", {width: 32, height: 32},
-            h("rect", {
-                x: 0, 
-                y: 0, 
-                width: 32, 
-                height: 32,
-                fill: colorFromWavelength(sceneObject.wavelength)
-            })
+    return h("form", null, 
+        h("label", null, 
+            h("input", {
+                type: "range", 
+                value:sceneObject.wavelength, 
+                min: 380, 
+                max: 780,
+                onChange: e=>handleWavelengthChange(e)
+            }),
+            `${sceneObject.wavelength}nm`,h("br"),
+            
+            h("svg", {width: 32, height: 32},
+                h("rect", {
+                    x: 0, 
+                    y: 0, 
+                    width: 32, 
+                    height: 32,
+                    fill: colorFromWavelength(sceneObject.wavelength)
+                })
+            ),
+            `${wavelengthToRGB(sceneObject.wavelength)}`,
         ),
-        `${wavelengthToRGB(sceneObject.wavelength)}`,
+        h("label", null, 
+            `intensity ${sceneObject.intensity}`,
+            h("input", {
+                type: "range", 
+                value: sceneObject.intensity,
+                onChange: (e)=>handleIntensityChange(e)
+            })
+        )
     );
 }
 

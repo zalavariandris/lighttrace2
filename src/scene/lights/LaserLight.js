@@ -6,9 +6,9 @@ import { Lightray } from "../raytrace.js";
 
 class LaserLight extends Light
 {
-    constructor({Cx, Cy, angle=0, wavelength=590}={})
+    constructor({Cx, Cy, angle=0, intensity=1.0, wavelength=590}={})
     {
-        super({Cx, Cy, wavelength});
+        super({Cx, Cy, intensity, wavelength});
         this.angle = angle;
     }
 
@@ -32,7 +32,7 @@ class LaserLight extends Light
         const y = Math.sin(this.angle);
         const dir = V(x,y);
         return Array.from({length: sampleCount}).map((_, i)=>{
-            return new Lightray(P(this.Cx, this.Cy), dir.normalized(1), 1/sampleCount)
+            return new Lightray(P(this.Cx, this.Cy), dir.normalized(1), this.intensity/sampleCount)
         })
     }
 }

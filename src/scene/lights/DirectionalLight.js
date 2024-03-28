@@ -5,9 +5,9 @@ import { Lightray } from "../raytrace.js";
 
 class DirectionalLight extends Light
 {
-    constructor({Cx, Cy, width, angle=0, wavelength=590}={})
+    constructor({Cx, Cy, width, angle=0, intensity=1.0, wavelength=590}={})
     {
-        super({Cx, Cy, wavelength})
+        super({Cx, Cy, intensity, wavelength})
         this.width = width;
         this.angle = angle;
     }
@@ -19,6 +19,7 @@ class DirectionalLight extends Light
             Cy:this.Cy,
             width: this.width, 
             angle: this.angle,
+            intensity: this.intensity,
             wavelength: this.wavelength
         })
     }
@@ -42,7 +43,7 @@ class DirectionalLight extends Light
 
             const origin = center.add(offset.multiply(samplingMethod==SamplingMethod.Random?randomRayOffset:uniformRayOffset))
             
-            return new Lightray(P(origin.x,origin.y), dir, 1/sampleCount)
+            return new Lightray(P(origin.x,origin.y), dir, this.intensity/sampleCount)
         });
     }
 
