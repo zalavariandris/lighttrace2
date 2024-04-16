@@ -47,6 +47,7 @@ https://zalavariandris.github.io/lighttrace2/
 - [x] leaks pointlight inside a circle (since rewrite) FIXED: compareHitPoint distances in raytrace.js
 - [x] fix transparent material refrection on exit
 - [x] fix concave lens ray intersections
+- [x] fix pan and zoom with omusetools
 - [ ] rectangle corners leaking: fix linesegment corners hitTest
 - [ ] cant use manipulators under shapes: fix svg layering and interaction
 - [ ] rotate shapes

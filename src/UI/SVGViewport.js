@@ -19,6 +19,7 @@ function SVGViewport({
     paths=[], 
     selection=[],
     onSelection=()=>{},
+    onMouseDown=()=>{},
     ...props
 }={})
 {

@@ -545,8 +545,9 @@ const App = ()=>{
             paths:svgDisplayOptions.lightPaths?uniformRaytraceResults.lightPaths:[], 
             ref: svgRef,
             onMouseDown: e=>{
-                if(currentToolName)
+                if(currentToolName && !e.defaultPrevented())
                 {
+                    console.log(currentToolName);
                     handleMouseDownTools(e);
                 }
             },
@@ -556,7 +557,6 @@ const App = ()=>{
                 {
                     setSelectionKeys([]);
                 }
-
             }
         },
             h("g", null, 
