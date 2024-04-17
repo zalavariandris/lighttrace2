@@ -30,17 +30,20 @@ https://zalavariandris.github.io/lighttrace2/
 - [x] seperate model from viewmodel, by switching _scene_ to PlainJavascriptObject
 - [x] rewrite Shape modelViews to independent Editable SVG Element components.
 
-- [ ] refactor GLViewport, and lift the rendering code to a child "entity" component.
+- [x] support light source intensity (in model)
+- [ ] support light source intensity with svgViewport
+- [ ] support light source intensity (in GLviewport)
 
-- [ ] support light source intensity
-- [ ] support light frequency
-- [ ] support light wavelength distribution
+- [x] support light frequency (model)
+- [ ] support light frequency with SVGViewport
+- [ ] support light frequency (in GLViewport)
 
 - [ ] show manipulators when object is selected.
+- [ ] support light wavelength distribution
 - [x] add new drag handler to SVGViewport
+- [ ] refactor GLViewport, and lift the rendering code to a child "entity" component.
 
 - [ ] simulate light as wave
-
 - [ ] ? refactor _sceneObject_ to sceneObject({shape, material})
 
 ### fix known bugs:
