@@ -1,4 +1,5 @@
 import {mat4} from 'gl-matrix'
+import {wavelengthToRGB} from "./scene/colorUtils.js"
 
 function fitViewboxInSize(viewBox, size)
 {
@@ -193,7 +194,19 @@ class GLLightpathRenderer{
 
             for(let lightpath of lightpaths)
             {
-                const vColors = lightpath.intensities.map(v=>[v,v,v]);
+                const lastRay = lightpath.rays[lightpath.rays.length-1];
+                
+                const vColors = lightpath.rays.map(ray=>{
+                    const [R,G,B] = wavelengthToRGB(ray.wavelength);
+                    return [R/255*ray.intensity,G/255*ray.intensity,B/255*ray.intensity];
+                });
+
+                const [R,G,B] = wavelengthToRGB(lastRay.wavelength);
+                vColors.push([R/255*lastRay.intensity,G/255*lastRay.intensity,B/255*lastRay.intensity]);
+                const vPositions = lightpath.rays.map(r=>[r.origin.x, r.origin.y]);
+                vPositions.push([lastRay.origin.x+lastRay.direction.x*1000, lastRay.origin.y+lastRay.direction.y*1000]);
+                
+
                 const draw_lightpath = regl(({
                     viewport: {x: 0, y:0, width: canvaswidth, height: canvasheight},
                     vert: `
@@ -217,7 +230,7 @@ class GLLightpathRenderer{
                         gl_FragColor = vec4(vColor.rgb,1);
                     }`,
                     attributes: {
-                        position: lightpath.points.map(point=>[point.x, point.y]).flat(),
+                        position: vPositions,
                         color: vColors,
                     },
             
@@ -241,7 +254,7 @@ class GLLightpathRenderer{
                         color: [0, 0, 0, 0]
                     },
                     lineWidth:1,
-                    count: lightpath.points.length,
+                    count: lightpath.rays.length+1,
                     primitive: "line strip"
                 }));
                 draw_lightpath()

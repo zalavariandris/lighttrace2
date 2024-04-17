@@ -91,16 +91,16 @@ const App = ()=>{
         lightSamples: 7,
         samplingMethod: SamplingMethod.Uniform,
         maxSampleSteps: 1024
-    })
-    const updateRaytraceOptions = options=>setRaytraceOptions({...raytraceOptions, ...options})
+    });
+    const updateRaytraceOptions = options=>setRaytraceOptions({...raytraceOptions, ...options});
 
-    const [svgDisplayOptions, setSvgDisplayOptions] = React.useState({
-        lightrays: false,
+    const [displayOptions, setDisplayOptions] = React.useState({
+        lightrays: true,
         hitPoints: true,
-        lightPaths: true,
-        glPaint: true
-    })
-    const updateSvgDisplayOptions = options=> setSvgDisplayOptions({...svgDisplayOptions, ...options})
+        lightPaths: false,
+        glPaint: false
+    });
+    const updateDisplayOptions = options => setDisplayOptions({...displayOptions, ...options});
 
     const [viewBox, setViewBox] = React.useState({
         x:0,y:0,w:512,h:512
@@ -526,7 +526,7 @@ const App = ()=>{
     const svgRef = React.useRef(null)
 
     return h("div", null,
-        svgDisplayOptions.glPaint?h(GLViewport,  {
+        displayOptions.glPaint?h(GLViewport,  {
             className:"viewport",
             viewBox: viewBox,
             scene: scene,
@@ -540,9 +540,9 @@ const App = ()=>{
             className:"viewport",
             viewBox: viewBox,
             onViewChange: viewBox=>setViewBox(viewBox),
-            rays: svgDisplayOptions.lightrays?uniformRaytraceResults.lightrays:[],
-            hitPoints: svgDisplayOptions.hitPoints?uniformRaytraceResults.hitPoints:[], 
-            paths:svgDisplayOptions.lightPaths?uniformRaytraceResults.lightPaths:[], 
+            rays: displayOptions.lightrays?uniformRaytraceResults.lightrays:[],
+            hitPoints: displayOptions.hitPoints?uniformRaytraceResults.hitPoints:[], 
+            paths:displayOptions.lightPaths?uniformRaytraceResults.lightPaths:[], 
             ref: svgRef,
             onMouseDown: e=>{
                 console.log("handle mousedown")
@@ -677,15 +677,15 @@ const App = ()=>{
                         e.preventDefault();
                         const formData = new FormData(e.target)
                         const newData = Object.fromEntries(myFormData.entries());
-                        setSvgDisplayOptions(newData);
+                        setDisplayOptions(newData);
                         return false;
                     }
                 }, 
                     h("label", null,
                         h("input", {
                             name:"rays",
-                            checked: svgDisplayOptions.lightrays, 
-                            onChange: (e)=>updateSvgDisplayOptions({lightrays: e.target.checked}),
+                            checked: displayOptions.lightrays, 
+                            onChange: (e)=>updateDisplayOptions({lightrays: e.target.checked}),
                             type: "checkbox"
                         }),
                         "show lightrays"
@@ -694,8 +694,8 @@ const App = ()=>{
                     h("label", null,
                         h("input", {
                             name:"hitPoints",
-                            checked: svgDisplayOptions.hitPoints, 
-                            onChange: (e)=>updateSvgDisplayOptions({hitPoints: e.target.checked}),
+                            checked: displayOptions.hitPoints, 
+                            onChange: (e)=>updateDisplayOptions({hitPoints: e.target.checked}),
                             type: "checkbox"
                         }),
                         "show hitpoints"
@@ -704,8 +704,8 @@ const App = ()=>{
                     h("label", null,
                         h("input", {
                             name:"lightPaths",
-                            checked: svgDisplayOptions.lightPaths, 
-                            onChange: (e)=>updateSvgDisplayOptions({lightPaths: e.target.checked}),
+                            checked: displayOptions.lightPaths, 
+                            onChange: (e)=>updateDisplayOptions({lightPaths: e.target.checked}),
                             type: "checkbox"
                         }),
                         "show lightpaths"
@@ -713,8 +713,8 @@ const App = ()=>{
                     h("label", null,
                     h("input", {
                         name:"glPaint",
-                        checked: svgDisplayOptions.glPaint, 
-                        onChange: (e)=>updateSvgDisplayOptions({glPaint: e.target.checked}),
+                        checked: displayOptions.glPaint, 
+                        onChange: (e)=>updateDisplayOptions({glPaint: e.target.checked}),
                         type: "checkbox"
                     }),
                     "show gl paint"

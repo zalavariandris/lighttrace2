@@ -61,8 +61,8 @@ function wavelengthToRGB(wavelength)
     return [red,green,blue];
 }
 
-function colorFromRGB([R,G,B]){
-    return `rgb(${R.toFixed(0)}, ${G.toFixed(0)}, ${B.toFixed(0)})`;
+function colorFromRGB([R,G,B], opacity=1.0){
+    return `rgba(${R.toFixed(0)}, ${G.toFixed(0)}, ${B.toFixed(0)}, ${opacity})`;
 }
 
 export {colorFromRGB, wavelengthToRGB}

@@ -79,10 +79,10 @@ function LightInspector({
         })
     }
 
-    function colorFromWavelength(wavelength)
+    function colorFromWavelength(wavelength, intensity=1.0)
     {
         const [R,G,B] = wavelengthToRGB(wavelength);
-        return `rgb(${(R).toFixed(0)}, ${(G).toFixed()}, ${(B).toFixed(0)})`
+        return `rgb(${(R).toFixed(0)*intensity}, ${(G).toFixed(0)*intensity}, ${(B).toFixed(0)*intensity})`
     }
 
     return h("form", null, 
@@ -102,7 +102,7 @@ function LightInspector({
                     y: 0, 
                     width: 32, 
                     height: 32,
-                    fill: colorFromWavelength(sceneObject.wavelength)
+                    style: {fill: colorFromWavelength(sceneObject.wavelength)}
                 })
             ),
             `${wavelengthToRGB(sceneObject.wavelength)}`,

@@ -51,7 +51,8 @@ class PointLight extends Light
             return new Lightray({
                 origin: P(this.Cx, this.Cy), 
                 direction: dir.normalized(1), 
-                intensity: this.intensity/sampleCount
+                intensity: this.intensity/sampleCount,
+                wavelength: this.wavelength
             });
         })
     }

@@ -31,15 +31,17 @@ https://zalavariandris.github.io/lighttrace2/
 - [x] rewrite Shape modelViews to independent Editable SVG Element components.
 
 - [x] support light source intensity (in model)
-- [ ] support light source intensity with svgViewport
-- [ ] support light source intensity (in GLviewport)
+- [x] support light source intensity with svgViewport
+- [x] support light source intensity (in GLviewport)
 
 - [x] support light frequency (model)
-- [ ] support light frequency with SVGViewport
-- [ ] support light frequency (in GLViewport)
+- [x] support light frequency with SVGViewport
+- [x] support light frequency (in GLViewport)
+
+- [ ] support light wavelength distribution (for white color for example...)
 
 - [ ] show manipulators when object is selected.
-- [ ] support light wavelength distribution
+
 - [x] add new drag handler to SVGViewport
 - [ ] refactor GLViewport, and lift the rendering code to a child "entity" component.
 
@@ -51,6 +53,7 @@ https://zalavariandris.github.io/lighttrace2/
 - [x] fix transparent material refrection on exit
 - [x] fix concave lens ray intersections
 - [x] fix pan and zoom with omusetools
+- [ ] cant select LaserLight
 - [ ] rectangle corners leaking: fix linesegment corners hitTest
 - [ ] cant use manipulators under shapes: fix svg layering and interaction
 - [ ] rotate shapes

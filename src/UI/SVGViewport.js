@@ -1,5 +1,5 @@
 import React, {useState} from "react"
-
+import {colorFromRGB, wavelengthToRGB} from "../scene/colorUtils.js"
 
 
 function viewboxString(viewBox)
@@ -7,6 +7,20 @@ function viewboxString(viewBox)
     return viewBox.x+" "+viewBox.y+" "+viewBox.w+" "+viewBox.h;
 }
 
+    // utils
+function lightpathToPoints(lightpath)
+{
+    const points = lightpath.rays.map(r=>r.origin);
+    const lastRay = lightpath.rays[lightpath.rays.length-1]
+    points.push({x: lastRay.origin.x+lastRay.direction.x*1000, y: lastRay.origin.y+lastRay.direction.y*1000});
+    return points;
+}
+    
+function pointsToSvgPath(points)
+{
+    let path = "M" + points.map(p => `${p.x},${p.y}`).join(" L");
+    return path;
+}
 
 const h = React.createElement;
 function SVGViewport({
@@ -55,7 +69,6 @@ function SVGViewport({
         onViewChange(newViewBox)
     }
 
-
     const onmousedown = (e)=>{
         
         if(props.onMouseDown){
@@ -101,11 +114,6 @@ function SVGViewport({
     }
 
 
-    // utils
-    const pointsToSvgPath = (points)=> {
-        let path = "M" + points.map(p => `${p.x},${p.y}`).join(" L");
-        return path;
-    }
 
     return h('svg', {
             xmlns:"http://www.w3.org/2000/svg",
@@ -117,11 +125,7 @@ function SVGViewport({
             viewBox: viewboxString(viewBox),
             ...props,
             onMouseDown: (e) => onmousedown(e),
-            onWheel: (e) => onmousewheel(e),
-            // onMouseMove: (e) => onmousemove(e),
-            // onMouseUp: (e) => onmouseup(e),
-            // onMouseLeave: (e) => onmouseleave(e),
-            
+            onWheel: (e) => onmousewheel(e)     
         },
         h('defs', null, 
             h('marker', {
@@ -141,17 +145,16 @@ function SVGViewport({
             style: {transform: `scale(var(--zoom))`}
         }, "O"),
         h('g', {className: 'paths'},
-            paths.filter(path => path.points.length > 1).map(path =>
+            paths.filter(path => path.rays.length > 1).map(path =>
                 h('g', null,
                     h('path', {
-                        d: pointsToSvgPath(path.points),
+                        d: pointsToSvgPath(lightpathToPoints(path)),
                         fill: 'none',
-                        stroke: `hsl(0deg 100% 100% / ${(path.intensity*100).toFixed(0)}%)`,
+                        stroke: `hsl(0deg 100% 100% / 10%)`,
                         className: 'lightpath',
                         strokeLinejoin:"round",
                         strokeLinecap:"round",
                         vectorEffect: "non-scaling-stroke",
-                        
                     })
                 )
             )
@@ -165,7 +168,8 @@ function SVGViewport({
                         x2: ray.origin.x + ray.direction.x * 1000,
                         y2: ray.origin.y + ray.direction.y * 1000,
                         className: 'lightray',
-                        vectorEffect: "non-scaling-stroke"
+                        vectorEffect: "non-scaling-stroke",
+                        style: {stroke: colorFromRGB(wavelengthToRGB(ray.wavelength), ray.intensity)}
                     })
                 )
             )

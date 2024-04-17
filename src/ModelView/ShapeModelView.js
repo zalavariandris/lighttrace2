@@ -105,7 +105,7 @@ const ShapeModelView = ({
                 angle: value.angle,
                 width: value.width
             }),
-            style: {fill: colorFromRGB(wavelengthToRGB(sceneObject.wavelength))},
+            style: {fill: colorFromRGB(wavelengthToRGB(sceneObject.wavelength), sceneObject.intensity)},
             ...props
         });
     }
@@ -124,7 +124,9 @@ const ShapeModelView = ({
                 angle: value.angle,
                 wavelength: value.wavelength,
                 intensity: value.intensity
-            })
+            }),
+            style: {fill: colorFromRGB(wavelengthToRGB(sceneObject.wavelength), sceneObject.intensity)},
+            ...props
         });
 
     }
@@ -135,7 +137,7 @@ const ShapeModelView = ({
             cy: sceneObject.Cy,
             angle: sceneObject.angle,
             style: {
-                fill: colorFromRGB(wavelengthToRGB(sceneObject.wavelength))
+                fill: colorFromRGB(wavelengthToRGB(sceneObject.wavelength), sceneObject.intensity)
             },
             onChange:(value)=>onChange({...sceneObject,
                 Cx: value.cx,
