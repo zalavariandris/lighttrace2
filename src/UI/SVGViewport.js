@@ -24,7 +24,6 @@ function SVGViewport({
 }={})
 {
     const svgRef = React.useRef()
-    const isPanning = React.useRef(false)
 
     const calcScale = ()=>{
         if(svgRef.current){
@@ -36,7 +35,6 @@ function SVGViewport({
     }
 
     // event handling
-    console.log(viewBox)
     const onmousewheel = (e)=>{
         const clientSize = {w: svgRef.current.clientWidth, h: svgRef.current.clientHeight}
         var w = viewBox.w;
@@ -57,42 +55,45 @@ function SVGViewport({
         onViewChange(newViewBox)
     }
 
-    const onmousemove = (e)=>{
-        if(props.onMouseMove){
-            props.onMouseMove(e);
-        }
-        if(e.defaultPrevented){
-            return;
-        }
-        console.log("window mousemove", viewBox)
-        const clientSize = {w: svgRef.current.clientWidth, h: svgRef.current.clientHeight}
-        let current_scale = clientSize.w/viewBox.w;
-        
-        var dx = -e.movementX/current_scale;
-        var dy = -e.movementY/current_scale;
-        
-        var newViewBox = {
-            x:viewBox.x+dx,
-            y:viewBox.y+dy,
-            w:viewBox.w,
-            h:viewBox.h
-        };
-
-        onViewChange(newViewBox)
-    }
-
-    const onmouseup = (e)=>{
-        console.log("window mouseup")
-        window.removeEventListener('mousemove', onmousemove);
-    }
 
     const onmousedown = (e)=>{
-        console.log("on mouse down")
+        
         if(props.onMouseDown){
             props.onMouseDown(e);
         }
         if(e.defaultPrevented){
             return;
+        }
+
+        const panBegin = {x: e.clientX, y: e.clientY};
+
+        const onmousemove = (e)=>{
+            if(props.onMouseMove){
+                props.onMouseMove(e);
+            }
+            if(e.defaultPrevented){
+                return;
+            }
+
+            const clientSize = {w: svgRef.current.clientWidth, h: svgRef.current.clientHeight}
+            let current_scale = clientSize.w/viewBox.w;
+            
+            var dx = -(e.clientX-panBegin.x)/current_scale;
+            var dy = -(e.clientY-panBegin.y)/current_scale;
+            
+            var newViewBox = {
+                x:viewBox.x+dx,
+                y:viewBox.y+dy,
+                w:viewBox.w,
+                h:viewBox.h
+            };
+    
+            onViewChange(newViewBox)
+        }
+    
+        const onmouseup = (e)=>{
+            console.log("window mouseup")
+            window.removeEventListener('mousemove', onmousemove);
         }
 
         window.addEventListener('mousemove', onmousemove);
