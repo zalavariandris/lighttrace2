@@ -37,7 +37,7 @@ https://zalavariandris.github.io/lighttrace2/
 - [ ] support light wavelength distribution
 
 - [ ] show manipulators when object is selected.
-
+- [x] add new drag handler to SVGViewport
 
 - [ ] simulate light as wave
 

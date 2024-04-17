@@ -515,7 +515,7 @@ const App = ()=>{
 
     const handleMouseDownTools = e =>
     {
-
+        console.log("handle tool", mouseTools[toolIdx])
         const toolIdx = mouseTools.findIndex(tool=>tool.name==currentToolName);
         if(toolIdx>=0){
             e.preventDefault()
@@ -545,10 +545,11 @@ const App = ()=>{
             paths:svgDisplayOptions.lightPaths?uniformRaytraceResults.lightPaths:[], 
             ref: svgRef,
             onMouseDown: e=>{
-                if(currentToolName && !e.defaultPrevented())
+                console.log("handle mousedown")
+                if(currentToolName)
                 {
-                    console.log(currentToolName);
                     handleMouseDownTools(e);
+                    e.preventDefault();
                 }
             },
             onClick:(e)=>{

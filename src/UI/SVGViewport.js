@@ -36,6 +36,7 @@ function SVGViewport({
     }
 
     // event handling
+    console.log(viewBox)
     const onmousewheel = (e)=>{
         const clientSize = {w: svgRef.current.clientWidth, h: svgRef.current.clientHeight}
         var w = viewBox.w;
@@ -56,47 +57,48 @@ function SVGViewport({
         onViewChange(newViewBox)
     }
 
-    const onmousedown = (e)=>{
-        if(props.onMouseDown){
-            props.onMouseDown(e);
+    const onmousemove = (e)=>{
+        if(props.onMouseMove){
+            props.onMouseMove(e);
         }
-        if(e.isDefaultPrevented()){
+        if(e.defaultPrevented){
             return;
         }
-        isPanning.current = true,
-        e.preventDefault();
-    }
+        console.log("window mousemove", viewBox)
+        const clientSize = {w: svgRef.current.clientWidth, h: svgRef.current.clientHeight}
+        let current_scale = clientSize.w/viewBox.w;
+        
+        var dx = -e.movementX/current_scale;
+        var dy = -e.movementY/current_scale;
+        
+        var newViewBox = {
+            x:viewBox.x+dx,
+            y:viewBox.y+dy,
+            w:viewBox.w,
+            h:viewBox.h
+        };
 
-    const onmousemove = (e)=>{
-        if (isPanning.current)
-        {
-            const clientSize = {w: svgRef.current.clientWidth, h: svgRef.current.clientHeight}
-            let current_scale = clientSize.w/viewBox.w;
-            
-            var dx = -e.movementX/current_scale;
-            var dy = -e.movementY/current_scale;
-            
-            var newViewBox = {
-                x:viewBox.x+dx,
-                y:viewBox.y+dy,
-                w:viewBox.w,
-                h:viewBox.h
-            };
-
-            onViewChange(newViewBox)
-        }
+        onViewChange(newViewBox)
     }
 
     const onmouseup = (e)=>{
-        if (isPanning.current)
-        {
-            isPanning.current = false
-        }
+        console.log("window mouseup")
+        window.removeEventListener('mousemove', onmousemove);
     }
 
-    const onmouseleave = (e)=>{
-        isPanning.current = false
+    const onmousedown = (e)=>{
+        console.log("on mouse down")
+        if(props.onMouseDown){
+            props.onMouseDown(e);
+        }
+        if(e.defaultPrevented){
+            return;
+        }
+
+        window.addEventListener('mousemove', onmousemove);
+        window.addEventListener('mouseup', onmouseup, {once: true});
     }
+
 
     // utils
     const pointsToSvgPath = (points)=> {
@@ -112,12 +114,13 @@ function SVGViewport({
             style: {"--zoom": calcScale(), ...props.style},
             ref: svgRef,
             viewBox: viewboxString(viewBox),
+            ...props,
             onMouseDown: (e) => onmousedown(e),
             onWheel: (e) => onmousewheel(e),
-            onMouseMove: (e) => onmousemove(e),
-            onMouseUp: (e) => onmouseup(e),
-            onMouseLeave: (e) => onmouseleave(e),
-            ...props
+            // onMouseMove: (e) => onmousemove(e),
+            // onMouseUp: (e) => onmouseup(e),
+            // onMouseLeave: (e) => onmouseleave(e),
+            
             // onClick: (e)=>{
             //     if(e.target==svgRef.current)
             //     {
