@@ -3,14 +3,12 @@ import {SamplingMethod} from "./lights/Light.js"
 
 class Lightray
 {
-    constructor({origin, direction, intensity=0.5, wavelength=550}={})
+    constructor({origin, direction, intensity=0.5, color=[1,1,1]}={})
     {
-        // console.assert(origin instanceof Point)
-        // console.assert(direction instanceof Vector)
         this.origin = origin;
         this.direction = direction;
         this.intensity = intensity;
-        this.wavelength = wavelength;
+        this.color = color;
     }
 
     copy()
@@ -19,13 +17,13 @@ class Lightray
             origin: this.origin, 
             direction: this.direction, 
             intensity: this.intensity, 
-            wavelength: this.wavelength
+            color: this.color
         });
     }
 
     toString()
     {
-        return `Lightray(${this.origin}, ${this.direction}, ${this.intensity}, ${this.wavelength})`
+        return `Lightray(${this.origin}, ${this.direction}, ${this.intensity}, ${this.color})`
     }
 }
 
@@ -79,8 +77,6 @@ class RaytraceResults
     }
 }
 
-
-
 function makeRaysFromLights(lights, {sampleCount, samplingMethod})
 {
     // angles to rays
@@ -111,7 +107,7 @@ function raytrace_pass(rays, [shapes, materials], {THRESHOLD=1e-6})
             const closestHitPoint = hitPoints.reduce(compareDistance, null);
             if(closestHitPoint) {closestHitPoint.shapeIdx = shapeIdx;}
             return closestHitPoint;
-        })
+        });
 
         // return closest intersection of ray
 
@@ -143,7 +139,7 @@ function raytrace_pass(rays, [shapes, materials], {THRESHOLD=1e-6})
                 origin: hitPoint.position, 
                 direction: bounceDirection, 
                 intensity: bounceIntensity,
-                wavelength: incidentRay.wavelength
+                color: incidentRay.color
             });
         }
     });

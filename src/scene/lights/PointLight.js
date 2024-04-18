@@ -6,8 +6,8 @@ import { Lightray } from "../raytrace.js";
 
 class PointLight extends Light
 {
-    constructor({Cx, Cy, angle=0, intensity=1.0, wavelength=590}={}){
-        super({Cx, Cy, intensity, wavelength})
+    constructor({Cx, Cy, angle=0, intensity=1.0, color=[1,1,1]}={}){
+        super({Cx, Cy, intensity, color})
         this.angle = angle
     }
 
@@ -17,7 +17,7 @@ class PointLight extends Light
             Cx: this.Cx, 
             Cy: this.Cy, 
             angle: this.angle,
-            wavelength: this.wavelength
+            color: this.color
         });
     }
 
@@ -52,7 +52,7 @@ class PointLight extends Light
                 origin: P(this.Cx, this.Cy), 
                 direction: dir.normalized(1), 
                 intensity: this.intensity/sampleCount,
-                wavelength: this.wavelength
+                color: this.color
             });
         })
     }

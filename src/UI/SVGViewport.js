@@ -169,7 +169,7 @@ function SVGViewport({
                         y2: ray.origin.y + ray.direction.y * 1000,
                         className: 'lightray',
                         vectorEffect: "non-scaling-stroke",
-                        style: {stroke: colorFromRGB(wavelengthToRGB(ray.wavelength), ray.intensity)}
+                        style: {stroke: colorFromRGB(ray.color, ray.intensity)}
                     })
                 )
             )

@@ -1,0 +1,30 @@
+{
+  "name": "lighttrace2",
+  "version": "0.0.9",
+  "description": "2d light tracing app",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zalavariandris/lighttrace2.git"
+  },
+  "keywords": [
+    "raytrace",
+    "GUI",
+    "2D"
+  ],
+  "author": "Andras Zalavari",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/zalavariandris/lighttrace2/issues"
+  },
+  "homepage": "https://github.com/zalavariandris/lighttrace2#readme",
+  "dependencies": {
+    "gl-matrix": "^3.4.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "regl": "^2.1.0"
+  }
+}

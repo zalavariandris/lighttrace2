@@ -38,6 +38,9 @@ https://zalavariandris.github.io/lighttrace2/
 - [x] support light frequency with SVGViewport
 - [x] support light frequency (in GLViewport)
 
+- [ ] use RGB color instead of a single frequency or spectral distribution (for now)
+
+
 - [ ] support light wavelength distribution (for white color for example...)
 
 - [ ] show manipulators when object is selected.
@@ -47,6 +50,8 @@ https://zalavariandris.github.io/lighttrace2/
 
 - [ ] simulate light as wave
 - [ ] ? refactor _sceneObject_ to sceneObject({shape, material})
+
+- [ ] spectral color support
 
 ### fix known bugs:
 - [x] leaks pointlight inside a circle (since rewrite) FIXED: compareHitPoint distances in raytrace.js
