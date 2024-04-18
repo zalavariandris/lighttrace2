@@ -48,11 +48,12 @@ class PointLight extends Light
             const x = Math.cos(a);
             const y = Math.sin(a);
             const dir = V(x,y);
+
             return new Lightray({
                 origin: P(this.Cx, this.Cy), 
                 direction: dir.normalized(1), 
                 intensity: this.intensity/sampleCount,
-                color: this.color
+                wavelength: Math.random()*300+380
             });
         })
     }

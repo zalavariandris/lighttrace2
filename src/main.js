@@ -29,6 +29,8 @@ import Inspector from "./ModelView/Inspector.js"
 import Manipulator from "./UI/Manipulator.js";
 import ShapeModelView from "./ModelView/ShapeModelView.js";
 
+import BlackBody from "./UI/BlackBody.js";
+
 const h = React.createElement;
 
 const generateId = ()=>{
@@ -605,6 +607,8 @@ const App = ()=>{
             className: "panel", 
             style: {right: "0px", top:"0px", position: "fixed"}
         }, 
+
+            h(BlackBody, null),
             h(Inspector, {
                 sceneObject: selectionKeys.length>0?scene[selectionKeys[0]]:null,
                 onChange: (newSceneObject)=>updateSceneObject(selectionKeys[0], newSceneObject)

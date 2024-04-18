@@ -67,3 +67,5 @@ https://zalavariandris.github.io/lighttrace2/
 
 
 
+# inspired
+https://benedikt-bitterli.me/tantalum/
