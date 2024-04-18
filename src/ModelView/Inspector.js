@@ -7,7 +7,7 @@ import MirrorMaterial from "../scene/materials/MirrorMaterial.js";
 import TransparentMaterial from "../scene/materials/TransparentMaterial.js";
 import DiffuseMaterial from "../scene/materials/DiffuseMaterial.js";
 
-import {wavelengthToRGB} from "../scene/colorUtils.js"
+import {colorFromRGB, wavelengthToRGB} from "../scene/colorUtils.js"
 
 const h = React.createElement;
 
@@ -66,7 +66,7 @@ function LightInspector({
         e.stopPropagation();
         e.preventDefault();
         onChange({...sceneObject, 
-            wavelength: e.target.value
+            color: e.target.value
         })
     }
 
@@ -77,12 +77,6 @@ function LightInspector({
         onChange({...sceneObject, 
             intensity: e.target.value
         })
-    }
-
-    function colorFromWavelength(wavelength, intensity=1.0)
-    {
-        const [R,G,B] = wavelengthToRGB(wavelength);
-        return `rgb(${(R).toFixed(0)*intensity}, ${(G).toFixed(0)*intensity}, ${(B).toFixed(0)*intensity})`
     }
 
     return h("form", null, 
@@ -102,10 +96,10 @@ function LightInspector({
                     y: 0, 
                     width: 32, 
                     height: 32,
-                    style: {fill: colorFromWavelength(sceneObject.wavelength)}
+                    style: {fill: colorFromRGB(sceneObject.color)}
                 })
             ),
-            `${wavelengthToRGB(sceneObject.wavelength)}`,
+            `${sceneObject.color}`,
         ),
         h("label", null, 
             `intensity ${sceneObject.intensity}`,
