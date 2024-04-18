@@ -21,7 +21,7 @@ import DiffuseMaterial from "./scene/materials/DiffuseMaterial.js";
 import TransparentMaterial from "./scene/materials/TransparentMaterial.js";
 import MirrorMaterial from "./scene/materials/MirrorMaterial.js";
 
-import {colorFromRGB, wavelengthToRGB} from "./scene/colorUtils.js"
+import {RGBToCSS, wavelengthToRGB} from "./scene/colorUtils.js"
 
 import {Lightray, makeRaysFromLights, raytrace, SamplingMethod} from "./scene/raytrace.js"
 import Inspector from "./ModelView/Inspector.js"
@@ -95,10 +95,10 @@ const App = ()=>{
     const updateRaytraceOptions = options=>setRaytraceOptions({...raytraceOptions, ...options});
 
     const [displayOptions, setDisplayOptions] = React.useState({
-        lightrays: true,
+        lightrays: false,
         hitPoints: true,
         lightPaths: false,
-        glPaint: false
+        glPaint: true
     });
     const updateDisplayOptions = options => setDisplayOptions({...displayOptions, ...options});
 
@@ -146,9 +146,8 @@ const App = ()=>{
         }),
         "sun": new DirectionalLight({Cx:50, Cy: 250, width: 80, angle: 0}),
         "lamp": new PointLight({Cx: 50, Cy: 150, angle:0}),
-
         "laser": new LaserLight({Cx:150, Cy: 150, angle: 0.5}),
-});
+    });
 
     const updateSceneObject = (key, newAttributes)=>{
         setScene( scene => {
@@ -753,5 +752,5 @@ const App = ()=>{
     )
 }
 
-const rdom = ReactDOM.createRoot(document.getElementById('root'))
+const rdom = ReactDOM.createRoot(document.getElementById('root'));
 rdom.render(React.createElement(App));

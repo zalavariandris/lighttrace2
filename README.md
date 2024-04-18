@@ -41,7 +41,7 @@ https://zalavariandris.github.io/lighttrace2/
 - [x] use RGB color instead of a single frequency or spectral distribution (for now)
 
 - [ ] show manipulators when object is selected.
-
+- [ ] persistent display options
 - [x] add new drag handler to SVGViewport
 - [ ] refactor GLViewport, and lift the rendering code to a child "entity" component.
 

@@ -1,5 +1,5 @@
 import React, {useState} from "react"
-import {colorFromRGB, wavelengthToRGB} from "../scene/colorUtils.js"
+import {RGBToCSS, wavelengthToRGB} from "../scene/colorUtils.js"
 
 
 function viewboxString(viewBox)
@@ -169,7 +169,7 @@ function SVGViewport({
                         y2: ray.origin.y + ray.direction.y * 1000,
                         className: 'lightray',
                         vectorEffect: "non-scaling-stroke",
-                        style: {stroke: colorFromRGB(ray.color, ray.intensity)}
+                        style: {stroke: RGBToCSS(wavelengthToRGB(ray.wavelength), ray.intensity)}
                     })
                 )
             )

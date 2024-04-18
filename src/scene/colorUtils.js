@@ -8,7 +8,7 @@ function wavelengthToRGB(wavelength)
     https://codepen.io/pen?editors=0110
     */
     var Gamma = 0.80,
-    IntensityMax = 255,
+    IntensityMax = 1.0,
     factor, red, green, blue;
     if((wavelength >= 380) && (wavelength<440)){
         red = -(wavelength - 440) / (440 - 380);
@@ -61,8 +61,8 @@ function wavelengthToRGB(wavelength)
     return [red,green,blue];
 }
 
-function colorFromRGB([R,G,B], opacity=1.0){
+function RGBToCSS([R,G,B], opacity=1.0){
     return `rgba(${(R*255).toFixed(0)}, ${(G*255).toFixed(0)}, ${(B*255).toFixed(0)}, ${opacity})`;
 }
 
-export {colorFromRGB, wavelengthToRGB}
+export {RGBToCSS, wavelengthToRGB}

@@ -1,6 +1,6 @@
 import React, {useState} from "react"
 import Manipulator from "../Manipulator.js";
-import {colorFromRGB, wavelengthToRGB} from "../../scene/colorUtils.js"
+import {RGBToCSS, wavelengthToRGB} from "../../scene/colorUtils.js"
 
 const h = React.createElement;
 

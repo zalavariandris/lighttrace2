@@ -3,12 +3,12 @@ import {SamplingMethod} from "./lights/Light.js"
 
 class Lightray
 {
-    constructor({origin, direction, intensity=0.5, color=[1,1,1]}={})
+    constructor({origin, direction, intensity=0.5, wavelength=550}={})
     {
         this.origin = origin;
         this.direction = direction;
         this.intensity = intensity;
-        this.color = color;
+        this.wavelength = wavelength;
     }
 
     copy()
@@ -17,13 +17,13 @@ class Lightray
             origin: this.origin, 
             direction: this.direction, 
             intensity: this.intensity, 
-            color: this.color
+            wavelength: this.wavelength
         });
     }
 
     toString()
     {
-        return `Lightray(${this.origin}, ${this.direction}, ${this.intensity}, ${this.color})`
+        return `Lightray(${this.origin}, ${this.direction}, ${this.intensity}, ${this.wavelength})`
     }
 }
 
@@ -139,7 +139,7 @@ function raytrace_pass(rays, [shapes, materials], {THRESHOLD=1e-6})
                 origin: hitPoint.position, 
                 direction: bounceDirection, 
                 intensity: bounceIntensity,
-                color: incidentRay.color
+                wavelength: incidentRay.wavelength
             });
         }
     });

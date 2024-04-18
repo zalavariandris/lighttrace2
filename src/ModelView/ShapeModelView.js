@@ -18,7 +18,7 @@ import RectView from "../UI/SVGEditableElements/RectView.js"
 import LineView from "../UI/SVGEditableElements/LineView.js"
 import SphericalLensView from "../UI/SVGEditableElements/SphericalLensView.js"
 
-import {colorFromRGB, wavelengthToRGB} from "../scene/colorUtils.js"
+import {RGBToCSS, wavelengthToRGB} from "../scene/colorUtils.js"
 
 const h = React.createElement;
 
@@ -105,7 +105,9 @@ const ShapeModelView = ({
                 angle: value.angle,
                 width: value.width
             }),
-            style: {fill: colorFromRGB(sceneObject.color, sceneObject.intensity)},
+            style: {
+                fill: RGBToCSS(wavelengthToRGB(sceneObject.wavelength), sceneObject.intensity)
+            },
             ...props
         });
     }
@@ -125,7 +127,9 @@ const ShapeModelView = ({
                 wavelength: value.wavelength,
                 intensity: value.intensity
             }),
-            style: {fill: colorFromRGB(sceneObject.color, sceneObject.intensity)},
+            style: {
+                fill: RGBToCSS(wavelengthToRGB(sceneObject.wavelength), sceneObject.intensity)
+            },
             ...props
         });
 
@@ -137,7 +141,7 @@ const ShapeModelView = ({
             cy: sceneObject.Cy,
             angle: sceneObject.angle,
             style: {
-                fill: colorFromRGB(sceneObject.color, sceneObject.intensity)
+                fill: RGBToCSS(wavelengthToRGB(sceneObject.wavelength), sceneObject.intensity)
             },
             onChange:(value)=>onChange({...sceneObject,
                 Cx: value.cx,

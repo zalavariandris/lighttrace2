@@ -7,7 +7,7 @@ import MirrorMaterial from "../scene/materials/MirrorMaterial.js";
 import TransparentMaterial from "../scene/materials/TransparentMaterial.js";
 import DiffuseMaterial from "../scene/materials/DiffuseMaterial.js";
 
-import {colorFromRGB, wavelengthToRGB} from "../scene/colorUtils.js"
+import {RGBToCSS, wavelengthToRGB} from "../scene/colorUtils.js"
 
 const h = React.createElement;
 
@@ -112,7 +112,7 @@ function LightInspector({
                     y: 0, 
                     width: 32, 
                     height: 32,
-                    style: {fill: colorFromRGB(sceneObject.color)}
+                    style: {fill: RGBToCSS(wavelengthToRGB(sceneObject.wavelength))}
                 })
             ),
             `${sceneObject.color}`,

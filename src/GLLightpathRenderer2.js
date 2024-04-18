@@ -1,5 +1,5 @@
 import {mat4} from 'gl-matrix'
-import {wavelengthToRGB} from "./scene/colorUtils.js"
+import {RGBToCSS, wavelengthToRGB} from "./scene/colorUtils.js"
 
 function fitViewboxInSize(viewBox, size)
 {
@@ -197,11 +197,11 @@ class GLLightpathRenderer{
                 const lastRay = lightpath.rays[lightpath.rays.length-1];
                 
                 const vColors = lightpath.rays.map(ray=>{
-                    const [R,G,B] = ray.color;
+                    const [R,G,B] = wavelengthToRGB(ray.wavelength);
                     return [R*ray.intensity,G*ray.intensity,B*ray.intensity];
                 });
 
-                const [R,G,B] = lastRay.color;
+                const [R,G,B] = wavelengthToRGB(lastRay.wavelength);
                 vColors.push([R*lastRay.intensity,G*lastRay.intensity,B*lastRay.intensity]);
                 const vPositions = lightpath.rays.map(r=>[r.origin.x, r.origin.y]);
                 vPositions.push([lastRay.origin.x+lastRay.direction.x*1000, lastRay.origin.y+lastRay.direction.y*1000]);
