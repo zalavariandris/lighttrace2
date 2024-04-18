@@ -38,10 +38,7 @@ https://zalavariandris.github.io/lighttrace2/
 - [x] support light frequency with SVGViewport
 - [x] support light frequency (in GLViewport)
 
-- [ ] use RGB color instead of a single frequency or spectral distribution (for now)
-
-
-- [ ] support light wavelength distribution (for white color for example...)
+- [x] use RGB color instead of a single frequency or spectral distribution (for now)
 
 - [ ] show manipulators when object is selected.
 

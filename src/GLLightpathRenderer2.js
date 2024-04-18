@@ -197,12 +197,12 @@ class GLLightpathRenderer{
                 const lastRay = lightpath.rays[lightpath.rays.length-1];
                 
                 const vColors = lightpath.rays.map(ray=>{
-                    const [R,G,B] = wavelengthToRGB(ray.wavelength);
-                    return [R/255*ray.intensity,G/255*ray.intensity,B/255*ray.intensity];
+                    const [R,G,B] = ray.color;
+                    return [R*ray.intensity,G*ray.intensity,B*ray.intensity];
                 });
 
-                const [R,G,B] = wavelengthToRGB(lastRay.wavelength);
-                vColors.push([R/255*lastRay.intensity,G/255*lastRay.intensity,B/255*lastRay.intensity]);
+                const [R,G,B] = lastRay.color;
+                vColors.push([R*lastRay.intensity,G*lastRay.intensity,B*lastRay.intensity]);
                 const vPositions = lightpath.rays.map(r=>[r.origin.x, r.origin.y]);
                 vPositions.push([lastRay.origin.x+lastRay.direction.x*1000, lastRay.origin.y+lastRay.direction.y*1000]);
                 

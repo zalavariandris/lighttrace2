@@ -733,7 +733,6 @@ const App = ()=>{
                                     onClick:(e)=>{
                                         e.preventDefault();
                                         setSelectionKeys([key]);
-    
                                     }
                                 }, 
                                     `${key}`

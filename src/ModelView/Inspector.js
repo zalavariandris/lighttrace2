@@ -83,12 +83,28 @@ function LightInspector({
         h("label", null, 
             h("input", {
                 type: "range", 
-                value:sceneObject.wavelength, 
-                min: 380, 
-                max: 780,
-                onChange: e=>handleWavelengthChange(e)
-            }),
-            `${sceneObject.wavelength}nm`,h("br"),
+                value:sceneObject.color[0], 
+                min: 0.1, 
+                max: 1,
+                step:0.1,
+                onChange: e=>onChange({...sceneObject, color: [e.target.value, sceneObject.color[1], sceneObject.color[2]]})
+            }),h("br"),
+            h("input", {
+                type: "range", 
+                value:sceneObject.color[1], 
+                min: 0.1, 
+                max: 1,
+                step:0.1,
+                onChange: e=>onChange({...sceneObject, color: [sceneObject.color[0], e.target.value, sceneObject.color[2]]})
+            }),h("br"),
+            h("input", {
+                type: "range", 
+                value:sceneObject.color[2], 
+                min: 0.1, 
+                max: 1,
+                step:0.1,
+                onChange: e=>onChange({...sceneObject, color: [sceneObject.color[0], sceneObject.color[1], e.target.value]})
+            }),h("br"),
             
             h("svg", {width: 32, height: 32},
                 h("rect", {
