@@ -14,7 +14,10 @@ class Light extends SceneObject
         this.color = color;
     }
 
-
+    sampleWavelength()
+    {
+        return Math.random()*300+380
+    }
 
     sampleRays()
     {

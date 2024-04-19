@@ -53,7 +53,7 @@ class PointLight extends Light
                 origin: P(this.Cx, this.Cy), 
                 direction: dir.normalized(1), 
                 intensity: this.intensity/sampleCount,
-                wavelength: Math.random()*300+380
+                wavelength: this.sampleWavelength()
             });
         })
     }

@@ -132,11 +132,8 @@ function Plot({
 }
 
 
-
-
 function BlackBody()
 {
-    
     const [temperature, setTemperature] = React.useState(5200);
 
     // Example usage:
@@ -164,7 +161,6 @@ function BlackBody()
         const sampled_wavelength_index = sample(probabilities);
         selectedCount[sampled_wavelength_index]+=1;
     }
-
 
     return h("div", {}, 
         h("section", null,
@@ -196,7 +192,6 @@ function BlackBody()
                 // maxy:500000000000000//overallRadiation/50000000000
             }),
         ),
-
     );
 }
 
