@@ -19,9 +19,20 @@ function blackbodyIntensity(wavelength, temperature) {
     return intensity;
 }
 
+function sample(discreet_probability_distributions)
+{
+    const aggregate_probability = discreet_probability_distributions.reduce((val, agg)=>{
+        return agg.length>0?[...agg, agg[agg.length-1]+val]:[agg];
+    },[]);
+
+    for(let i=0; i<aggregate_probability.length; i++){
+        
+    }
+}
+
 function blackbodyRadiationAtAllFrequencies(temperature, frequencyMin, frequencyMax, numSteps) {
     const h = 6.62607015e-34; // Planck's constant (m² kg / s)
-    const c = 299792458; // Speed of light (m/s)
+    const c = 299_792_458; // Speed of light (m/s)
     const kB = 1.380649e-23; // Boltzmann constant (m² kg / s² K)
 
     const T = temperature; // Temperature in Kelvin
@@ -29,7 +40,8 @@ function blackbodyRadiationAtAllFrequencies(temperature, frequencyMin, frequency
 
     let totalRadiance = 0;
 
-    for (let i = 0; i < numSteps; i++) {
+    for (let i = 0; i < numSteps; i++)
+    {
         const nu = frequencyMin + i * deltaNu;
         const lambda = c / nu; // Convert frequency to wavelength
 
@@ -43,7 +55,9 @@ function blackbodyRadiationAtAllFrequencies(temperature, frequencyMin, frequency
     return totalRadiance;
 }
 
-function randomFrequencyInVisibleRange(temperature) {
+function randomFrequencyInVisibleRange(temperature)
+{
+
     const frequencyMin = 4.3e14; // Minimum frequency in Hz (corresponds to 700 nm)
     const frequencyMax = 7.5e14; // Maximum frequency in Hz (corresponds to 400 nm)
 
@@ -75,30 +89,15 @@ function randomFrequencyInVisibleRange(temperature) {
     return randomFrequency;
 }
 
-
-function BlackBody({
-        y=[1,40,30,50,10], 
-        x=null,
-        minx=null,
-        maxx=null,
-        miny=0,
-        maxy=10000000
-    }={})
+function Plot({
+    y=[1,40,30,50,10], 
+    x=null,
+    minx=null,
+    maxx=null,
+    miny=null,
+    maxy=null
+}={})
 {
-    const [temperature, setTemperature] = React.useState(5200);
-
-    // Example usage:
-    const frequencyMin = 1e14; // Minimum frequency in Hz
-    const frequencyMax = 1e16; // Maximum frequency in Hz
-    const numSteps = 100; // Number of steps for numerical integration
-
-    const radiance = blackbodyRadiationAtAllFrequencies(temperature, frequencyMin, frequencyMax, numSteps);
-
-    // calc blackbody radiation in visible range
-    const visibleRange = _.range(380,780,1);
-
-    const visibleIntensity = _.range(380,780,10).map(wavelength => blackbodyIntensity(wavelength, temperature)*500000000000000000/radiance);
-    y = visibleIntensity;
 
     // x spacing
     x = x || y.map((_,i)=>i);
@@ -111,31 +110,71 @@ function BlackBody({
 
     const rangex = maxx-minx;
     const rangey = maxy-miny;
+    const points = _.zip(x,y).map(([x,y])=>{
+        return [(x-minx)/rangex*256,256-(y-miny)/rangey*256];
+    });
+
+    return h("svg", {
+        width: 256, 
+        height: 256,
+        viewBox: "0 0 256 256",
+        preserveAspectRatio:"none"
+    },
+        h("g", {
+                // transform: `scale(${256/rangex},${-256/rangey}) translate(${-minx},${-miny-rangey})`
+            },
+            h("path", {
+                d: `${points.map((p, i)=> (i>0?"L":"M")+`${p[0]},${p[1]}`).join(" ")}`,
+                stroke: "blue",
+                fill: "none",
+                strokeWidth: 1,
+                vectorEffect: "non-scaling-stroke"
+            })
+        ),
+        // YAxis
+        h("line", {
+            x1:0, y1:0, x2:0,y2:256,
+            stroke: "black",
+            strokeWidth:3
+        }),
+        h("text", {
+            x:4,y:250
+        }, `${miny}`),
+        h("text", {
+            x:4,y:20
+        }, `${maxy}`),
+        //X Axis
+        h("line", {
+            x1:0, y1:256, x2:256,y2:256,
+            stroke: "black",
+            strokeWidth:3
+        }),
+    );
+}
 
 
+function BlackBody()
+{
+    const [temperature, setTemperature] = React.useState(5200);
 
-    const points = _.zip(x,y);
+    // Example usage:
+    const c = 299_792_458; // Speed of light (m/s)
+    const frequencyMin = 1e14; // Minimum frequency in Hz
+    const frequencyMax = 1e16; // Maximum frequency in Hz
+    
+    const numSteps = 100; // Number of steps for numerical integration
+
+    const overallRadiation = blackbodyRadiationAtAllFrequencies(temperature, frequencyMin, frequencyMax, numSteps);
+
+    // calc blackbody radiation in visible range
+    const wavelengths = _.range(380-200,780+200,1)
+    const visibleIntensities = wavelengths.map(wavelength => {
+        const radianceAtFrequency = blackbodyIntensity(wavelength, temperature)
+        return radianceAtFrequency;
+    });
 
 
     return h("div", {}, 
-        h("svg", {
-            width: 256, 
-            height: 256,
-            viewBox: "0 0 256 256",
-            preserveAspectRatio:"none"
-        },
-            h("g", {
-                    transform: `scale(${256/rangex},${-256/rangey}) translate(${-minx},${-miny-rangey})`
-                },
-                h("path", {
-                    d: `${points.map((p, i)=> (i>0?"L":"M")+`${p[0]},${p[1]}`).join(" ")}`,
-                    stroke: "white",
-                    fill: "none",
-                    strokeWidth: 1,
-                    vectorEffect: "non-scaling-stroke"
-                })
-            )
-        ),
         h("label", {}, 
             "Temperature",
             h("input", {
@@ -145,7 +184,14 @@ function BlackBody({
                 onChange: (e)=>setTemperature(e.target.value)
             }),
             `${temperature}K`
-        ),
+        ),h("br"),
+        h(Plot, {
+            y: visibleIntensities,
+            x: wavelengths,
+            miny:0,
+            maxy:500000000000000//overallRadiation/50000000000
+        }),
+        `${overallRadiation}`
     );
 }
 
