@@ -1,4 +1,4 @@
-import React, {useState} from "react"
+import React, {Children, useState} from "react"
 import _ from "lodash"
 
 const h = React.createElement;
@@ -17,17 +17,6 @@ function blackbodyIntensity(wavelength, temperature) {
     const intensity = numerator / denominator;
 
     return intensity;
-}
-
-function sample(discreet_probability_distributions)
-{
-    const aggregate_probability = discreet_probability_distributions.reduce((val, agg)=>{
-        return agg.length>0?[...agg, agg[agg.length-1]+val]:[agg];
-    },[]);
-
-    for(let i=0; i<aggregate_probability.length; i++){
-        
-    }
 }
 
 function blackbodyRadiationAtAllFrequencies(temperature, frequencyMin, frequencyMax, numSteps) {
@@ -55,39 +44,30 @@ function blackbodyRadiationAtAllFrequencies(temperature, frequencyMin, frequency
     return totalRadiance;
 }
 
-function randomFrequencyInVisibleRange(temperature)
+function sample(discrete_probability_distributions)
 {
-
-    const frequencyMin = 4.3e14; // Minimum frequency in Hz (corresponds to 700 nm)
-    const frequencyMax = 7.5e14; // Maximum frequency in Hz (corresponds to 400 nm)
-
-    // Calculate total radiance over the visible range
-    const totalRadiance = blackbodyRadiationAtAllFrequencies(temperature, frequencyMin, frequencyMax, 1000);
-
-    // Generate a random value proportional to radiance
-    const randomValue = Math.random() * totalRadiance;
-
-    let currentRadiance = 0;
-    let randomFrequency = 0;
-
-    // Iterate over frequencies in the visible range
-    for (let nu = frequencyMin; nu <= frequencyMax; nu += (frequencyMax - frequencyMin) / 1000) {
-        // Calculate spectral radiance at this frequency
-        const lambda = 299792458 / nu; // Convert frequency to wavelength
-        const spectralRadiance = blackbodyIntensity(lambda * 1e9, temperature); // Convert wavelength to nm and get intensity
-
-        // Accumulate radiance
-        currentRadiance += spectralRadiance * ((frequencyMax - frequencyMin) / 1000);
-
-        // If the accumulated radiance exceeds the random value, set the frequency and break
-        if (currentRadiance >= randomValue) {
-            randomFrequency = nu;
-            break;
+    // Generate a random number between 0 and 1
+    const random_number = Math.random();
+    
+    // Initialize cumulative probability
+    let cumulative_probability = 0;
+    
+    // Iterate through the distributions
+    for (let i = 0; i < discrete_probability_distributions.length; i++) {
+        // Add the probability of the current distribution to cumulative probability
+        cumulative_probability += discrete_probability_distributions[i];
+        
+        // Check if the random number falls within the cumulative probability
+        if (random_number < cumulative_probability) {
+            // Return the value associated with the current distribution
+            return i;
         }
     }
-
-    return randomFrequency;
+    
+    // If no value has been returned yet, return the last value
+    return discrete_probability_distributions.length - 1;
 }
+
 
 function Plot({
     y=[1,40,30,50,10], 
@@ -98,7 +78,6 @@ function Plot({
     maxy=null
 }={})
 {
-
     // x spacing
     x = x || y.map((_,i)=>i);
 
@@ -153,8 +132,11 @@ function Plot({
 }
 
 
+
+
 function BlackBody()
 {
+    
     const [temperature, setTemperature] = React.useState(5200);
 
     // Example usage:
@@ -162,36 +144,59 @@ function BlackBody()
     const frequencyMin = 1e14; // Minimum frequency in Hz
     const frequencyMax = 1e16; // Maximum frequency in Hz
     
-    const numSteps = 100; // Number of steps for numerical integration
+    const numSteps = 10; // Number of steps for numerical integration
+    // const overallRadiation = blackbodyRadiationAtAllFrequencies(temperature, frequencyMin, frequencyMax, numSteps);
 
-    const overallRadiation = blackbodyRadiationAtAllFrequencies(temperature, frequencyMin, frequencyMax, numSteps);
-
-    // calc blackbody radiation in visible range
-    const wavelengths = _.range(380-200,780+200,1)
+    // Blackbody radiation in visible range
+    const wavelengths = _.range(380-200,780+200,10);
+    
     const visibleIntensities = wavelengths.map(wavelength => {
         const radianceAtFrequency = blackbodyIntensity(wavelength, temperature)
         return radianceAtFrequency;
     });
 
+    // Sample radiation
+    const sumIntensity = _.sum(visibleIntensities);
+    const selectedCount = wavelengths.map(v=>0);
+    const probabilities = visibleIntensities.map(intensity=>intensity/sumIntensity);
+    for(let i=0;i<100000;i++)
+    {
+        const sampled_wavelength_index = sample(probabilities);
+        selectedCount[sampled_wavelength_index]+=1;
+    }
+
 
     return h("div", {}, 
-        h("label", {}, 
-            "Temperature",
-            h("input", {
-                type: "range", 
-                min:1000, max: 10000,
-                value: temperature,
-                onChange: (e)=>setTemperature(e.target.value)
+        h("section", null,
+            h("h3",null, "Blackbody Radiation"),
+            h("label", {}, 
+                "Temperature",
+                h("input", {
+                    type: "range", 
+                    min:1000, max: 10000,
+                    value: temperature,
+                    onChange: (e)=>setTemperature(e.target.value)
+                }),
+                `${temperature}K`
+            ),h("br"),
+
+            h(Plot, {
+                y: visibleIntensities,
+                x: wavelengths,
+                miny:0,
+                // maxy:500000000000000//overallRadiation/50000000000
+            })
+        ),
+        h("section",null,
+            h("h3",null, "Sample Radiation"),
+            h(Plot, {
+                // y: visibleIntensities,
+                y: selectedCount,
+                miny:0,
+                // maxy:500000000000000//overallRadiation/50000000000
             }),
-            `${temperature}K`
-        ),h("br"),
-        h(Plot, {
-            y: visibleIntensities,
-            x: wavelengths,
-            miny:0,
-            maxy:500000000000000//overallRadiation/50000000000
-        }),
-        `${overallRadiation}`
+        ),
+
     );
 }
 
