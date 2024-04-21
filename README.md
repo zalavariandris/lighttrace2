@@ -49,7 +49,7 @@ https://zalavariandris.github.io/lighttrace2/
 - [ ] refactor GLViewport, and lift the rendering code to a child "entity" component.
 
 - [ ] simulate light as wave
-
+- [ ] rotate shapes
 
 
 
@@ -58,10 +58,11 @@ https://zalavariandris.github.io/lighttrace2/
 - [x] fix transparent material refrection on exit
 - [x] fix concave lens ray intersections
 - [x] fix pan and zoom with omusetools
-- [ ] cant select LaserLight
+- [x] cant select LaserLight
 - [ ] rectangle corners leaking: fix linesegment corners hitTest
 - [ ] cant use manipulators under shapes: fix svg layering and interaction
-- [ ] rotate shapes
+- [ ] Lens svg path is not conitonous (when selected its obvious)
+- [x] fix LineSegment surfaceNormal and Rectangle surface normals.
 - [x] fix selection when scene has changed -> unifiedScenemodel with selection
 - [x] fix (potential) memory leak on long simulations.
   - [x] stop refining(rendering) after a number of samples!

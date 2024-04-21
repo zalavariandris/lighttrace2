@@ -30,6 +30,7 @@ const LineView = ({
                 ...props
             }),
             h(Manipulator, {
+                className: "manip",
                 onDragStart: (e)=>console.log(e),
                 onDrag: (e)=>{
                     onChange({x2, y2,
@@ -38,6 +39,7 @@ const LineView = ({
                     });
                 },
             }, h("circle", {
+                className: "handle",
                 cx: x1, 
                 cy: y1, 
                 r:5,
@@ -51,7 +53,9 @@ const LineView = ({
                         y2: e.sceneY
                     });
                 },
+                className: "manip",
             }, h("circle", {
+                className: "handle",
                 cx: x2, 
                 cy: y2, 
                 r: 5,

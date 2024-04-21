@@ -3,6 +3,10 @@ import {SamplingMethod} from "./lights/Light.js"
 import _ from "lodash"
 import { sampleBlackbody } from "../UI/BlackBody.js";
 
+import LineSegment from "./shapes/LineSegment.js";
+
+const EPSILON=1e-6;
+
 class Lightray
 {
     constructor({origin, direction, intensity=0.5, wavelength=550}={})
@@ -263,7 +267,7 @@ function hitLineSegment(ray, shape)
         
         return [new HitPoint({
             position: hitPosition, 
-            surfaceNormal: N,
+            surfaceNormal: N.negate(),
             shape: shape
         })];
     }
@@ -280,10 +284,10 @@ function hitRectangle(ray, shape)
     const right =  shape.Cx + shape.width/2;
     
     const sides = [
-        new LineSegment({Ax:left, Ay: top, Bx:right, By:top}),
-        new LineSegment({Bx:right, By: bottom, Ax:right, Ay:top}),
-        new LineSegment({Ax:right, Ay: bottom, Bx:left, By:bottom}),
-        new LineSegment({Ax:left, Ay: bottom, Bx:left, By:top})
+        new LineSegment({Ax:right, Ay: top, Bx:left, By:top}), //top
+        new LineSegment({Bx:right, By: top, Ax:right, Ay:bottom}), //right
+        new LineSegment({Ax:left, Ay: bottom, Bx:right, By:bottom}), //bottom
+        new LineSegment({Ax:left, Ay: top, Bx:left, By:bottom}) // keft
     ];
     
     // merge all
@@ -349,7 +353,8 @@ function hitSphericalLens(ray, lens)
 }
 
 // handle materials
-function sampleTransparent(incidentRay, hitPoint, ior) {
+function sampleTransparent(incidentRay, hitPoint, ior)
+{
     const V = incidentRay.direction.normalized();
     const N = hitPoint.surfaceNormal.normalized();
 
@@ -394,42 +399,53 @@ function sampleMirror(incidentRay, hitPoint)
     });
 }
 
-function makeRaysFromLights(lights, {sampleCount, samplingMethod})
+function sampleDiffuse(incidentRay, hitPoint)
 {
-    // angles to rays
-    return lights.map((light)=>{
-        switch (light.constructor.name) {
-            case "PointLight":
-                return samplePointlight(light, {sampleCount, samplingMethod});
-                break;
-            case "LaserLight":
-                return sampleLaserLight(light, {sampleCount, samplingMethod});
-                break;
-            case "DirectionalLight":
-                return sampleDirectionalLight(light, {sampleCount, samplingMethod});
-                break;
-            default:
-                break;
-        }
-    }).flat(1);
-}
+    const V = incidentRay.direction.normalized();
+    const N = hitPoint.surfaceNormal.normalized();
 
+    const spread = 1/1;
+    const angle = Math.random()*Math.PI*spread-Math.PI*spread/2 + Math.atan2(N.y, N.x);
+
+    return new Lightray({
+        origin: hitPoint.position,
+        direction: new Vector(Math.cos(angle), Math.sin(angle)),
+        intensity: incidentRay.intensity,
+        wavelength: incidentRay.wavelength
+    });
+}
 
 function raytrace_pass(rays, [shapes, materials], {THRESHOLD=1e-6})
 {
-    // intersection
-
+    // intersection Threshold
     const THRESHOLD_SQUARED = THRESHOLD**THRESHOLD;
 
+    // I. Calculate hitData for each ray
     const hitPoints = rays.map((ray)=>{
         if(ray==null)
         {
             return [null, null, null];
         }
 
-        const raySceneHitPoints = _.zipWith(shapes, materials).map(([shape, material])=>{
-            
-            let hitPoints = shape.hitTest(ray)
+        const raySceneHitPoints = _.zip(shapes, materials).map(([shape, material])=>{
+            let hitPoints = []
+            switch (shape.constructor.name) {
+                case "Circle":
+                    hitPoints = hitCircle(ray, shape);
+                    break;
+                case "Rectangle":
+                    hitPoints = hitRectangle(ray, shape);
+                    break;
+                case "SphericalLens":
+                    hitPoints = hitSphericalLens(ray, shape);
+                    break;
+                case "LineSegment":
+                    hitPoints = hitLineSegment(ray, shape);
+                    break;
+                default:
+                    break;
+            }
+            // hitPoints = shape.hitTest(ray)
             
             // filter raypoints within distance threshold
             hitPoints = hitPoints.filter(hitPoint=>{
@@ -442,7 +458,7 @@ function raytrace_pass(rays, [shapes, materials], {THRESHOLD=1e-6})
             })
         }).flat(1);
 
-        // return closest intersection of ray
+        // reduce hitData for each ray to the closest hitPoint
         return raySceneHitPoints.reduce(([A, shapeA, materialA],[B, shapeB, materialB])=>{
             if(A===null) return [B, shapeB, materialB];
             if(B===null) return [A, shapeA, materialA];
@@ -450,7 +466,7 @@ function raytrace_pass(rays, [shapes, materials], {THRESHOLD=1e-6})
         }, [null, null, null]);
     });
 
-    // secondary rays
+    // II. Generate secondary rays from hitData
     const secondaries = hitPoints.map(([hitPoint, shape, material], i)=>{
         if(hitPoint==null)
         {
@@ -467,16 +483,20 @@ function raytrace_pass(rays, [shapes, materials], {THRESHOLD=1e-6})
             // const IsInside = incidentDirection.dotProduct(hitPoint.surfaceNormal)>0;
             // const hitNormal = IsInside?surfaceNormal.negate():surfaceNormal;
 
-            return sampleTransparent(incidentRay, hitPoint, 1.44);
-
-            const bounceDirection = material.sample(incidentDirection, surfaceNormal);
-            const bounceIntensity = incidentRay.intensity*1.0;
-            return new Lightray({
-                origin: hitPoint.position, 
-                direction: bounceDirection, 
-                intensity: bounceIntensity,
-                wavelength: incidentRay.wavelength
-            });
+            switch (material.constructor.name) {
+                case "TransparentMaterial":
+                    return sampleTransparent(incidentRay, hitPoint, 1.49);
+                    break;
+                case "MirrorMaterial":
+                    return sampleMirror(incidentRay, hitPoint);
+                    break;
+                case "DiffuseMaterial":
+                    return sampleDiffuse(incidentRay, hitPoint);
+                    break;
+                default:
+                    return incidentRay;
+                    break;
+            }
         }
     });
 
@@ -486,7 +506,21 @@ function raytrace_pass(rays, [shapes, materials], {THRESHOLD=1e-6})
 function raytrace(lights, [shapes, materials], {maxBounce=3, samplingMethod="Uniform", lightSamples=9}={})
 {
     // initial rays
-    const initialLightrays = makeRaysFromLights(lights, {sampleCount: lightSamples, samplingMethod:samplingMethod});
+    const initialLightrays = lights.map((light)=>{
+        switch (light.constructor.name) {
+            case "PointLight":
+                return samplePointlight(light, {sampleCount:lightSamples, samplingMethod});
+                break;
+            case "LaserLight":
+                return sampleLaserLight(light, {sampleCount:lightSamples, samplingMethod});
+                break;
+            case "DirectionalLight":
+                return sampleDirectionalLight(light, {sampleCount:lightSamples, samplingMethod});
+                break;
+            default:
+                break;
+        }
+    }).flat(1);
 
     // raytrace steps
     let currentRays = initialLightrays;
@@ -511,8 +545,6 @@ function raytrace(lights, [shapes, materials], {maxBounce=3, samplingMethod="Uni
             }
         }
 
-        // allRays = [...allRays, ...secondaries]
-        // allHitPoints = [...allHitPoints, ...hitPoints]
         currentRays = secondaries;
     }
 
@@ -525,5 +557,5 @@ function raytrace(lights, [shapes, materials], {maxBounce=3, samplingMethod="Uni
     )
 }
 
-export {makeRaysFromLights, raytrace, SamplingMethod}
+export {raytrace, SamplingMethod}
 export {Lightray, HitPoint}

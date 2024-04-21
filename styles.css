@@ -120,10 +120,10 @@ svg .shape{
 }
 
 /* MANIPULATORS */
-.sceneItem:not(:hover) .autohide{
+/* .sceneItem:not(:hover) .autohide{
     opacity: 0.0;
     transition: opacity 1.3s ease-in;
-}
+} */
 
 .sceneItem.TransparentMaterial>.shape{
     stroke: hsla(180, 100%, 50%, 0.37);
@@ -135,6 +135,10 @@ svg .shape{
 .sceneItem.MirrorMaterial>.shape{
     stroke: white
     /* stroke: white; */
+}
+
+.sceneItem:not(.selected) .manip{
+    display: none;
 }
 
 .manip .handle{

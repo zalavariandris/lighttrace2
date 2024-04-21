@@ -23,7 +23,7 @@ import MirrorMaterial from "./scene/materials/MirrorMaterial.js";
 
 import {RGBToCSS, wavelengthToRGB, temperatureToRGB} from "./scene/colorUtils.js"
 
-import {Lightray, makeRaysFromLights, raytrace, SamplingMethod} from "./scene/raytrace.js"
+import {Lightray, raytrace, SamplingMethod} from "./scene/raytrace.js"
 import Inspector from "./ModelView/Inspector.js"
 
 import Manipulator from "./UI/Manipulator.js";
@@ -121,7 +121,7 @@ const App = ()=>{
             Cx:360, 
             Cy:200, 
             radius: 50, 
-            material: "mirror"
+            material: "mirror",
         }),
         "rect prism": new Rectangle({
             Cx: 500,
@@ -153,9 +153,22 @@ const App = ()=>{
             centerThickness: 50, 
             material: "glass", 
         }),
-        "sun": new DirectionalLight({Cx:50, Cy: 250, width: 80, angle: 0}),
-        "lamp": new PointLight({Cx: 50, Cy: 150, angle:0}),
-        "laser": new LaserLight({Cx:150, Cy: 150, angle: 0.5}),
+        "sun": new DirectionalLight({
+            Cx:50, 
+            Cy: 250, 
+            width: 80, 
+            angle: 0
+        }),
+        "lamp": new PointLight({
+            Cx: 50, 
+            Cy: 150, 
+            angle:0
+        }),
+        "laser": new LaserLight({
+            Cx:150, 
+            Cy: 150, 
+            angle: 0.5
+        }),
     });
 
     const updateSceneObject = (key, newAttributes)=>{
@@ -279,7 +292,6 @@ const App = ()=>{
                 e.preventDefault();
                 var svg  = e.target.closest("SVG");
                 let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
-
 
                 const [beginSceneX, beginSceneY] = [loc.x, loc.y];
     
@@ -647,6 +659,7 @@ const App = ()=>{
                             y: sceneObject.Cy,
                             angle: sceneObject.angle,
                             width: sceneObject.width,
+                            showManipulators: selectionKeys.hasOwnProperty(key),
                             onChange:(value)=>updateSceneObject(key, {...sceneObject,
                                 Cx: value.x,
                                 Cy: value.y,

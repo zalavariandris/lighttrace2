@@ -65,9 +65,10 @@ const SphericalLensView = ({
                 onChange({cx, cy, diameter, edgeThickness,
                     centerThickness: (e.sceneX-cx)*2
                 });
-            }
+            },
+            className:"manip"
         }, h('circle', {
-            className: "autohide",
+            className: "handle",
             cx:cx+centerThickness/2, 
             cy:cy,
             r: 5,
@@ -75,6 +76,7 @@ const SphericalLensView = ({
             style: {cursor: "ew-resize"}
         })),
         h(Manipulator, {
+            className:"manip",
             onDrag: e=>{
                 const newEdgeThickness = Math.max(1, (e.sceneX-cx)*2);
                 onChange({cx, cy,
@@ -84,7 +86,7 @@ const SphericalLensView = ({
                 });
             }
         }, h('circle', {
-            className: "autohide",
+            className: "handle",
             cx:cx+edgeThickness/2, 
             cy:cy+diameter/2,
             r: 5,
