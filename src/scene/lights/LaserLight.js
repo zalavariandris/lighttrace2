@@ -26,20 +26,6 @@ class LaserLight extends Light
     {
         return `LaserLight(${this.Cx}, ${this.Cy}, ${this.angle.toFixed()})`
     }
-
-    sampleRays({sampleCount=9, samplingMethod=SamplingMethod.Uniform}={}){
-        const x = Math.cos(this.angle);
-        const y = Math.sin(this.angle);
-        const dir = V(x,y);
-        return Array.from({length: sampleCount}).map((_, i)=>{
-            return new Lightray({
-                origin: P(this.Cx, this.Cy), 
-                direction: dir.normalized(1), 
-                intensity: this.intensity/sampleCount,
-                color: this.color
-            });
-        })
-    }
 }
 
 export default LaserLight

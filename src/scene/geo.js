@@ -107,6 +107,14 @@ class Vector
     {
         return new Vector(this.x * value, this.y * value);
     }
+
+    reflect(normal) {
+        const dotProduct = this.dotProduct(normal);
+        return new Vector(
+            this.x - 2 * dotProduct * normal.x,
+            this.y - 2 * dotProduct * normal.y
+        );
+    }
     
     normalized(value=1.0)
     {

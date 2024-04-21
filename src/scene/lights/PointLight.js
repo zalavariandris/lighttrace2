@@ -25,38 +25,6 @@ class PointLight extends Light
     {
         return `Pointlight (${this.Cx}, ${this.Cy} ${this.angle.toFixed(0)})`
     }
-
-    sampleRays({sampleCount, samplingMethod=SamplingMethod.Uniform}={})
-    {
-        
-        function makeUniformAngles(N, angleOffset=0)
-        {
-            return Array.from({length:N},(v,k)=>{
-                return k/N*Math.PI*2+angleOffset
-            });
-        }
-
-        function makeRandomAngles(N, angleOffset=0)
-        {
-            return Array.from({length:N},(v,k)=>{
-                return Math.random()*Math.PI*2+angleOffset;
-            });
-        }
-
-        const angles = samplingMethod==SamplingMethod.Random ? makeRandomAngles(sampleCount, this.angle) : makeUniformAngles(sampleCount, this.angle)
-        return angles.map((a)=>{
-            const x = Math.cos(a);
-            const y = Math.sin(a);
-            const dir = V(x,y);
-
-            return new Lightray({
-                origin: P(this.Cx, this.Cy), 
-                direction: dir.normalized(1), 
-                intensity: this.intensity/sampleCount,
-                wavelength: this.sampleWavelength()
-            });
-        })
-    }
 }
 
 export default PointLight

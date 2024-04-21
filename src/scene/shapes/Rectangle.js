@@ -60,10 +60,10 @@ class Rectangle extends Shape
         const bottomLeft = new Point(left, bottom)
         
         const sides = [
-            new LineSegment({Ax:left, Ay: top, Bx:right, By:top}),
-            new LineSegment({Bx:right, By: bottom, Ax:right, Ay:top}),
-            new LineSegment({Ax:right, Ay: bottom, Bx:left, By:bottom}),
-            new LineSegment({Ax:left, Ay: bottom, Bx:left, By:top}),
+            new LineSegment({Ax:left, Ay: top, Bx:right, By:top, material: this.material}),
+            new LineSegment({Bx:right, By: bottom, Ax:right, Ay:top, material: this.material}),
+            new LineSegment({Ax:right, Ay: bottom, Bx:left, By:bottom, material: this.material}),
+            new LineSegment({Ax:left, Ay: bottom, Bx:left, By:top, material: this.material}),
         ];
         
         let hits = []

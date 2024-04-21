@@ -4,6 +4,7 @@ import {P, V} from "../geo.js"
 import { HitPoint } from "../raytrace.js";
 const EPSILON=1e-6;
 
+
 class Circle extends Shape
 {
     constructor({Cx, Cy, material, radius})
@@ -12,7 +13,7 @@ class Circle extends Shape
         this.radius=radius;
     }
 
-    static fromThreePoints(S, M, E) {
+    static fromThreePoints(S, M, E, {material}={}) {
 
         var Sx = S.x;
         var Sy = S.y;
@@ -37,12 +38,12 @@ class Circle extends Shape
         return new Circle({
             Cx:Cx, 
             Cy:Cy, 
-            material:null, 
+            material:material, 
             radius: Math.hypot(Cx - Sx, Cy - Sy)
         })
       }
 
-      static fromRadiusAndTwoPoints(r, A, B, flip=false) {
+      static fromRadiusAndTwoPoints(r, A, B, flip=false, {material}) {
             const [Ax, Ay] = [A.x, A.y];
             const [Bx, By] = [B.x, B.y];
 
@@ -60,7 +61,7 @@ class Circle extends Shape
             return new Circle({
                 Cx: Cx, 
                 Cy: Cy, 
-                material: null, 
+                material: material, 
                 radius: r
             });
     }

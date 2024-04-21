@@ -27,9 +27,16 @@ import {Lightray, makeRaysFromLights, raytrace, SamplingMethod} from "./scene/ra
 import Inspector from "./ModelView/Inspector.js"
 
 import Manipulator from "./UI/Manipulator.js";
-import ShapeModelView from "./ModelView/ShapeModelView.js";
 
 import BlackBody from "./UI/BlackBody.js";
+
+import CircleView from "./UI/SVGEditableElements/CircleView.js";
+import DirectionalLightView from "./UI/SVGEditableElements/DirectionalLightView.js"
+import LaserLightView from "./UI/SVGEditableElements/LaserLightView.js"
+import PointLightView from "./UI/SVGEditableElements/PointLightView.js";
+import RectView from "./UI/SVGEditableElements/RectView.js"
+import LineView from "./UI/SVGEditableElements/LineView.js"
+import SphericalLensView from "./UI/SVGEditableElements/SphericalLensView.js"
 
 const h = React.createElement;
 
@@ -563,14 +570,145 @@ const App = ()=>{
         },
             h("g", null, 
                 Object.entries(scene).map( ([key, sceneObject])=>{
-                    return h(ShapeModelView, {
+                    const props = {
                         className: selectionKeys.indexOf(key)>=0 ? "sceneItem selected" : "sceneItem not-selected",
-                        sceneObject, 
-                        onChange: (value)=>updateSceneObject(key, value),
                         onClick: e=>{
                             setSelectionKeys([key])
                         }
-                    })
+                    };
+                    if(sceneObject instanceof Circle)
+                    {
+                        return h(CircleView, {
+                            cx:sceneObject.Cx, 
+                            cy:sceneObject.Cy, 
+                            r:sceneObject.radius,  
+                            onChange:(svgElement)=>updateSceneObject(key, {
+                                Cx:svgElement.cx, 
+                                Cy:svgElement.cy, 
+                                radius:svgElement.r
+                            }),
+                            ...props
+                        });
+                    }
+                    else if(sceneObject instanceof Rectangle)
+                    {
+                        return h(RectView, {
+                            x:sceneObject.Cx-sceneObject.width/2, 
+                            y:sceneObject.Cy-sceneObject.height/2, 
+                            width:sceneObject.width, 
+                            height:sceneObject.height, 
+                            onChange:value=>updateSceneObject(key, {
+                                Cx: value.x+value.width/2, 
+                                Cy: value.y+value.height/2, 
+                                width: value.width, 
+                                height: value.height
+                            }),
+                            ...props
+                        });
+                    }
+                    else if(sceneObject instanceof LineSegment)
+                    {
+                        return h(LineView, {
+                            x1:sceneObject.Ax, 
+                            y1:sceneObject.Ay, 
+                            x2:sceneObject.Bx, 
+                            y2:sceneObject.By, 
+                            onChange:(svgElement)=>updateSceneObject(key, {...sceneObject,
+                                Ax:svgElement.x1, 
+                                Ay:svgElement.y1, 
+                                Bx:svgElement.x2, 
+                                By:svgElement.y2
+                            }),
+                            ...props
+                        });
+                    }
+                    else if(sceneObject instanceof SphericalLens)
+                    {
+                        return h(SphericalLensView, {
+                            cx: sceneObject.Cx, 
+                            cy: sceneObject.Cy,
+                            diameter: sceneObject.diameter,
+                            edgeThickness: sceneObject.edgeThickness,
+                            centerThickness: sceneObject.centerThickness,
+                            onChange:(value)=>updateSceneObject(key, {...sceneObject,
+                                Cx: value.cx,
+                                Cy: value.cy,
+                                diameter: value.diameter,
+                                edgeThickness: value.edgeThickness,
+                                centerThickness: value.centerThickness
+                            }),
+                            ...props
+                        });
+                    }
+                    else if(sceneObject instanceof DirectionalLight)
+                    {
+                        return h(DirectionalLightView, {
+                            x: sceneObject.Cx, 
+                            y: sceneObject.Cy,
+                            angle: sceneObject.angle,
+                            width: sceneObject.width,
+                            onChange:(value)=>updateSceneObject(key, {...sceneObject,
+                                Cx: value.x,
+                                Cy: value.y,
+                                angle: value.angle,
+                                width: value.width
+                            }),
+                            style: {
+                                fill: RGBToCSS(wavelengthToRGB(sceneObject.wavelength), sceneObject.intensity)
+                            },
+                            ...props
+                        });
+                    }
+
+                    else if(sceneObject instanceof LaserLight)
+                    {
+                        return h(LaserLightView, {
+                            x: sceneObject.Cx, 
+                            y: sceneObject.Cy,
+                            intensity: sceneObject.intensity,
+                            wavelength: sceneObject.wavelength,
+                            angle: sceneObject.angle,
+                            onChange:(value)=>updateSceneObject(key, {...sceneObject,
+                                Cx: value.x,
+                                Cy: value.y,
+                                angle: value.angle,
+                                wavelength: value.wavelength,
+                                intensity: value.intensity
+                            }),
+                            style: {
+                                fill: RGBToCSS(wavelengthToRGB(sceneObject.wavelength), sceneObject.intensity)
+                            },
+                            ...props
+                        });
+
+                    }
+                    else if(sceneObject instanceof PointLight)
+                    {
+                        return h(PointLightView, {
+                            cx: sceneObject.Cx,
+                            cy: sceneObject.Cy,
+                            angle: sceneObject.angle,
+                            style: {
+                                fill: RGBToCSS(wavelengthToRGB(sceneObject.wavelength), sceneObject.intensity)
+                            },
+                            onChange:(value)=>updateSceneObject(key, {...sceneObject,
+                                Cx: value.cx,
+                                Cy: value.cy,
+                                angle: value.angle
+                            }),
+                            ...props
+                        });
+                    }
+
+                    else
+                    {
+                        return h("text", {
+                            className: "shape",
+                            x: sceneObject.Cx,
+                            y: sceneObject.Cy,
+                            ...props
+                        }, `shape`)
+                    }
                 })
             )
         ),

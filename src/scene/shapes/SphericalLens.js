@@ -38,7 +38,7 @@ class SphericalLens extends Shape
         const topLeft =    P(Cx-this.edgeThickness/2,   Cy+this.diameter/2)
         const middleLeft = P(Cx-this.centerThickness/2, Cy+0              )
         const bottomLeft = P(Cx-this.edgeThickness/2,   Cy-this.diameter/2)
-        return Circle.fromThreePoints(topLeft, middleLeft, bottomLeft)
+        return Circle.fromThreePoints(topLeft, middleLeft, bottomLeft, {material: this.material})
     }
 
     getRightCircle()
@@ -48,7 +48,7 @@ class SphericalLens extends Shape
         const topRight =    P(Cx+this.edgeThickness/2,   Cy+this.diameter/2)
         const middleRight = P(Cx+this.centerThickness/2, Cy+0               )
         const bottomRight = P(Cx+this.edgeThickness/2,   Cy-this.diameter/2)
-        return Circle.fromThreePoints(topRight, middleRight, bottomRight)
+        return Circle.fromThreePoints(topRight, middleRight, bottomRight, {materia:this.material})
     }
 
 
@@ -64,6 +64,8 @@ class SphericalLens extends Shape
             right: Cx+Math.max(this.edgeThickness/2, this.centerThickness/2)
         };
     }
+
+
 
     hitTest(ray)
     {
