@@ -37,6 +37,8 @@ import PointLightView from "./UI/SVGEditableElements/PointLightView.js";
 import RectView from "./UI/SVGEditableElements/RectView.js"
 import LineView from "./UI/SVGEditableElements/LineView.js"
 import SphericalLensView from "./UI/SVGEditableElements/SphericalLensView.js"
+import { Provider } from 'react-redux'
+import store from './store.js'
 
 const h = React.createElement;
 
@@ -92,8 +94,8 @@ function cursorPoint(svg, {x, y}){
     return {x:scenePoint.x, y:scenePoint.y};
 }
 
-const App = ()=>{
 
+const App = ()=>{
     /* STATE and Actions */
     const [raytraceOptions, setRaytraceOptions] = React.useState({
         maxBounce: 9,
@@ -188,25 +190,6 @@ const App = ()=>{
         });
     };
 
-    /* MATERIALS */
-    const [materials, setMaterials] = React.useState({
-        "glass": new TransparentMaterial(),
-        "diffuse": new DiffuseMaterial(),
-        "mirror": new MirrorMaterial()
-    })
-
-    /* SELECTION */
-    const [selectionKeys, setSelectionKeys] = useState([])
-
-    const getSelectedSceneObject=()=>
-    {
-        const key = selectionKeys[0];
-        if(key && scene.hasOwnProperty(key)){
-            return scene[key]
-        }
-        return null;
-    }
-
     const addSceneObject = (key, newSceneObject)=>{
         setScene(scene=>{
             return {...scene, [key]: newSceneObject}
@@ -220,18 +203,28 @@ const App = ()=>{
         setSelectionKeys([]);
     }
 
+    /* SELECTION */
+    const [selectionKeys, setSelectionKeys] = useState([])
+
+    const getSelectedSceneObject=()=>
+    {
+        const key = selectionKeys[0];
+        if(key && scene.hasOwnProperty(key)){
+            return scene[key]
+        }
+        return null;
+    }
+
     // 
     function calcRaytraceUniform()
     {
         const lights = Object.values(scene).filter(obj=>obj instanceof Light);
         const shapes = Object.values(scene).filter(obj=>obj instanceof Shape);
-        const shapesMaterials = shapes.map(s=>materials[s.material]);
 
-        const newRaytraceResults = raytrace(lights, [shapes, shapesMaterials], {
+        const newRaytraceResults = raytrace(lights, [shapes, shapes.map(shape=>shape.material)], {
             maxBounce:raytraceOptions.maxBounce, 
             samplingMethod: raytraceOptions.samplingMethod, 
             lightSamples: raytraceOptions.lightSample
-            
         });
 
         return newRaytraceResults
@@ -241,9 +234,8 @@ const App = ()=>{
     {
         const lights = Object.values(scene).filter(obj=>obj instanceof Light);
         const shapes = Object.values(scene).filter(obj=>obj instanceof Shape);
-        const shapesMaterials = shapes.map(s=>materials[s.material]);
 
-        const newRaytraceResults = raytrace(lights, [shapes, shapesMaterials], {
+        const newRaytraceResults = raytrace(lights, [shapes, shapes.map(shape=>shape.material)], {
             maxBounce:raytraceOptions.maxBounce, 
             samplingMethod: SamplingMethod.Random, 
             lightSamples: raytraceOptions.lightSamples
@@ -545,363 +537,364 @@ const App = ()=>{
 
     const svgRef = React.useRef(null)
 
-    return h("div", null,
-        displayOptions.glPaint?h(GLViewport,  {
-            className:"viewport",
-            viewBox: viewBox,
-            scene: scene,
-            paths: randomRaytraceResults.lightPaths,
-            onReset: ()=>{
-                // TODO: this is temporary. rendering and raytacing should be seperated from this component.
-                setCurrentSampleStep(0); setAnimate(true);
-            }
-        }):null,
-        h(SVGViewport, {
-            className:"viewport",
-            viewBox: viewBox,
-            onViewChange: viewBox=>setViewBox(viewBox),
-            rays: displayOptions.lightrays?uniformRaytraceResults.lightrays:[],
-            hitPoints: displayOptions.hitPoints?uniformRaytraceResults.hitPoints:[], 
-            paths:displayOptions.lightPaths?uniformRaytraceResults.lightPaths:[], 
-            ref: svgRef,
-            onMouseDown: e=>{
-                console.log("handle mousedown")
-                if(currentToolName)
-                {
-                    handleMouseDownTools(e);
-                    e.preventDefault();
+    return h(Provider, {store},
+            h("div", null,
+            displayOptions.glPaint?h(GLViewport,  {
+                className:"viewport",
+                viewBox: viewBox,
+                scene: scene,
+                paths: randomRaytraceResults.lightPaths,
+                onReset: ()=>{
+                    // TODO: this is temporary. rendering and raytacing should be seperated from this component.
+                    setCurrentSampleStep(0); setAnimate(true);
                 }
-            },
-            onClick:(e)=>{
-                // TODO check the actual element not just the type
-                if(e.target.tagName=="svg")
-                {
-                    setSelectionKeys([]);
-                }
-            }
-        },
-            h("g", null, 
-                Object.entries(scene).map( ([key, sceneObject])=>{
-                    const props = {
-                        className: selectionKeys.indexOf(key)>=0 ? "sceneItem selected" : "sceneItem not-selected",
-                        onClick: e=>{
-                            setSelectionKeys([key])
-                        }
-                    };
-                    if(sceneObject instanceof Circle)
+            }):null,
+            h(SVGViewport, {
+                className:"viewport",
+                viewBox: viewBox,
+                onViewChange: viewBox=>setViewBox(viewBox),
+                rays: displayOptions.lightrays?uniformRaytraceResults.lightrays:[],
+                hitPoints: displayOptions.hitPoints?uniformRaytraceResults.hitPoints:[], 
+                paths:displayOptions.lightPaths?uniformRaytraceResults.lightPaths:[], 
+                ref: svgRef,
+                onMouseDown: e=>{
+                    console.log("handle mousedown")
+                    if(currentToolName)
                     {
-                        return h(CircleView, {
-                            cx:sceneObject.Cx, 
-                            cy:sceneObject.Cy, 
-                            r:sceneObject.radius,  
-                            onChange:(svgElement)=>updateSceneObject(key, {
-                                Cx:svgElement.cx, 
-                                Cy:svgElement.cy, 
-                                radius:svgElement.r
-                            }),
-                            ...props
-                        });
-                    }
-                    else if(sceneObject instanceof Rectangle)
-                    {
-                        return h(RectView, {
-                            x:sceneObject.Cx-sceneObject.width/2, 
-                            y:sceneObject.Cy-sceneObject.height/2, 
-                            width:sceneObject.width, 
-                            height:sceneObject.height, 
-                            onChange:value=>updateSceneObject(key, {
-                                Cx: value.x+value.width/2, 
-                                Cy: value.y+value.height/2, 
-                                width: value.width, 
-                                height: value.height
-                            }),
-                            ...props
-                        });
-                    }
-                    else if(sceneObject instanceof LineSegment)
-                    {
-                        return h(LineView, {
-                            x1:sceneObject.Ax, 
-                            y1:sceneObject.Ay, 
-                            x2:sceneObject.Bx, 
-                            y2:sceneObject.By, 
-                            onChange:(svgElement)=>updateSceneObject(key, {...sceneObject,
-                                Ax:svgElement.x1, 
-                                Ay:svgElement.y1, 
-                                Bx:svgElement.x2, 
-                                By:svgElement.y2
-                            }),
-                            ...props
-                        });
-                    }
-                    else if(sceneObject instanceof SphericalLens)
-                    {
-                        return h(SphericalLensView, {
-                            cx: sceneObject.Cx, 
-                            cy: sceneObject.Cy,
-                            diameter: sceneObject.diameter,
-                            edgeThickness: sceneObject.edgeThickness,
-                            centerThickness: sceneObject.centerThickness,
-                            onChange:(value)=>updateSceneObject(key, {...sceneObject,
-                                Cx: value.cx,
-                                Cy: value.cy,
-                                diameter: value.diameter,
-                                edgeThickness: value.edgeThickness,
-                                centerThickness: value.centerThickness
-                            }),
-                            ...props
-                        });
-                    }
-                    else if(sceneObject instanceof DirectionalLight)
-                    {
-                        return h(DirectionalLightView, {
-                            x: sceneObject.Cx, 
-                            y: sceneObject.Cy,
-                            angle: sceneObject.angle,
-                            width: sceneObject.width,
-                            showManipulators: selectionKeys.hasOwnProperty(key),
-                            onChange:(value)=>updateSceneObject(key, {...sceneObject,
-                                Cx: value.x,
-                                Cy: value.y,
-                                angle: value.angle,
-                                width: value.width
-                            }),
-                            style: {
-                                fill: RGBToCSS(temperatureToRGB(sceneObject.temperature), sceneObject.intensity)
-                            },
-                            ...props
-                        });
-                    }
-
-                    else if(sceneObject instanceof LaserLight)
-                    {
-                        return h(LaserLightView, {
-                            x: sceneObject.Cx, 
-                            y: sceneObject.Cy,
-                            intensity: sceneObject.intensity,
-                            wavelength: sceneObject.wavelength,
-                            angle: sceneObject.angle,
-                            onChange:(value)=>updateSceneObject(key, {...sceneObject,
-                                Cx: value.x,
-                                Cy: value.y,
-                                angle: value.angle,
-                                wavelength: value.wavelength,
-                                intensity: value.intensity
-                            }),
-                            style: {
-                                fill: RGBToCSS(temperatureToRGB(sceneObject.temperature), sceneObject.intensity)
-                            },
-                            ...props
-                        });
-
-                    }
-                    else if(sceneObject instanceof PointLight)
-                    {
-                        return h(PointLightView, {
-                            cx: sceneObject.Cx,
-                            cy: sceneObject.Cy,
-                            angle: sceneObject.angle,
-                            style: {
-                                fill: RGBToCSS(temperatureToRGB(sceneObject.temperature), sceneObject.intensity)
-                            },
-                            onChange:(value)=>updateSceneObject(key, {...sceneObject,
-                                Cx: value.cx,
-                                Cy: value.cy,
-                                angle: value.angle
-                            }),
-                            ...props
-                        });
-                    }
-
-                    else
-                    {
-                        return h("text", {
-                            className: "shape",
-                            x: sceneObject.Cx,
-                            y: sceneObject.Cy,
-                            ...props
-                        }, `shape`)
-                    }
-                })
-            )
-        ),
-
-        h("div", {
-            id: "toolbar", className: "panel"
-        },
-            h("button", {
-                onClick: e=>setCurrentToolName(null),
-                className: currentToolName == null ? "active" : null
-            }, h("i", {className: "fa-solid fa-arrow-pointer"})),
-
-            mouseTools.map(tool=>{
-                return h("button", {
-                    onClick: e=>setCurrentToolName(tool.name),
-                    title: tool.name,
-                    className: currentToolName == tool.name ? "active" : null
-                }, tool.name)
-            }),
-            h("hr"),
-            h("button", {
-                onClick: (e)=>{
-                    const selectedObject = getSelectedSceneObject();
-                    if(selectedObject)
-                    {
-                        removeSceneObject(selectedObject)
+                        handleMouseDownTools(e);
+                        e.preventDefault();
                     }
                 },
-                className: "danger"
-            }, "delete")
-        ),
+                onClick:(e)=>{
+                    // TODO check the actual element not just the type
+                    if(e.target.tagName=="svg")
+                    {
+                        setSelectionKeys([]);
+                    }
+                }
+            },
+                h("g", null, 
+                    Object.entries(scene).map( ([key, sceneObject])=>{
+                        const props = {
+                            className: selectionKeys.indexOf(key)>=0 ? "sceneItem selected" : "sceneItem not-selected",
+                            onClick: e=>{
+                                setSelectionKeys([key])
+                            }
+                        };
+                        if(sceneObject instanceof Circle)
+                        {
+                            return h(CircleView, {
+                                cx:sceneObject.Cx, 
+                                cy:sceneObject.Cy, 
+                                r:sceneObject.radius,  
+                                onChange:(svgElement)=>updateSceneObject(key, {
+                                    Cx:svgElement.cx, 
+                                    Cy:svgElement.cy, 
+                                    radius:svgElement.r
+                                }),
+                                ...props
+                            });
+                        }
+                        else if(sceneObject instanceof Rectangle)
+                        {
+                            return h(RectView, {
+                                x:sceneObject.Cx-sceneObject.width/2, 
+                                y:sceneObject.Cy-sceneObject.height/2, 
+                                width:sceneObject.width, 
+                                height:sceneObject.height, 
+                                onChange:value=>updateSceneObject(key, {
+                                    Cx: value.x+value.width/2, 
+                                    Cy: value.y+value.height/2, 
+                                    width: value.width, 
+                                    height: value.height
+                                }),
+                                ...props
+                            });
+                        }
+                        else if(sceneObject instanceof LineSegment)
+                        {
+                            return h(LineView, {
+                                x1:sceneObject.Ax, 
+                                y1:sceneObject.Ay, 
+                                x2:sceneObject.Bx, 
+                                y2:sceneObject.By, 
+                                onChange:(svgElement)=>updateSceneObject(key, {...sceneObject,
+                                    Ax:svgElement.x1, 
+                                    Ay:svgElement.y1, 
+                                    Bx:svgElement.x2, 
+                                    By:svgElement.y2
+                                }),
+                                ...props
+                            });
+                        }
+                        else if(sceneObject instanceof SphericalLens)
+                        {
+                            return h(SphericalLensView, {
+                                cx: sceneObject.Cx, 
+                                cy: sceneObject.Cy,
+                                diameter: sceneObject.diameter,
+                                edgeThickness: sceneObject.edgeThickness,
+                                centerThickness: sceneObject.centerThickness,
+                                onChange:(value)=>updateSceneObject(key, {...sceneObject,
+                                    Cx: value.cx,
+                                    Cy: value.cy,
+                                    diameter: value.diameter,
+                                    edgeThickness: value.edgeThickness,
+                                    centerThickness: value.centerThickness
+                                }),
+                                ...props
+                            });
+                        }
+                        else if(sceneObject instanceof DirectionalLight)
+                        {
+                            return h(DirectionalLightView, {
+                                x: sceneObject.Cx, 
+                                y: sceneObject.Cy,
+                                angle: sceneObject.angle,
+                                width: sceneObject.width,
+                                onChange:(value)=>updateSceneObject(key, {...sceneObject,
+                                    Cx: value.x,
+                                    Cy: value.y,
+                                    angle: value.angle,
+                                    width: value.width
+                                }),
+                                style: {
+                                    fill: RGBToCSS(temperatureToRGB(sceneObject.temperature), sceneObject.intensity)
+                                },
+                                ...props
+                            });
+                        }
 
-        h("div", {
-            className: "panel", 
-            style: {right: "0px", top:"0px", position: "fixed"}
-        }, 
+                        else if(sceneObject instanceof LaserLight)
+                        {
+                            return h(LaserLightView, {
+                                x: sceneObject.Cx, 
+                                y: sceneObject.Cy,
+                                intensity: sceneObject.intensity,
+                                wavelength: sceneObject.wavelength,
+                                angle: sceneObject.angle,
+                                onChange:(value)=>updateSceneObject(key, {...sceneObject,
+                                    Cx: value.x,
+                                    Cy: value.y,
+                                    angle: value.angle,
+                                    wavelength: value.wavelength,
+                                    intensity: value.intensity
+                                }),
+                                style: {
+                                    fill: RGBToCSS(temperatureToRGB(sceneObject.temperature), sceneObject.intensity)
+                                },
+                                ...props
+                            });
 
-            h(BlackBody, null),
-            h(Inspector, {
-                sceneObject: selectionKeys.length>0?scene[selectionKeys[0]]:null,
-                onChange: (newSceneObject)=>updateSceneObject(selectionKeys[0], newSceneObject)
-            }),
-            h(Collapsable, {title: h("h2", null, "Raytrace otions"), defaultOpen:false},
-                h("form", null,
-                    h("label", null, `Sampling steps: ${currentSampleStep}`,
-                        "/",
-                        h("input", {
-                            type: "number", 
-                            value: raytraceOptions.maxSampleSteps,
-                            onChange:e=>updateRaytraceOptions({maxSampleSteps: e.target.value})
-                        }),
-                        h("progress", {value: currentSampleStep, max:raytraceOptions.maxSampleSteps}),
-                    ),
+                        }
+                        else if(sceneObject instanceof PointLight)
+                        {
+                            return h(PointLightView, {
+                                cx: sceneObject.Cx,
+                                cy: sceneObject.Cy,
+                                angle: sceneObject.angle,
+                                style: {
+                                    fill: RGBToCSS(temperatureToRGB(sceneObject.temperature), sceneObject.intensity)
+                                },
+                                onChange:(value)=>updateSceneObject(key, {...sceneObject,
+                                    Cx: value.cx,
+                                    Cy: value.cy,
+                                    angle: value.angle
+                                }),
+                                ...props
+                            });
+                        }
 
-                    h("label", null, "Light samples",
-                        h("input", {
-                            type:"range", 
-                            name: "light samples",
-                            value:raytraceOptions.lightSamples, 
-                            onInput:(e)=>updateRaytraceOptions({lightSamples: e.target.value}),
-                            min: 1, 
-                            max:200
-                        }),
-                        `${raytraceOptions.lightSamples}`
-                    ),
-                    h("label", null, "Max bounce",
-                        h("input", {
-                            type:"range", 
-                            name: "max bounce",
-                            value:raytraceOptions.maxBounce, 
-                            onInput:(e)=>updateRaytraceOptions({maxBounce: e.target.value}), 
-                            min: 0, 
-                            max:16
-                        }),
-                        `${raytraceOptions.maxBounce}`
-                    ),
-                    h("label", null, "Sampling method",
-                        h("label", null, 
-                            SamplingMethod.Random,
+                        else
+                        {
+                            return h("text", {
+                                className: "shape",
+                                x: sceneObject.Cx,
+                                y: sceneObject.Cy,
+                                ...props
+                            }, `shape`)
+                        }
+                    })
+                )
+            ),
+
+            h("div", {
+                id: "toolbar", className: "panel"
+            },
+                h("button", {
+                    onClick: e=>setCurrentToolName(null),
+                    className: currentToolName == null ? "active" : null
+                }, h("i", {className: "fa-solid fa-arrow-pointer"})),
+
+                mouseTools.map(tool=>{
+                    return h("button", {
+                        onClick: e=>setCurrentToolName(tool.name),
+                        title: tool.name,
+                        className: currentToolName == tool.name ? "active" : null
+                    }, tool.name)
+                }),
+                h("hr"),
+                h("button", {
+                    onClick: (e)=>{
+                        const selectedObject = getSelectedSceneObject();
+                        if(selectedObject)
+                        {
+                            removeSceneObject(selectedObject)
+                        }
+                    },
+                    className: "danger"
+                }, "delete")
+            ),
+
+            h("div", {
+                className: "panel", 
+                style: {right: "0px", top:"0px", position: "fixed"}
+            }, 
+
+                h(BlackBody, null),
+                h(Inspector, {
+                    sceneObject: selectionKeys.length>0?scene[selectionKeys[0]]:null,
+                    onChange: (newSceneObject)=>updateSceneObject(selectionKeys[0], newSceneObject)
+                }),
+                h(Collapsable, {title: h("h2", null, "Raytrace otions"), defaultOpen:false},
+                    h("form", null,
+                        h("label", null, `Sampling steps: ${currentSampleStep}`,
+                            "/",
                             h("input", {
-                                name: "sampling", 
-                                checked: raytraceOptions.samplingMethod == SamplingMethod.Random,
-                                onChange: (e)=>updateRaytraceOptions({samplingMethod: e.target.value}),
-                                id:SamplingMethod.Random, 
-                                type:"radio", 
-                                value:SamplingMethod.Random
-                            })
+                                type: "number", 
+                                value: raytraceOptions.maxSampleSteps,
+                                onChange:e=>updateRaytraceOptions({maxSampleSteps: e.target.value})
+                            }),
+                            h("progress", {value: currentSampleStep, max:raytraceOptions.maxSampleSteps}),
                         ),
-                        h("label", null, 
-                            SamplingMethod.Uniform,
+
+                        h("label", null, "Light samples",
                             h("input", {
-                                name: "sampling",
-                                checked: raytraceOptions.samplingMethod == SamplingMethod.Uniform,
-                                onChange: (e)=>updateRaytraceOptions({samplingMethod: e.target.value}),
-                                id: SamplingMethod.Uniform,
-                                type:"radio",
-                                value:SamplingMethod.Uniform
-                            })
+                                type:"range", 
+                                name: "light samples",
+                                value:raytraceOptions.lightSamples, 
+                                onInput:(e)=>updateRaytraceOptions({lightSamples: e.target.value}),
+                                min: 1, 
+                                max:200
+                            }),
+                            `${raytraceOptions.lightSamples}`
+                        ),
+                        h("label", null, "Max bounce",
+                            h("input", {
+                                type:"range", 
+                                name: "max bounce",
+                                value:raytraceOptions.maxBounce, 
+                                onInput:(e)=>updateRaytraceOptions({maxBounce: e.target.value}), 
+                                min: 0, 
+                                max:16
+                            }),
+                            `${raytraceOptions.maxBounce}`
+                        ),
+                        h("label", null, "Sampling method",
+                            h("label", null, 
+                                SamplingMethod.Random,
+                                h("input", {
+                                    name: "sampling", 
+                                    checked: raytraceOptions.samplingMethod == SamplingMethod.Random,
+                                    onChange: (e)=>updateRaytraceOptions({samplingMethod: e.target.value}),
+                                    id:SamplingMethod.Random, 
+                                    type:"radio", 
+                                    value:SamplingMethod.Random
+                                })
+                            ),
+                            h("label", null, 
+                                SamplingMethod.Uniform,
+                                h("input", {
+                                    name: "sampling",
+                                    checked: raytraceOptions.samplingMethod == SamplingMethod.Uniform,
+                                    onChange: (e)=>updateRaytraceOptions({samplingMethod: e.target.value}),
+                                    id: SamplingMethod.Uniform,
+                                    type:"radio",
+                                    value:SamplingMethod.Uniform
+                                })
+                            )
                         )
+                    ),
+                ),
+                h(Collapsable, {title: h("h2", null, "Display options"), defaultOpen:false},
+                    h("form", {
+                        onSubmit: (e)=>{
+                            //TODO: use form submission istead of each input change to update settings
+                            e.preventDefault();
+                            const formData = new FormData(e.target)
+                            const newData = Object.fromEntries(myFormData.entries());
+                            setDisplayOptions(newData);
+                            return false;
+                        }
+                    }, 
+                        h("label", null,
+                            h("input", {
+                                name:"rays",
+                                checked: displayOptions.lightrays, 
+                                onChange: (e)=>updateDisplayOptions({lightrays: e.target.checked}),
+                                type: "checkbox"
+                            }),
+                            "show lightrays"
+                        ),
+                        h("br"),
+                        h("label", null,
+                            h("input", {
+                                name:"hitPoints",
+                                checked: displayOptions.hitPoints, 
+                                onChange: (e)=>updateDisplayOptions({hitPoints: e.target.checked}),
+                                type: "checkbox"
+                            }),
+                            "show hitpoints"
+                        ),
+                        h("br"),
+                        h("label", null,
+                            h("input", {
+                                name:"lightPaths",
+                                checked: displayOptions.lightPaths, 
+                                onChange: (e)=>updateDisplayOptions({lightPaths: e.target.checked}),
+                                type: "checkbox"
+                            }),
+                            "show lightpaths"
+                        ),
+                        h("label", null,
+                        h("input", {
+                            name:"glPaint",
+                            checked: displayOptions.glPaint, 
+                            onChange: (e)=>updateDisplayOptions({glPaint: e.target.checked}),
+                            type: "checkbox"
+                        }),
+                        "show gl paint"
+                    )
+                    
                     )
                 ),
-            ),
-            h(Collapsable, {title: h("h2", null, "Display options"), defaultOpen:false},
-                h("form", {
-                    onSubmit: (e)=>{
-                        //TODO: use form submission istead of each input change to update settings
-                        e.preventDefault();
-                        const formData = new FormData(e.target)
-                        const newData = Object.fromEntries(myFormData.entries());
-                        setDisplayOptions(newData);
-                        return false;
-                    }
-                }, 
-                    h("label", null,
-                        h("input", {
-                            name:"rays",
-                            checked: displayOptions.lightrays, 
-                            onChange: (e)=>updateDisplayOptions({lightrays: e.target.checked}),
-                            type: "checkbox"
-                        }),
-                        "show lightrays"
-                    ),
-                    h("br"),
-                    h("label", null,
-                        h("input", {
-                            name:"hitPoints",
-                            checked: displayOptions.hitPoints, 
-                            onChange: (e)=>updateDisplayOptions({hitPoints: e.target.checked}),
-                            type: "checkbox"
-                        }),
-                        "show hitpoints"
-                    ),
-                    h("br"),
-                    h("label", null,
-                        h("input", {
-                            name:"lightPaths",
-                            checked: displayOptions.lightPaths, 
-                            onChange: (e)=>updateDisplayOptions({lightPaths: e.target.checked}),
-                            type: "checkbox"
-                        }),
-                        "show lightpaths"
-                    ),
-                    h("label", null,
-                    h("input", {
-                        name:"glPaint",
-                        checked: displayOptions.glPaint, 
-                        onChange: (e)=>updateDisplayOptions({glPaint: e.target.checked}),
-                        type: "checkbox"
-                    }),
-                    "show gl paint"
-                )
-                
-                )
-            ),
-            h(Collapsable, {title: h("h2", null, "Outliner"), defaultOpen: false},
-                    h("ul", null, 
-                        ...Object.entries(scene).map(([key, sceneObject])=>{
-                            return h("li", {
-                                style: {fontStyle: selectionKeys.indexOf(key)>=0?"italic":"normal"}
-                            }, 
-                                h("a", {
-                                    href:"#", 
-                                    onClick:(e)=>{
-                                        e.preventDefault();
-                                        setSelectionKeys([key]);
-                                    }
+                h(Collapsable, {title: h("h2", null, "Outliner"), defaultOpen: false},
+                        h("ul", null, 
+                            ...Object.entries(scene).map(([key, sceneObject])=>{
+                                return h("li", {
+                                    style: {fontStyle: selectionKeys.indexOf(key)>=0?"italic":"normal"}
                                 }, 
-                                    `${key}`
+                                    h("a", {
+                                        href:"#", 
+                                        onClick:(e)=>{
+                                            e.preventDefault();
+                                            setSelectionKeys([key]);
+                                        }
+                                    }, 
+                                        `${key}`
+                                    )
                                 )
-                            )
-                        })
-                    )
-            ),
-            h(Collapsable, {title: h("h2", null, "Raytrace shapes"), defaultOpen:false},
-                h(RaytraceStats, {
-                    scene: Object.values(scene), 
-                    lightRays: uniformRaytraceResults.rays, 
-                    hitPoints: uniformRaytraceResults.hitPoints, 
-                    lightPaths: uniformRaytraceResults.lightPaths
-                })
+                            })
+                        )
+                ),
+                h(Collapsable, {title: h("h2", null, "Raytrace shapes"), defaultOpen:false},
+                    h(RaytraceStats, {
+                        scene: Object.values(scene), 
+                        lightRays: uniformRaytraceResults.rays, 
+                        hitPoints: uniformRaytraceResults.hitPoints, 
+                        lightPaths: uniformRaytraceResults.lightPaths
+                    })
+                )
             )
         )
     )

@@ -39,7 +39,9 @@ https://zalavariandris.github.io/lighttrace2/
 - [x] support light frequency (in GLViewport)
 - [x] use RGB color instead of a single frequency or spectral distribution (for now)
 - [x] spectral color support
-- [ ] show manipulators when object is selected.
+- [x] show manipulators only when object is selected.
+
+
 - [ ] persistent display options
 - [ ] ? refactor _sceneObject_ to ECS entity
 - [ ] hitTest and raytrace on the GPU
@@ -47,6 +49,9 @@ https://zalavariandris.github.io/lighttrace2/
 
 - [x] add new drag handler to SVGViewport
 - [ ] refactor GLViewport, and lift the rendering code to a child "entity" component.
+- [ ] use redux for UI View models?
+- [ ] refactor UI to reusable widgets and ModelViews. Like SVGViewport and SVG Panel?
+
 
 - [ ] simulate light as wave
 - [ ] rotate shapes

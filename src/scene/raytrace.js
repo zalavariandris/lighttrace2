@@ -483,14 +483,14 @@ function raytrace_pass(rays, [shapes, materials], {THRESHOLD=1e-6})
             // const IsInside = incidentDirection.dotProduct(hitPoint.surfaceNormal)>0;
             // const hitNormal = IsInside?surfaceNormal.negate():surfaceNormal;
 
-            switch (material.constructor.name) {
-                case "TransparentMaterial":
+            switch (material) {
+                case "glass":
                     return sampleTransparent(incidentRay, hitPoint, 1.49);
                     break;
-                case "MirrorMaterial":
+                case "mirror":
                     return sampleMirror(incidentRay, hitPoint);
                     break;
-                case "DiffuseMaterial":
+                case "diffuse":
                     return sampleDiffuse(incidentRay, hitPoint);
                     break;
                 default:
