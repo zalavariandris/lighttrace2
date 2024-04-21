@@ -6,8 +6,8 @@ import { Lightray } from "../raytrace.js";
 
 class PointLight extends Light
 {
-    constructor({Cx, Cy, angle=0, intensity=1.0, color=[1,1,1]}={}){
-        super({Cx, Cy, intensity, color})
+    constructor({Cx, Cy, angle=0, intensity=1.0, temperature=6500}={}){
+        super({Cx, Cy, intensity, temperature})
         this.angle = angle
     }
 
@@ -17,7 +17,7 @@ class PointLight extends Light
             Cx: this.Cx, 
             Cy: this.Cy, 
             angle: this.angle,
-            color: this.color
+            temperature: this.temperature
         });
     }
 

@@ -1,6 +1,7 @@
 import {Point, Vector, P, V} from "./geo.js"
 import {SamplingMethod} from "./lights/Light.js"
 import _ from "lodash"
+import { sampleBlackbody } from "../UI/BlackBody.js";
 
 class Lightray
 {
@@ -82,6 +83,7 @@ class RaytraceResults
 // handle light sampling
 function sampleWavelength(temperature)
 {
+    return sampleBlackbody(temperature, 10);
     return Math.random()*300+380
 }
 
@@ -112,7 +114,7 @@ function samplePointlight(light, {sampleCount, samplingMethod})
             origin: P(light.Cx, light.Cy), 
             direction: dir.normalized(1), 
             intensity: light.intensity/sampleCount,
-            wavelength: sampleWavelength(light.temperature, light.intensity)
+            wavelength: sampleWavelength(light.temperature)
         });
     })
 }
@@ -151,7 +153,7 @@ function sampleDirectionalLight(light, {sampleCount, samplingMethod})
             origin: P(origin.x,origin.y), 
             direction: dir, 
             intensity: light.intensity/sampleCount,
-            color: light.color
+            wavelength: sampleWavelength(light.temperature)
         });
     });
 }
@@ -380,6 +382,16 @@ function sampleTransparent(incidentRay, hitPoint, ior) {
             wavelength: incidentRay.wavelength
         });
     }
+}
+
+function sampleMirror(incidentRay, hitPoint)
+{
+    return new Lightray({
+        origin: hitPoint.position,
+        direction: incidentRay.direction.reflect(hitPoint.surfaceNormal),
+        intensity: incidentRay.intensity,
+        wavelength: incidentRay.wavelength
+    });
 }
 
 function makeRaysFromLights(lights, {sampleCount, samplingMethod})

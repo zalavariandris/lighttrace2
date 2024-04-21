@@ -5,9 +5,9 @@ import { Lightray } from "../raytrace.js";
 
 class DirectionalLight extends Light
 {
-    constructor({Cx, Cy, width, angle=0, intensity=1.0, color=[1,1,1]}={})
+    constructor({Cx, Cy, width, angle=0, intensity=1.0, temperature=6500}={})
     {
-        super({Cx, Cy, intensity, color})
+        super({Cx, Cy, intensity, temperature})
         this.width = width;
         this.angle = angle;
     }
@@ -20,7 +20,7 @@ class DirectionalLight extends Light
             width: this.width, 
             angle: this.angle,
             intensity: this.intensity,
-            color: this.color
+            temperature: this.temperature
         })
     }
 

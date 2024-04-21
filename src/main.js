@@ -21,7 +21,7 @@ import DiffuseMaterial from "./scene/materials/DiffuseMaterial.js";
 import TransparentMaterial from "./scene/materials/TransparentMaterial.js";
 import MirrorMaterial from "./scene/materials/MirrorMaterial.js";
 
-import {RGBToCSS, wavelengthToRGB} from "./scene/colorUtils.js"
+import {RGBToCSS, wavelengthToRGB, temperatureToRGB} from "./scene/colorUtils.js"
 
 import {Lightray, makeRaysFromLights, raytrace, SamplingMethod} from "./scene/raytrace.js"
 import Inspector from "./ModelView/Inspector.js"
@@ -654,7 +654,7 @@ const App = ()=>{
                                 width: value.width
                             }),
                             style: {
-                                fill: RGBToCSS(wavelengthToRGB(sceneObject.wavelength), sceneObject.intensity)
+                                fill: RGBToCSS(temperatureToRGB(sceneObject.temperature), sceneObject.intensity)
                             },
                             ...props
                         });
@@ -676,7 +676,7 @@ const App = ()=>{
                                 intensity: value.intensity
                             }),
                             style: {
-                                fill: RGBToCSS(wavelengthToRGB(sceneObject.wavelength), sceneObject.intensity)
+                                fill: RGBToCSS(temperatureToRGB(sceneObject.temperature), sceneObject.intensity)
                             },
                             ...props
                         });
@@ -689,7 +689,7 @@ const App = ()=>{
                             cy: sceneObject.Cy,
                             angle: sceneObject.angle,
                             style: {
-                                fill: RGBToCSS(wavelengthToRGB(sceneObject.wavelength), sceneObject.intensity)
+                                fill: RGBToCSS(temperatureToRGB(sceneObject.temperature), sceneObject.intensity)
                             },
                             onChange:(value)=>updateSceneObject(key, {...sceneObject,
                                 Cx: value.cx,

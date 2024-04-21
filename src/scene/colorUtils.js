@@ -61,8 +61,56 @@ function wavelengthToRGB(wavelength)
     return [red,green,blue];
 }
 
+/**
+ * Estimates the RGB color from a given temperature in Kelvin, in a linear color space within the [0,1] range.
+ * This function uses the approximation of the Planckian locus in RGB color space.
+ * 
+ * @param {number} temperature - The temperature in Kelvin.
+ * @returns {Array} An array containing the linear RGB values.
+ */
+function temperatureToRGB(temperature) {
+    // Normalize temperature
+    const kelvin = temperature / 100.0;
+    let red, green, blue;
+
+    // Calculate red
+    if (kelvin <= 66.0) {
+        red = 1.0;
+    } else {
+        red = kelvin - 60.0;
+        red = 329.698727446 * Math.pow(red, -0.1332047592);
+        red = red / 255.0;
+    }
+
+    // Calculate green
+    if (kelvin <= 66.0) {
+        green = kelvin;
+        green = 99.4708025861 * Math.log(green) - 161.1195681661;
+        green = green / 255.0;
+    } else {
+        green = kelvin - 60.0;
+        green = 288.1221695283 * Math.pow(green, -0.0755148492);
+        green = green / 255.0;
+    }
+
+    // Calculate blue
+    if (kelvin >= 66.0) {
+        blue = 1.0;
+    } else if (kelvin <= 19.0) {
+        blue = 0.0;
+    } else {
+        blue = kelvin - 10.0;
+        blue = 138.5177312231 * Math.log(blue) - 305.0447927307;
+        blue = blue / 255.0;
+    }
+
+    return [red, green, blue];
+}
+
+
+
 function RGBToCSS([R,G,B], opacity=1.0){
     return `rgba(${(R*255).toFixed(0)}, ${(G*255).toFixed(0)}, ${(B*255).toFixed(0)}, ${opacity})`;
 }
 
-export {RGBToCSS, wavelengthToRGB}
+export {RGBToCSS, wavelengthToRGB, temperatureToRGB}

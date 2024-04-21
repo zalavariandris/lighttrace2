@@ -7,11 +7,11 @@ const SamplingMethod = Object.freeze({
 
 class Light extends SceneObject
 {
-    constructor({Cx, Cy, intensity, color=[1,1,1]}={})
+    constructor({Cx, Cy, intensity, temperature=6500}={})
     {
         super({Cx, Cy});
         this.intensity = intensity;
-        this.color = color;
+        this.temperature = temperature;
     }
 }
 

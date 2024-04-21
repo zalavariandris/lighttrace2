@@ -7,7 +7,7 @@ import MirrorMaterial from "../scene/materials/MirrorMaterial.js";
 import TransparentMaterial from "../scene/materials/TransparentMaterial.js";
 import DiffuseMaterial from "../scene/materials/DiffuseMaterial.js";
 
-import {RGBToCSS, wavelengthToRGB} from "../scene/colorUtils.js"
+import {RGBToCSS, temperatureToRGB, wavelengthToRGB} from "../scene/colorUtils.js"
 
 const h = React.createElement;
 
@@ -83,28 +83,12 @@ function LightInspector({
         h("label", null, 
             h("input", {
                 type: "range", 
-                value:sceneObject.color[0], 
-                min: 0.1, 
-                max: 1,
-                step:0.1,
-                onChange: e=>onChange({...sceneObject, color: [e.target.value, sceneObject.color[1], sceneObject.color[2]]})
-            }),h("br"),
-            h("input", {
-                type: "range", 
-                value:sceneObject.color[1], 
-                min: 0.1, 
-                max: 1,
-                step:0.1,
-                onChange: e=>onChange({...sceneObject, color: [sceneObject.color[0], e.target.value, sceneObject.color[2]]})
-            }),h("br"),
-            h("input", {
-                type: "range", 
-                value:sceneObject.color[2], 
-                min: 0.1, 
-                max: 1,
-                step:0.1,
-                onChange: e=>onChange({...sceneObject, color: [sceneObject.color[0], sceneObject.color[1], e.target.value]})
-            }),h("br"),
+                value:sceneObject.temperature, 
+                min: 1000, 
+                max: 10000,
+                step:10,
+                onChange: e=>onChange({...sceneObject, temperature: e.target.value})
+            }),
             
             h("svg", {width: 32, height: 32},
                 h("rect", {
@@ -112,10 +96,10 @@ function LightInspector({
                     y: 0, 
                     width: 32, 
                     height: 32,
-                    style: {fill: RGBToCSS(wavelengthToRGB(sceneObject.wavelength))}
+                    style: {fill: RGBToCSS(temperatureToRGB(sceneObject.temperature))}
                 })
             ),
-            `${sceneObject.color}`,
+            `${sceneObject.temperature}K`,
         ),
         h("label", null, 
             `intensity ${sceneObject.intensity}`,
