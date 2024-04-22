@@ -1,40 +1,41 @@
 import { configureStore } from '@reduxjs/toolkit'
 import { createSlice } from '@reduxjs/toolkit'
 
-const initialState = {
-    entities: {},
-    status: null
-}
+const displayOptionsSlice = createSlice({
+  name: 'displayOptions',
+  initialState: {
+    showLightrays: true,
+    showHitPoints: true,
+    showLightPaths: true,
+    showGL: false,
+  },
+  reducers: {
+    setShowLightrays: (state, action) => {
+      state.showLightrays = action.payload;
+    },
+    setShowHitPoints: (state, action) => {
+      state.showHitPoints = action.payload;
+    },
+    setShowLightPaths: (state, action) => {
+      state.showLightPaths = action.payload;
+    },
+    setShowGL: (state, action) => {
+      state.showGL = action.payload;
+    },
+  },
+});
 
-const entitiesSlice = createSlice({
-    name: 'entities',
-    initialState,
-    reducers: {
-        entityAdded(state, action)
-        {
-            // ✅ This "mutating" code is okay inside of createSlice!
-            state.entities.push(action.payload)
-        },
-
-        entityUpdated(state, action)
-        {
-            Object.assign(state.entities[action.payload.key], action.payload.attributes)
-        },
-
-        entityRemoved(state, action)
-        {
-            return {
-                ...state,
-                status: 'loading'
-            }
-        }
-    }
-})
-
-export const { entityAdded, entityUpdated, entityRemoved } = entitiesSlice.actions
+export const { 
+  setShowLightrays, 
+  setShowHitPoints, 
+  setShowLightPaths, 
+  setShowGL 
+} = displayOptionsSlice.actions;
 
 export default configureStore({
-    reducer: {
-        scene: entitiesSlice.reducer
-    },
+  reducer: {
+    displayOptions: displayOptionsSlice.reducer,
+  },
 });
+
+

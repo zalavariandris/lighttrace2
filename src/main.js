@@ -1,5 +1,5 @@
 import ReactDOM from "react-dom"
-import React, {useState} from "react"
+import React, {createContext, useState, useReducer, useSyncExternalStore} from "react"
 
 import SVGViewport from "./UI/SVGViewport.js";
 import GLViewport from "./ModelView/GLViewport.js";
@@ -37,8 +37,9 @@ import PointLightView from "./UI/SVGEditableElements/PointLightView.js";
 import RectView from "./UI/SVGEditableElements/RectView.js"
 import LineView from "./UI/SVGEditableElements/LineView.js"
 import SphericalLensView from "./UI/SVGEditableElements/SphericalLensView.js"
-import { Provider } from 'react-redux'
-import store from './store.js'
+import { Provider, useStore} from 'react-redux'
+// import store from './store.js'
+
 
 const h = React.createElement;
 
@@ -95,6 +96,24 @@ function cursorPoint(svg, {x, y}){
 }
 
 
+function displayReducer(state, action)
+{
+    switch (action.type) {
+        case 'lightraysVisibilityChanged':
+            return {...state,  lightrays: action.visible};
+        case 'hitpointsVisibilityChanged':
+            return {...state,  hitpoints: action.visible};
+        case 'lightpathsVisibilityChanged':
+            return {...state,  lightpaths: action.visible};
+        case 'glrenderChanged':
+            return {...state,  glPaint: action.visible};
+    
+        default:
+            throw Error('Unknown action.');
+    }
+}
+
+
 const App = ()=>{
     /* STATE and Actions */
     const [raytraceOptions, setRaytraceOptions] = React.useState({
@@ -106,12 +125,15 @@ const App = ()=>{
     const updateRaytraceOptions = options=>setRaytraceOptions({...raytraceOptions, ...options});
 
     const [displayOptions, setDisplayOptions] = React.useState({
-        lightrays: false,
-        hitPoints: true,
-        lightPaths: false,
+        lightrays: true,
+        hitpoints: true,
+        lightpaths: true,
         glPaint: true
     });
     const updateDisplayOptions = options => setDisplayOptions({...displayOptions, ...options});
+
+
+    const [displayState, dispatchDisplay] = useReducer(displayReducer, {age: 43});
 
     const [viewBox, setViewBox] = React.useState({
         x:0,y:0,w:512,h:512
@@ -537,8 +559,7 @@ const App = ()=>{
 
     const svgRef = React.useRef(null)
 
-    return h(Provider, {store},
-            h("div", null,
+    return h("div", null,
             displayOptions.glPaint?h(GLViewport,  {
                 className:"viewport",
                 viewBox: viewBox,
@@ -554,8 +575,8 @@ const App = ()=>{
                 viewBox: viewBox,
                 onViewChange: viewBox=>setViewBox(viewBox),
                 rays: displayOptions.lightrays?uniformRaytraceResults.lightrays:[],
-                hitPoints: displayOptions.hitPoints?uniformRaytraceResults.hitPoints:[], 
-                paths:displayOptions.lightPaths?uniformRaytraceResults.lightPaths:[], 
+                hitPoints: displayOptions.hitpoints?uniformRaytraceResults.hitPoints:[], 
+                paths:displayOptions.lightpaths?uniformRaytraceResults.lightPaths:[], 
                 ref: svgRef,
                 onMouseDown: e=>{
                     console.log("handle mousedown")
@@ -821,17 +842,17 @@ const App = ()=>{
                         onSubmit: (e)=>{
                             //TODO: use form submission istead of each input change to update settings
                             e.preventDefault();
-                            const formData = new FormData(e.target)
-                            const newData = Object.fromEntries(myFormData.entries());
-                            setDisplayOptions(newData);
-                            return false;
+                            // const formData = new FormData(e.target)
+                            // const newData = Object.fromEntries(myFormData.entries());
+                            // setDisplayOptions(newData);
+                            // return false;
                         }
                     }, 
                         h("label", null,
                             h("input", {
                                 name:"rays",
                                 checked: displayOptions.lightrays, 
-                                onChange: (e)=>updateDisplayOptions({lightrays: e.target.checked}),
+                                onChange: (e)=>displayModel.setShowLightrays(e.target.checked),
                                 type: "checkbox"
                             }),
                             "show lightrays"
@@ -840,8 +861,8 @@ const App = ()=>{
                         h("label", null,
                             h("input", {
                                 name:"hitPoints",
-                                checked: displayOptions.hitPoints, 
-                                onChange: (e)=>updateDisplayOptions({hitPoints: e.target.checked}),
+                                checked: displayOptions.hitpoints, 
+                                onChange: (e)=>updateDisplayOptions({hitpoints: e.target.checked}),
                                 type: "checkbox"
                             }),
                             "show hitpoints"
@@ -850,8 +871,8 @@ const App = ()=>{
                         h("label", null,
                             h("input", {
                                 name:"lightPaths",
-                                checked: displayOptions.lightPaths, 
-                                onChange: (e)=>updateDisplayOptions({lightPaths: e.target.checked}),
+                                checked: displayOptions.lightpaths, 
+                                onChange: (e)=>updateDisplayOptions({lightpaths: e.target.checked}),
                                 type: "checkbox"
                             }),
                             "show lightpaths"
@@ -897,7 +918,6 @@ const App = ()=>{
                 )
             )
         )
-    )
 }
 
 const rdom = ReactDOM.createRoot(document.getElementById('root'));
