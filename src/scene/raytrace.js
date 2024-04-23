@@ -1,5 +1,5 @@
 import {Point, Vector, P, V} from "./geo.js"
-import {SamplingMethod} from "./lights/Light.js"
+import { SamplingMethod } from "../stores/raytraceOptionsStore.js";
 import _ from "lodash"
 import { sampleBlackbody } from "../UI/BlackBody.js";
 

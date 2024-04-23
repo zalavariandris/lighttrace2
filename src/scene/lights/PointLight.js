@@ -1,7 +1,4 @@
 import Light from "./Light.js"
-import { SamplingMethod } from "./Light.js";
-import {P, V} from "../geo.js"
-import { Lightray } from "../raytrace.js";
 
 
 class PointLight extends Light
