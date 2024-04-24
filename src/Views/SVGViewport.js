@@ -17,7 +17,6 @@ import RectView from "../UI/SVGEditableElements/RectView.js"
 import LineView from "../UI/SVGEditableElements/LineView.js"
 import SphericalLensView from "../UI/SVGEditableElements/SphericalLensView.js"
 
-
 import sceneStore from "../stores/sceneStore.js";
 import selectionStore from "../stores/selectionStore.js";
 
@@ -131,8 +130,6 @@ function SVGViewport({
         window.addEventListener('mousemove', onmousemove);
         window.addEventListener('mouseup', onmouseup, {once: true});
     }
-
-
 
     return h('svg', {
             xmlns:"http://www.w3.org/2000/svg",

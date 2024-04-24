@@ -31,19 +31,84 @@ import mouseToolsStore from "./stores/mouseToolsStore.js"
 import DisplayOptionsForm from "./Views/DisplayOptionsForm.js";
 import RaytraceOptionsForm from "./Views/RaytraceOptionsForm.js";
 import Outliner from "./Views/Outliner.js"
+import {circleTool, rectangleTool, lineTool, lensTool, pointlightTool, directionalLightTool, laserTool} from "./Views/MouseTools.js";
 
 /*MAIN*/ 
 const h = React.createElement;
 
-const generateId = ()=>{
-    return Math.random().toString(32).substring(2, 9);
+const mouseTools = {
+    "circle": circleTool, 
+    "rectangle": rectangleTool, 
+    "line": lineTool, 
+    "lens": lensTool,
+    "pointlight": pointlightTool, 
+    "directional": directionalLightTool, 
+    "laser": laserTool
 };
 
-function cursorPoint(svg, {x, y}){
-    let pt = svg.createSVGPoint();
-    pt.x =x; pt.y = y;
-    const scenePoint = pt.matrixTransform(svg.getScreenCTM().inverse());
-    return {x:scenePoint.x, y:scenePoint.y};
+function Toolbar()
+{
+    const currentToolName = React.useSyncExternalStore(mouseToolsStore.subscribe, mouseToolsStore.getSnapshot);
+
+
+    /*TOOLBAR*/
+    return h("div", {
+        id: "toolbar", className: "panel"
+    },
+        h("button", {
+            onClick: e=>mouseToolsStore.setCurrentTool(toolName),
+            className: currentToolName == null ? "active" : null
+        }, h("i", {className: "fa-solid fa-arrow-pointer"})),
+
+        Object.keys(mouseTools).map(toolName=>{
+            return h("button", {
+                onClick: e=>mouseToolsStore.setCurrentTool(toolName),
+                title: toolName,
+                className: currentToolName == toolName ? "active" : null
+            }, `${toolName}`)
+        }),
+        h("hr"),
+        h("button", {
+            onClick: (e)=>{
+                if(selectionKeys.length<1){
+                    return;
+                }
+                const selectedObjectKey = selectionKeys[0];
+                if(selectedObjectKey)
+                {
+                    sceneStore.removeSceneObject(selectedObjectKey)
+                }
+            },
+            className: "danger"
+        }, "delete")
+    )
+}
+
+function Sidebar()
+{
+    const scene = useSyncExternalStore(sceneStore.subscribe, sceneStore.getSnapshot);
+    const selectionKeys = useSyncExternalStore(selectionStore.subscribe, selectionStore.getSnapshot);
+
+    return h("div", {
+        className: "panel", 
+        style: {right: "0px", top:"0px", position: "fixed"}
+    }, 
+        
+        // h(BlackBody, null),
+        h(Inspector, {
+            sceneObject: selectionKeys.length>0?scene[selectionKeys[0]]:null,
+            onChange: (newSceneObject)=>sceneStore.updateSceneObject(selectionKeys[0], newSceneObject)
+        }),
+        h(Collapsable, {title: h("h2", null, "Raytrace otions"), defaultOpen:false},
+            h(RaytraceOptionsForm)
+        ),
+        h(Collapsable, {title: h("h2", null, "Display options"), defaultOpen:false},
+            h(DisplayOptionsForm)
+        ),
+        h(Collapsable, {title: h("h2", null, "Outliner"), defaultOpen: false},
+            h(Outliner)
+        )
+    )
 }
 
 const App = ()=>{
@@ -123,262 +188,12 @@ const App = ()=>{
     /* MOUSE TOOLS */
     const currentToolName = React.useSyncExternalStore(mouseToolsStore.subscribe, mouseToolsStore.getSnapshot);
 
-    const mouseTools = [
-        {
-            name: "circle",
-            handler: e => {
-                e.preventDefault();
-                var svg  = e.target.closest("SVG");
-                let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
-
-                const [beginSceneX, beginSceneY] = [loc.x, loc.y];
-    
-                // create circle
-                const key = generateId();
-                sceneStore.addSceneObject(key, new Circle({
-                    Cx: beginSceneX, 
-                    Cy: beginSceneY, 
-                    radius:5, 
-                    material: "glass"
-                }));
-
-                const handleDrag = e=>{
-                    // var svg  = e.target.closest("SVG");
-                    let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
-                    const [sceneX, sceneY] = [loc.x, loc.y]
-                    const [dx, dy] = [sceneX-beginSceneX, sceneY-beginSceneY];
-    
-                    sceneStore.updateSceneObject(key, {
-                        radius: Math.hypot(dx, dy)
-                    });
-                }
-    
-                window.addEventListener("mousemove", handleDrag);
-                window.addEventListener("mouseup", e=>{
-                    window.removeEventListener("mousemove", handleDrag);
-                    mouseToolsStore.setCurrentTool(null)
-                }, {once: true});
-            }
-        },
-        {
-            name: "rectangle",
-            handler: e => {
-                e.preventDefault();
-                var svg  = e.target.closest("SVG");
-                let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
-                const [beginSceneX, beginSceneY] = [loc.x, loc.y];
-    
-                const key = generateId();
-    
-                sceneStore.addSceneObject(key, new Rectangle({
-                    Cx: beginSceneX, 
-                    Cy: beginSceneY, 
-                    width: 5,
-                    height: 5,
-                    material: "diffuse"
-                }));
-
-                const handleDrag = e=>{
-                    // var svg  = e.target.closest("SVG");
-                    let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
-                    const [sceneX, sceneY] = [loc.x, loc.y]
-                    const [dx, dy] = [sceneX-beginSceneX, sceneY-beginSceneY];
-    
-                    sceneStore.updateSceneObject(key, {
-                        width: Math.abs(dx)*2,
-                        height: Math.abs(dy)*2
-                    });
-                }
-    
-                window.addEventListener("mousemove", handleDrag);
-                window.addEventListener("mouseup", e=>{
-                    window.removeEventListener("mousemove", handleDrag);
-                    mouseToolsStore.setCurrentTool(null)
-                }, {once: true});
-            }
-        },
-        {
-            name: "line",
-            handler: e => {
-                e.preventDefault();
-                var svg  = e.target.closest("SVG");
-                let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
-                const [beginSceneX, beginSceneY] = [loc.x, loc.y];
-    
-                const key = generateId();
-                sceneStore.addSceneObject(key, new LineSegment({
-                    Ax: beginSceneX, 
-                    Ay: beginSceneY, 
-                    Bx: beginSceneX+5,
-                    By: beginSceneY,
-                    material: "diffuse"
-                }));
-    
-                const handleDrag = e=>{
-                    // var svg  = e.target.closest("SVG");
-                    let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
-                    const [sceneX, sceneY] = [loc.x, loc.y];
-    
-                    sceneStore.updateSceneObject(key, {
-                        Bx: sceneX, 
-                        By: sceneY
-                    });
-                }
-    
-                window.addEventListener("mousemove", handleDrag);
-                window.addEventListener("mouseup", e=>{
-                    window.removeEventListener("mousemove", handleDrag);
-                    mouseToolsStore.setCurrentTool(null)
-                }, {once: true});
-            }
-        },
-        {
-            name: "lens",
-            handler: e => {
-                e.preventDefault();
-                var svg  = e.target.closest("SVG");
-                let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
-                const [beginSceneX, beginSceneY] = [loc.x, loc.y];
-
-                const key = generateId();
-                sceneStore.addSceneObject(key, new SphericalLens({
-                    Cx: beginSceneX, 
-                    Cy: beginSceneY, 
-                    centerThickness: 5,
-                    edgeThickness: 0,
-                    material: "glass"
-                }));
-    
-                const handleDrag = e=>{
-                    // var svg  = e.target.closest("SVG");
-                    let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
-                    const [sceneX, sceneY] = [loc.x, loc.y]
-                    const [dx, dy] = [sceneX-beginSceneX, sceneY-beginSceneY];
-
-                    sceneStore.updateSceneObject(key, {
-                        diameter: Math.abs(dy*2),
-                        edgeThickness:   dx>0 ?    1 : dx*2,
-                        centerThickness: dx>0 ? dx*2 : 0
-                    });
-                }
-    
-                window.addEventListener("mousemove", handleDrag);
-                window.addEventListener("mouseup", e=>{
-                    window.removeEventListener("mousemove", handleDrag);
-                    mouseToolsStore.setCurrentTool(null)
-                }, {once: true});
-            }
-        },
-        {
-            name: "pointlight",
-            handler: e => {
-                e.preventDefault();
-                var svg  = e.target.closest("SVG");
-                let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
-                const [beginSceneX, beginSceneY] = [loc.x, loc.y];
-    
-                const key = generateId();
-                sceneStore.addSceneObject(key, new PointLight({
-                    Cx: beginSceneX, 
-                    Cy: beginSceneY, 
-                    angle: 0
-                }));
-    
-                const handleDrag = e=>{
-                    // var svg  = e.target.closest("SVG");
-                    let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
-                    const [sceneX, sceneY] = [loc.x, loc.y]
-                    const [dx, dy] = [sceneX-beginSceneX, sceneY-beginSceneY];
-
-                    sceneStore.updateSceneObject(key, {
-                        angle: Math.atan2(dy, dx)
-                    });
-                }
-    
-                window.addEventListener("mousemove", handleDrag);
-                window.addEventListener("mouseup", e=>{
-                    window.removeEventListener("mousemove", handleDrag);
-                    mouseToolsStore.setCurrentTool(null);
-                }, {once: true});
-            }
-        },
-        {
-            name: "directional",
-            handler: e => {
-                e.preventDefault();
-                var svg  = e.target.closest("SVG");
-                let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
-                const [beginSceneX, beginSceneY] = [loc.x, loc.y];
-                
-                const key = generateId();
-                sceneStore.addSceneObject(key, new DirectionalLight({
-                    Cx: beginSceneX, 
-                    Cy: beginSceneY, 
-                    angle: 0
-                }));
-    
-                const handleDrag = e=>{
-                    // var svg  = e.target.closest("SVG");
-                    let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
-                    const [sceneX, sceneY] = [loc.x, loc.y]
-                    const [dx, dy] = [sceneX-beginSceneX, sceneY-beginSceneY];
-
-                    sceneStore.updateSceneObject(key, {
-                        angle: Math.atan2(dy, dx),
-                        width: Math.hypot(dx, dy)/2
-                    });
-                }
-    
-                window.addEventListener("mousemove", handleDrag);
-                window.addEventListener("mouseup", e=>{
-                    window.removeEventListener("mousemove", handleDrag);
-                    mouseToolsStore.setCurrentTool(null);
-                }, {once: true});
-            }
-        },
-        {
-            name: "laser",
-            handler: e => {
-                e.preventDefault();
-                var svg  = e.target.closest("SVG");
-                let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
-                const [beginSceneX, beginSceneY] = [loc.x, loc.y];
-    
-                const key = generateId();
-                sceneStore.addSceneObject(key, new LaserLight({
-                    Cx: beginSceneX, 
-                    Cy: beginSceneY, 
-                    angle: 0
-                }));
-    
-                const handleDrag = e=>{
-                    // var svg  = e.target.closest("SVG");
-                    let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
-                    const [sceneX, sceneY] = [loc.x, loc.y]
-                    const [dx, dy] = [sceneX-beginSceneX, sceneY-beginSceneY];
-                    
-                    sceneStore.updateSceneObject(key, {
-                        angle: Math.atan2(dy, dx)
-                    });
-                }
-    
-                window.addEventListener("mousemove", handleDrag);
-                window.addEventListener("mouseup", e=>{
-                    window.removeEventListener("mousemove", handleDrag);
-                    mouseToolsStore.setCurrentTool(null);
-                }, {once: true});
-            }
-        }
-    ]
 
     const handleMouseDownTools = e =>
     {
-        
-        const toolIdx = mouseTools.findIndex(tool=>tool.name==currentToolName);
-        console.log("handle tool", mouseTools[toolIdx])
-        if(toolIdx>=0){
-            e.preventDefault()
-            mouseTools[toolIdx].handler(e)
+        if(currentToolName){
+            const handler = mouseTools[currentToolName];
+            handler(e);
         }
     }
 
@@ -387,7 +202,6 @@ const App = ()=>{
             displayOptions.glPaint?h(GLViewport,  {
                 className:"viewport",
                 viewBox: viewBox,
-
                 scene: scene,
                 paths: randomRaytraceResults.lightPaths,
                 onReset: ()=>{
@@ -398,12 +212,9 @@ const App = ()=>{
             h(SVGViewport, {
                 className:"viewport",
                 viewBox: viewBox,
-
                 rays: displayOptions.lightrays?uniformRaytraceResults.lightrays:[],
                 hitPoints: displayOptions.hitpoints?uniformRaytraceResults.hitPoints:[], 
                 paths:displayOptions.lightpaths?uniformRaytraceResults.lightPaths:[], 
-
-
                 onViewChange: viewBox=>setViewBox(viewBox),
                 onMouseDown: e=>{
                     console.log("handle mousedown")
@@ -413,69 +224,17 @@ const App = ()=>{
                         e.preventDefault();
                     }
                 },
-                // onClick:(e)=>{
-                //     // TODO check the actual element not just the type
-                //     if(e.target.tagName=="svg")
-                //     {
-                //         selectionStore.setSelectionKeys([]);
-                //     }
-                // }
-            },
-                
-            ),
+                onClick:(e)=>{
+                    // TODO check the actual element not just the type
+                    if(e.target.tagName=="svg")
+                    {
+                        selectionStore.setSelectionKeys([]);
+                    }
+                }
+            }),
 
-            /*TOOLBAR*/
-            h("div", {
-                id: "toolbar", className: "panel"
-            },
-                h("button", {
-                    onClick: e=>setCurrentToolName(null),
-                    className: currentToolName == null ? "active" : null
-                }, h("i", {className: "fa-solid fa-arrow-pointer"})),
-
-                mouseTools.map(tool=>{
-                    return h("button", {
-                        onClick: e=>mouseToolsStore.setCurrentTool(tool.name),
-                        title: tool.name,
-                        className: currentToolName == tool.name ? "active" : null
-                    }, tool.name)
-                }),
-                h("hr"),
-                h("button", {
-                    onClick: (e)=>{
-                        if(selectionKeys.length<1){
-                            return;
-                        }
-                        const selectedObjectKey = selectionKeys[0];
-                        if(selectedObjectKey)
-                        {
-                            sceneStore.removeSceneObject(selectedObjectKey)
-                        }
-                    },
-                    className: "danger"
-                }, "delete")
-            ),
-
-            h("div", {
-                className: "panel", 
-                style: {right: "0px", top:"0px", position: "fixed"}
-            }, 
-
-                // h(BlackBody, null),
-                h(Inspector, {
-                    sceneObject: selectionKeys.length>0?scene[selectionKeys[0]]:null,
-                    onChange: (newSceneObject)=>sceneStore.updateSceneObject(selectionKeys[0], newSceneObject)
-                }),
-                h(Collapsable, {title: h("h2", null, "Raytrace otions"), defaultOpen:false},
-                    h(RaytraceOptionsForm)
-                ),
-                h(Collapsable, {title: h("h2", null, "Display options"), defaultOpen:false},
-                    h(DisplayOptionsForm)
-                ),
-                h(Collapsable, {title: h("h2", null, "Outliner"), defaultOpen: false},
-                    h(Outliner)
-                )
-            )
+            h(Toolbar),
+            h(Sidebar)
         )
 }
 

@@ -40,10 +40,11 @@ https://zalavariandris.github.io/lighttrace2/
 - [x] use RGB color instead of a single frequency or spectral distribution (for now)
 - [x] spectral color support
 - [x] show manipulators only when object is selected.
-- [ ] dispersion (Sellmeier equation)
 - [x] pull modell from App Component
-- [ ] move mousetools to mouseToolsStore and SVGViewport
+- [x] factor out mouseTools
+- [x] dispersion! (Sellmeier equation)
 
+- [ ] rectangle selection, middlemouse for pan
 - [ ] persistent display options
 - [ ] ? refactor _sceneObject_ to ECS entity
 - [ ] hitTest and raytrace on the GPU

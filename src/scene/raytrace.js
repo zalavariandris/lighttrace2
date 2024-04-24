@@ -84,7 +84,7 @@ class RaytraceResults
 }
 
 
-// handle light sampling
+/* SAMPLE LIGHT SOURCES */
 function sampleWavelength(temperature)
 {
     return sampleBlackbody(temperature, 10);
@@ -162,7 +162,7 @@ function sampleDirectionalLight(light, {sampleCount, samplingMethod})
     });
 }
 
-// handle ray hit shapes
+/* HIT TESTS */
 function hitCircle(ray, circle)
 {
     // solve quadratic equatation: at**2+bt+c=0
@@ -352,7 +352,55 @@ function hitSphericalLens(ray, lens)
     });
 }
 
-// handle materials
+/* SAMPLE MATERIALS */
+/**
+ * Calculate refractive index using the Sellmeier equation.
+ * @param {number} wavelength - Wavelength of light in nanometers.
+ * @param {number[]} coefficients - Sellmeier coefficients [B1, C1, D1, B2, C2, D2, ...].
+ * @returns {number} - Refractive index at the given wavelength.
+ * 
+ * example coefficents:
+ * bk7Coefficients = [1.03961212, 0.00600069867, 0.231792344, 0.0200179144, 0.0209690841, 103.560653];
+ */
+function sellmeier(wavelength, coefficients) {
+    // Initialize sum for accumulating the contributions from each Sellmeier term
+    let sum = 0;
+    
+    // Iterate over each set of Sellmeier coefficients (B, C, D)
+    for (let i = 0; i < coefficients.length; i += 3) {
+        // Extract coefficients for the current term
+        const B = coefficients[i];
+        const C = coefficients[i + 1];
+        const D = coefficients[i + 2];
+        
+        // Calculate the square of the wavelength
+        const wl_sq = wavelength * wavelength;
+        
+        // Calculate the contribution of the current term to the sum
+        sum += (B * wl_sq) / (wl_sq - C);
+    }
+    
+    // Calculate the square of the refractive index using the completed sum
+    const n_squared = 1 + sum;
+    
+    // Return the square root of the square of the refractive index
+    return Math.sqrt(n_squared);
+}
+
+function sellmeierIor(b, c, lambda) {
+    // Calculate the square of the wavelength
+    const lSq = (lambda * 1e-3) * (lambda * 1e-3);
+
+    // Calculate the contribution of each Sellmeier term and sum them up
+    let sum = 0;
+    for (let i = 0; i < b.length; i++) {
+        sum += (b[i] * lSq) / (lSq - c[i]);
+    }
+
+    // Add 1.0 to the sum to get the refractive index squared
+    return 1.0 + sum;
+}
+
 function sampleTransparent(incidentRay, hitPoint, ior)
 {
     const V = incidentRay.direction.normalized();
@@ -485,7 +533,11 @@ function raytrace_pass(rays, [shapes, materials], {THRESHOLD=1e-6})
 
             switch (material) {
                 case "glass":
-                    return sampleTransparent(incidentRay, hitPoint, 1.49);
+                    const b = [1.6215, 0.2563, 1.6445];
+                    const c = [0.0122, 0.0596, 147.4688];
+                    let ior =  sellmeierIor(b, c, incidentRay.wavelength)/1.44;
+                    // const ior = Math.sqrt(iorSquared)
+                    return sampleTransparent(incidentRay, hitPoint, ior);
                     break;
                 case "mirror":
                     return sampleMirror(incidentRay, hitPoint);

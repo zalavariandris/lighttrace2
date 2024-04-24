@@ -11,19 +11,6 @@ import DirectionalLight from "../scene/lights/DirectionalLight.js"
 
 
 let scene = {
-    "mirror ball" :new Circle({
-        Cx:360, 
-        Cy:200, 
-        radius: 50, 
-        material: "mirror",
-    }),
-    "rect prism": new Rectangle({
-        Cx: 500,
-        Cy: 250,
-        width: 150,
-        height: 150,
-        material: "glass"
-    }),
     "floor line": new LineSegment({
         Ax: 50, 
         Ay: 450, 
@@ -32,37 +19,19 @@ let scene = {
         material: "mirror"
     }),
     "concave lens": new SphericalLens({
-        Cx: 150, 
-        Cy:250, 
+        Cx: 130, 
+        Cy: 280, 
         diameter: 140,
-        edgeThickness: 60,
-        centerThickness:5,
+        edgeThickness: 5,
+        centerThickness:80,
         material: "glass" 
     }),
-    "convex lens": new SphericalLens({
-        Cx: 230, 
-        Cy: 250,
-        diameter: 100,
-        edgeThickness: 5,
-        centerThickness: 50, 
-        material: "glass", 
-    }),
-    "sun": new DirectionalLight({
+
+    "sun": new LaserLight({
         Cx:50, 
         Cy: 250, 
-        width: 80, 
         angle: 0
-    }),
-    "lamp": new PointLight({
-        Cx: 50, 
-        Cy: 150, 
-        angle:0
-    }),
-    "laser": new LaserLight({
-        Cx:150, 
-        Cy: 150, 
-        angle: 0.5
-    }),
+    })
 };
 
 let selectionKeys = [];
