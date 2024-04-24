@@ -7,7 +7,7 @@ let raytraceOptions = {
     maxBounce: 9,
     lightSamples: 7,
     samplingMethod: SamplingMethod.Uniform,
-    maxSampleSteps: 1024
+    maxSampleSteps: 12000000
 };
 let listeners = [];
 

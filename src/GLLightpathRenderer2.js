@@ -1,6 +1,6 @@
 import {mat4} from 'gl-matrix'
 import {RGBToCSS, wavelengthToRGB} from "./scene/colorUtils.js"
-
+import _ from "lodash"
 function fitViewboxInSize(viewBox, size)
 {
     // adjust viewbox width to match resolution aspect "contain"
@@ -194,15 +194,26 @@ class GLLightpathRenderer{
 
             for(let lightpath of lightpaths)
             {
-                const lastRay = lightpath.rays[lightpath.rays.length-1];
                 
-                const vColors = lightpath.rays.map(ray=>{
+                
+                const vColors = lightpath.rays.map((ray, idx)=>{
                     const [R,G,B] = wavelengthToRGB(ray.wavelength);
-                    return [R*ray.intensity,G*ray.intensity,B*ray.intensity];
+                    
+                    // correct rasteriyation bias (ref: https://benedikt-bitterli.me/tantalum/)
+                    let biasCorrection = ray.direction.magnitude()/Math.max(Math.abs(ray.direction.x), Math.abs(ray.direction.y));
+                    biasCorrection = _.clamp(biasCorrection, 1.0, 1.414214);
+
+                    return [
+                        R*ray.intensity*biasCorrection,
+                        G*ray.intensity*biasCorrection,
+                        B*ray.intensity*biasCorrection
+                    ];
                 });
 
+                const lastRay = lightpath.rays[lightpath.rays.length-1];
                 const [R,G,B] = wavelengthToRGB(lastRay.wavelength);
                 vColors.push([R*lastRay.intensity,G*lastRay.intensity,B*lastRay.intensity]);
+
                 const vPositions = lightpath.rays.map(r=>[r.origin.x, r.origin.y]);
                 vPositions.push([lastRay.origin.x+lastRay.direction.x*1000, lastRay.origin.y+lastRay.direction.y*1000]);
                 
@@ -226,7 +237,7 @@ class GLLightpathRenderer{
                     uniform vec3 baseColor;
                     varying vec3 vColor;
                     void main () {
-                        
+                        float rasterizationBias = 1.0;
                         gl_FragColor = vec4(vColor.rgb,1);
                     }`,
                     attributes: {

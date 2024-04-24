@@ -27,10 +27,16 @@ let scene = {
         material: "glass" 
     }),
 
-    "sun": new LaserLight({
-        Cx:50, 
-        Cy: 250, 
-        angle: 0
+    // "laser": new LaserLight({
+    //     Cx:50, 
+    //     Cy: 250, 
+    //     angle: 0
+    // }),
+    "lamp": new PointLight({
+        Cx: 50,
+        Cy: 250,
+        intensity: 8,
+        temperature: 6300
     })
 };
 

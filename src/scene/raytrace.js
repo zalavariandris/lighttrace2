@@ -87,8 +87,9 @@ class RaytraceResults
 /* SAMPLE LIGHT SOURCES */
 function sampleWavelength(temperature)
 {
-    return sampleBlackbody(temperature, 10);
+    // return sampleBlackbody(temperature, 10);
     return Math.random()*300+380
+    // return 550;
 }
 
 function samplePointlight(light, {sampleCount, samplingMethod})

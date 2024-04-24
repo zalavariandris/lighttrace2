@@ -46,6 +46,43 @@ const mouseTools = {
     "laser": laserTool
 };
 
+class RaytraceStore{
+    constructor()
+    {
+        this.listeners = [];
+        this.state = {
+            rays: [],
+            hitPoints: [],
+            paths: []
+        }
+    }
+
+    getSnapshot()
+    {
+        return this.state;
+    }
+
+    subscribe(listener) {
+        this.listeners = [...this.listeners, listener];
+        return () => {
+            this.listeners = this.listeners.filter(l => l !== listener);
+        };
+    }
+
+    emitChange() {
+        for (let listener of this.listeners) {
+            listener();
+        }
+    }
+
+    raytrace()
+    {
+        
+        this.emitChange();
+    }
+
+}
+
 function Toolbar()
 {
     const currentToolName = React.useSyncExternalStore(mouseToolsStore.subscribe, mouseToolsStore.getSnapshot);

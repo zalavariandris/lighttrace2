@@ -1,7 +1,7 @@
 let displayOptions = {
     lightrays: false,
-    hitpoints: true,
-    lightpaths: true,
+    hitpoints: false,
+    lightpaths: false,
     glPaint: true
 };
 let listeners = [];
