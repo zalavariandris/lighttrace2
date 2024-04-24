@@ -49,7 +49,7 @@ const mouseTools = {
 function Toolbar()
 {
     const currentToolName = React.useSyncExternalStore(mouseToolsStore.subscribe, mouseToolsStore.getSnapshot);
-
+    const selectionKeys = useSyncExternalStore(selectionStore.subscribe, selectionStore.getSnapshot);
 
     /*TOOLBAR*/
     return h("div", {
