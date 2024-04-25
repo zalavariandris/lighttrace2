@@ -30,7 +30,6 @@ function makeTransform({position=[0,0,0],rotation=[0,0,0],scale=[1,1,1]}={}){
     return model;
 }
 
-
 function matchProjectionToSVGViewbox(svg_viewbox, win)
 {
 

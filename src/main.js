@@ -75,12 +75,45 @@ class RaytraceStore{
         }
     }
 
-    raytrace()
+    raytrace(scene, {maxBounce, samplingMethod, lightSamples})
     {
+
+        const lightrays=[];
+        const hitPoints=[];
+        const lightpaths=[];
+
+        const lights = Object.values(scene).filter(obj=>obj instanceof Light);
+        const shapes = Object.values(scene).filter(obj=>obj instanceof Shape);
+
+        const newRaytraceResults = raytrace(lights, [shapes, shapes.map(shape=>shape.material)], {
+            maxBounce:raytraceOptions.maxBounce, 
+            samplingMethod: SamplingMethod.Random, 
+            lightSamples: raytraceOptions.lightSamples
+        });
+
+        this.state.lightrays=newRaytraceResults.lightrays;
+        this.state.hitPoints=newRaytraceResults.hitPoints;
+        this.state.lightpaths=newRaytraceResults.lightPaths;
         
         this.emitChange();
     }
+}
 
+const randomRaytraceStore = new RaytraceStore()
+
+function RaytraceStats()
+{
+    const raytrceResults = React.useSyncExternalStore(()=>randomRaytraceStore.subscribe(), ()=>randomRaytraceStore.getSnapshot());
+    const maxSamples = 1000;
+    const currentSamples = 500;
+
+    return h("div", null, 
+        h("label", null, 
+            `samples: ${currentSamples}/${maxSamples}`,
+            h("progress", {min:0, max:maxSamples, value: currentSamples}),
+        )
+
+    );
 }
 
 function Toolbar()
@@ -136,6 +169,7 @@ function Sidebar()
             sceneObject: selectionKeys.length>0?scene[selectionKeys[0]]:null,
             onChange: (newSceneObject)=>sceneStore.updateSceneObject(selectionKeys[0], newSceneObject)
         }),
+        h(RaytraceStats),
         h(Collapsable, {title: h("h2", null, "Raytrace otions"), defaultOpen:false},
             h(RaytraceOptionsForm)
         ),
@@ -207,20 +241,20 @@ const App = ()=>{
 
     // TODO: move this and the whole animation to the GLVewiprot component
     // stop animation when max samples reached 
-    React.useEffect(()=>{
-        if(currentSampleStep>raytraceOptions.maxSampleSteps){
-            setAnimate(false);
-        }
-    }, [currentSampleStep])
+    // React.useEffect(()=>{
+    //     if(currentSampleStep>raytraceOptions.maxSampleSteps){
+    //         setAnimate(false);
+    //     }
+    // }, [currentSampleStep])
 
-    React.useEffect(() => {
-        if(animate)
-        {
-            setCurrentSampleStep(0)
-            requestRef.current = requestAnimationFrame(onAnimationTick);
-            return () => cancelAnimationFrame(requestRef.current);
-        }
-    }, [animate]); // Make sure the effect runs only once
+    // React.useEffect(() => {
+    //     if(animate)
+    //     {
+    //         setCurrentSampleStep(0)
+    //         requestRef.current = requestAnimationFrame(onAnimationTick);
+    //         return () => cancelAnimationFrame(requestRef.current);
+    //     }
+    // }, [animate]); // Make sure the effect runs only once
 
     /* MOUSE TOOLS */
     const currentToolName = React.useSyncExternalStore(mouseToolsStore.subscribe, mouseToolsStore.getSnapshot);
@@ -236,16 +270,16 @@ const App = ()=>{
 
     return h("div", null,
             /*VIEWPORTS*/
-            displayOptions.glPaint?h(GLViewport,  {
-                className:"viewport",
-                viewBox: viewBox,
-                scene: scene,
-                paths: randomRaytraceResults.lightPaths,
-                onReset: ()=>{
-                    // TODO: this is temporary. rendering and raytacing should be seperated from this component.
-                    setCurrentSampleStep(0); setAnimate(true);
-                }
-            }):null,
+            // displayOptions.glPaint?h(GLViewport,  {
+            //     className:"viewport",
+            //     viewBox: viewBox,
+            //     scene: scene,
+            //     paths: randomRaytraceResults.lightPaths,
+            //     onReset: ()=>{
+            //         // TODO: this is temporary. rendering and raytacing should be seperated from this component.
+            //         setCurrentSampleStep(0); setAnimate(true);
+            //     }
+            // }):null,
             h(SVGViewport, {
                 className:"viewport",
                 viewBox: viewBox,

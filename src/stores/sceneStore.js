@@ -20,7 +20,7 @@ let scene = {
     }),
     "concave lens": new SphericalLens({
         Cx: 130, 
-        Cy: 280, 
+        Cy: 290, 
         diameter: 140,
         edgeThickness: 5,
         centerThickness:80,
@@ -56,6 +56,7 @@ export default {
     addSceneObject(key, newSceneObject)
     {
         scene = {...scene, [key]: newSceneObject};
+        emitChange();
     },
 
     removeSceneObject(key){
@@ -63,6 +64,7 @@ export default {
             return k!== key;
         }));
         selectionKeys = [];
+        emitChange();
     },
 
     updateSceneObject(key, newAttributes){
@@ -77,6 +79,7 @@ export default {
         }
         
         scene = {...scene, [key]: newSceneObject};
+        emitChange();
     },
 
     setSelectionKeys(newSelectionKeys)
