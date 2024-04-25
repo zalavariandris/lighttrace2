@@ -69,52 +69,38 @@ class RaytraceStore{
         };
     }
 
-    emitChange() {
-        for (let listener of this.listeners) {
+    emitChange()
+    {
+        
+        for (let listener of this.listeners)
+        {
             listener();
         }
     }
 
     raytrace(scene, {maxBounce, samplingMethod, lightSamples})
     {
-
-        const lightrays=[];
-        const hitPoints=[];
-        const lightpaths=[];
-
         const lights = Object.values(scene).filter(obj=>obj instanceof Light);
         const shapes = Object.values(scene).filter(obj=>obj instanceof Shape);
 
         const newRaytraceResults = raytrace(lights, [shapes, shapes.map(shape=>shape.material)], {
-            maxBounce:raytraceOptions.maxBounce, 
-            samplingMethod: SamplingMethod.Random, 
-            lightSamples: raytraceOptions.lightSamples
+            maxBounce: maxBounce, 
+            samplingMethod: samplingMethod,
+            lightSamples: lightSamples
         });
 
-        this.state.lightrays=newRaytraceResults.lightrays;
-        this.state.hitPoints=newRaytraceResults.hitPoints;
-        this.state.lightpaths=newRaytraceResults.lightPaths;
-        
+        this.state = {...this.state,
+            lightrays: newRaytraceResults.lightrays,
+            hitPoints: newRaytraceResults.hitPoints,
+            lightPaths: newRaytraceResults.lightPaths
+        };
+
         this.emitChange();
     }
 }
 
-const randomRaytraceStore = new RaytraceStore()
-
-function RaytraceStats()
-{
-    const raytrceResults = React.useSyncExternalStore(()=>randomRaytraceStore.subscribe(), ()=>randomRaytraceStore.getSnapshot());
-    const maxSamples = 1000;
-    const currentSamples = 500;
-
-    return h("div", null, 
-        h("label", null, 
-            `samples: ${currentSamples}/${maxSamples}`,
-            h("progress", {min:0, max:maxSamples, value: currentSamples}),
-        )
-
-    );
-}
+const randomRaytraceStore = new RaytraceStore();
+const uniformRaytraceStore = new RaytraceStore();
 
 function Toolbar()
 {
@@ -169,7 +155,7 @@ function Sidebar()
             sceneObject: selectionKeys.length>0?scene[selectionKeys[0]]:null,
             onChange: (newSceneObject)=>sceneStore.updateSceneObject(selectionKeys[0], newSceneObject)
         }),
-        h(RaytraceStats),
+        // h(RaytraceStats),
         h(Collapsable, {title: h("h2", null, "Raytrace otions"), defaultOpen:false},
             h(RaytraceOptionsForm)
         ),
@@ -181,6 +167,18 @@ function Sidebar()
         )
     )
 }
+
+function animate()
+{
+    requestAnimationFrame(animate);
+    const scene = sceneStore.getSnapshot();
+    randomRaytraceStore.raytrace(scene, {
+        maxBounce: 9, 
+        samplingMethod: SamplingMethod.Uniform,
+        lightSamples: 9
+    });
+}
+animate()
 
 const App = ()=>{
     /*Settings*/
@@ -197,37 +195,10 @@ const App = ()=>{
         x:0,y:0,w:512,h:512
     });
 
-    // 
-    function calcRaytraceUniform()
-    {
-        const lights = Object.values(scene).filter(obj=>obj instanceof Light);
-        const shapes = Object.values(scene).filter(obj=>obj instanceof Shape);
+    const uniformRaytraceResults = React.useSyncExternalStore((listener)=>randomRaytraceStore.subscribe(listener), ()=>randomRaytraceStore.getSnapshot());
+    
+    // inital raytrace
 
-        const newRaytraceResults = raytrace(lights, [shapes, shapes.map(shape=>shape.material)], {
-            maxBounce:raytraceOptions.maxBounce, 
-            samplingMethod: raytraceOptions.samplingMethod, 
-            lightSamples: raytraceOptions.lightSample
-        });
-
-        return newRaytraceResults
-    }
-
-    function calcRaytraceRandom()
-    {
-        const lights = Object.values(scene).filter(obj=>obj instanceof Light);
-        const shapes = Object.values(scene).filter(obj=>obj instanceof Shape);
-
-        const newRaytraceResults = raytrace(lights, [shapes, shapes.map(shape=>shape.material)], {
-            maxBounce:raytraceOptions.maxBounce, 
-            samplingMethod: SamplingMethod.Random, 
-            lightSamples: raytraceOptions.lightSamples
-        });
-
-        return newRaytraceResults
-    }
-
-    const uniformRaytraceResults = calcRaytraceUniform();
-    const randomRaytraceResults = calcRaytraceRandom();
 
     /* step rayrace on animation frame */
     const [animate, setAnimate] = React.useState(true);

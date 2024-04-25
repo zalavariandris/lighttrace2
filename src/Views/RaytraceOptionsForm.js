@@ -3,6 +3,16 @@ import raytraceOptionsStore, {SamplingMethod} from "../stores/raytraceOptionsSto
 import { raytrace } from "../scene/raytrace.js";
 const h = React.createElement;
 
+
+function animate()
+{
+    requestAnimationFrame(animate);
+    // progressive raytrace
+}
+
+animate()
+
+
 function RaytraceOptionsForm()
 {
     const raytraceOptions = useSyncExternalStore(raytraceOptionsStore.subscribe, raytraceOptionsStore.getSnapshot);
@@ -24,7 +34,7 @@ function RaytraceOptionsForm()
                 value:raytraceOptions.lightSamples, 
                 onInput:(e)=>raytraceOptionsStore.updateOptions({lightSamples: e.target.value}),
                 min: 1, 
-                max:200
+                max: 512
             }),
             `${raytraceOptions.lightSamples}`
         ),

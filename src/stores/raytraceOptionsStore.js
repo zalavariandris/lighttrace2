@@ -5,7 +5,7 @@ const SamplingMethod = Object.freeze({
 
 let raytraceOptions = {
     maxBounce: 9,
-    lightSamples: 7,
+    lightSamples: 32,
     samplingMethod: SamplingMethod.Uniform,
     maxSampleSteps: 12000000
 };
