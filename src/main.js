@@ -127,11 +127,14 @@ const App = ()=>{
     console.log("render app")
     const simpleRaytraceResults = React.useSyncExternalStore((listener)=>simpleRaytraceStore.subscribe(listener), ()=>simpleRaytraceStore.getSnapshot());
 
-    //     simpleRaytraceStore.updateRaytrace(scene, {
-    //     maxBounce: 9, 
-    //     samplingMethod: SamplingMethod.Uniform,
-    //     lightSamples: 9
-    // });
+    React.useEffect(()=>{
+        simpleRaytraceStore.updateRaytrace(scene, {
+            maxBounce: 9, 
+            samplingMethod: SamplingMethod.Uniform,
+            lightSamples: 9
+        });
+    }, [scene]);
+
     // inital raytrace
 
     /* MOUSE TOOLS */
