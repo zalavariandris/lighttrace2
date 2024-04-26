@@ -5,15 +5,7 @@ import SVGViewport from "./Views/SVGViewport.js";
 import GLViewport from "./Views/GLViewport.js";
 import Collapsable from "./UI/Collapsable.js";
 
-import Shape from "./scene/shapes/Shape.js";
-import Circle from "./scene/shapes/Circle.js"
-import LineSegment from "./scene/shapes/LineSegment.js"
-import Rectangle from "./scene/shapes/Rectangle.js"
-import SphericalLens from "./scene/shapes/SphericalLens.js"
-import Light from "./scene/lights/Light.js"
-import PointLight from "./scene/lights/PointLight.js"
-import LaserLight from "./scene/lights/LaserLight.js"
-import DirectionalLight from "./scene/lights/DirectionalLight.js"
+
 
 
 import {raytrace, SamplingMethod} from "./scene/raytrace.js"
@@ -46,61 +38,8 @@ const mouseTools = {
     "laser": laserTool
 };
 
-class RaytraceStore{
-    constructor()
-    {
-        this.listeners = [];
-        this.state = {
-            rays: [],
-            hitPoints: [],
-            paths: []
-        }
-    }
 
-    getSnapshot()
-    {
-        return this.state;
-    }
-
-    subscribe(listener) {
-        this.listeners = [...this.listeners, listener];
-        return () => {
-            this.listeners = this.listeners.filter(l => l !== listener);
-        };
-    }
-
-    emitChange()
-    {
-        
-        for (let listener of this.listeners)
-        {
-            listener();
-        }
-    }
-
-    raytrace(scene, {maxBounce, samplingMethod, lightSamples})
-    {
-        const lights = Object.values(scene).filter(obj=>obj instanceof Light);
-        const shapes = Object.values(scene).filter(obj=>obj instanceof Shape);
-
-        const newRaytraceResults = raytrace(lights, [shapes, shapes.map(shape=>shape.material)], {
-            maxBounce: maxBounce, 
-            samplingMethod: samplingMethod,
-            lightSamples: lightSamples
-        });
-
-        this.state = {...this.state,
-            lightrays: newRaytraceResults.lightrays,
-            hitPoints: newRaytraceResults.hitPoints,
-            lightPaths: newRaytraceResults.lightPaths
-        };
-
-        this.emitChange();
-    }
-}
-
-const randomRaytraceStore = new RaytraceStore();
-const uniformRaytraceStore = new RaytraceStore();
+import simpleRaytraceStore from "./stores/simpleRaytraceStore.js";
 
 function Toolbar()
 {
@@ -156,11 +95,11 @@ function Sidebar()
             onChange: (newSceneObject)=>sceneStore.updateSceneObject(selectionKeys[0], newSceneObject)
         }),
         // h(RaytraceStats),
-        h(Collapsable, {title: h("h2", null, "Raytrace otions"), defaultOpen:false},
-            h(RaytraceOptionsForm)
-        ),
         h(Collapsable, {title: h("h2", null, "Display options"), defaultOpen:false},
             h(DisplayOptionsForm)
+        ),
+        h(Collapsable, {title: h("h2", null, "Raytrace otions"), defaultOpen:false},
+            h(RaytraceOptionsForm)
         ),
         h(Collapsable, {title: h("h2", null, "Outliner"), defaultOpen: false},
             h(Outliner)
@@ -168,17 +107,7 @@ function Sidebar()
     )
 }
 
-function animate()
-{
-    requestAnimationFrame(animate);
-    const scene = sceneStore.getSnapshot();
-    randomRaytraceStore.raytrace(scene, {
-        maxBounce: 9, 
-        samplingMethod: SamplingMethod.Uniform,
-        lightSamples: 9
-    });
-}
-animate()
+
 
 const App = ()=>{
     /*Settings*/
@@ -195,37 +124,15 @@ const App = ()=>{
         x:0,y:0,w:512,h:512
     });
 
-    const uniformRaytraceResults = React.useSyncExternalStore((listener)=>randomRaytraceStore.subscribe(listener), ()=>randomRaytraceStore.getSnapshot());
-    
+    console.log("render app")
+    const simpleRaytraceResults = React.useSyncExternalStore((listener)=>simpleRaytraceStore.subscribe(listener), ()=>simpleRaytraceStore.getSnapshot());
+
+    //     simpleRaytraceStore.updateRaytrace(scene, {
+    //     maxBounce: 9, 
+    //     samplingMethod: SamplingMethod.Uniform,
+    //     lightSamples: 9
+    // });
     // inital raytrace
-
-
-    /* step rayrace on animation frame */
-    const [animate, setAnimate] = React.useState(true);
-    const [currentSampleStep, setCurrentSampleStep] = React.useState(0);
-    const requestRef = React.useRef();
-
-    const onAnimationTick = timeStamp => {
-        setCurrentSampleStep(prevCount => prevCount + 1);
-        requestRef.current = requestAnimationFrame(onAnimationTick);
-    }
-
-    // TODO: move this and the whole animation to the GLVewiprot component
-    // stop animation when max samples reached 
-    // React.useEffect(()=>{
-    //     if(currentSampleStep>raytraceOptions.maxSampleSteps){
-    //         setAnimate(false);
-    //     }
-    // }, [currentSampleStep])
-
-    // React.useEffect(() => {
-    //     if(animate)
-    //     {
-    //         setCurrentSampleStep(0)
-    //         requestRef.current = requestAnimationFrame(onAnimationTick);
-    //         return () => cancelAnimationFrame(requestRef.current);
-    //     }
-    // }, [animate]); // Make sure the effect runs only once
 
     /* MOUSE TOOLS */
     const currentToolName = React.useSyncExternalStore(mouseToolsStore.subscribe, mouseToolsStore.getSnapshot);
@@ -254,9 +161,9 @@ const App = ()=>{
             h(SVGViewport, {
                 className:"viewport",
                 viewBox: viewBox,
-                rays: displayOptions.lightrays?uniformRaytraceResults.lightrays:[],
-                hitPoints: displayOptions.hitpoints?uniformRaytraceResults.hitPoints:[], 
-                paths:displayOptions.lightpaths?uniformRaytraceResults.lightPaths:[], 
+                rays: displayOptions.lightrays?simpleRaytraceResults.lightrays:[],
+                hitPoints: displayOptions.hitpoints?simpleRaytraceResults.hitPoints:[], 
+                paths:displayOptions.lightpaths?simpleRaytraceResults.lightPaths:[], 
                 onViewChange: viewBox=>setViewBox(viewBox),
                 onMouseDown: e=>{
                     console.log("handle mousedown")
