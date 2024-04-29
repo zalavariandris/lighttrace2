@@ -19,6 +19,9 @@ import SphericalLensView from "../UI/SVGEditableElements/SphericalLensView.js"
 
 import sceneStore from "../stores/sceneStore.js";
 import selectionStore from "../stores/selectionStore.js";
+import simpleRaytraceStore from "../stores/simpleRaytraceStore.js";
+import { SamplingMethod } from "../stores/raytraceOptionsStore.js";
+import displayOptionsStore from "../stores/displayOptionsStore.js"
 
 function viewboxString(viewBox)
 {
@@ -40,14 +43,22 @@ function pointsToSvgPath(points)
     return path;
 }
 
+const calcScale = (svg, viewBox)=>{
+    // const svg = svgRef.current;
+    if(svg)
+    {
+        const clientSize = {w: svg.clientWidth, h: svg.clientHeight}
+        return viewBox.w/clientSize.w;
+    }else{
+        return 1.0;
+    }
+}
+
 const h = React.createElement;
 function SVGViewport({
     viewBox={x:0, y:0, w:512, h:512}, 
     onViewChange=()=>{},
     onSceneObject=()=>{},
-    rays=[], 
-    hitPoints=[], 
-    paths=[], 
     onSelection=()=>{},
     ...props
 }={})
@@ -55,15 +66,6 @@ function SVGViewport({
     const scene = React.useSyncExternalStore(sceneStore.subscribe, sceneStore.getSnapshot);
     const selectionKeys = React.useSyncExternalStore(selectionStore.subscribe, selectionStore.getSnapshot);
     const svgRef = React.useRef()
-
-    const calcScale = ()=>{
-        if(svgRef.current){
-            const clientSize = {w: svgRef.current.clientWidth, h: svgRef.current.clientHeight}
-            return viewBox.w/clientSize.w;
-        }else{
-            return 1.0;
-        }
-    }
 
     // event handling
     const onmousewheel = (e)=>{
@@ -86,8 +88,7 @@ function SVGViewport({
         onViewChange(newViewBox)
     }
 
-    const onmousedown = (e)=>{
-        
+    const panViewportTool = (e)=>{ 
         if(props.onMouseDown)
         {
             props.onMouseDown(e);
@@ -98,7 +99,7 @@ function SVGViewport({
 
         const panBegin = {x: e.clientX, y: e.clientY};
 
-        const onmousemove = (e)=>{
+        const handleDrag = (e)=>{
             if(props.onMouseMove){
                 props.onMouseMove(e);
             }
@@ -122,25 +123,35 @@ function SVGViewport({
             onViewChange(newViewBox)
         }
     
-        const onmouseup = (e)=>{
-            console.log("window mouseup")
-            window.removeEventListener('mousemove', onmousemove);
-        }
 
-        window.addEventListener('mousemove', onmousemove);
-        window.addEventListener('mouseup', onmouseup, {once: true});
+        window.addEventListener('mousemove', handleDrag);
+        window.addEventListener('mouseup', ()=>window.removeEventListener("mousemove", handleDrag), {once: true});
     }
+
+    const simpleRaytraceResults = React.useSyncExternalStore((listener)=>simpleRaytraceStore.subscribe(listener), ()=>simpleRaytraceStore.getSnapshot());
+    const displayOptions = React.useSyncExternalStore(displayOptionsStore.subscribe, displayOptionsStore.getSnapshot);
+    React.useEffect(()=>{
+        simpleRaytraceStore.updateRaytrace(scene, {
+            maxBounce: 9, 
+            samplingMethod: SamplingMethod.Uniform,
+            lightSamples: 9
+        });
+    }, [scene]);
+
+    const rays = displayOptions.lightrays ? simpleRaytraceResults.lightrays || [] : [];
+    const hitPoints =  displayOptions.hitpoints ? simpleRaytraceResults.hitPoints || [] : [];
+    const paths = displayOptions.lightpaths ? simpleRaytraceResults.lightPaths || [] : [];
 
     return h('svg', {
             xmlns:"http://www.w3.org/2000/svg",
             width: props.width,
             height: props.height,
             className: props.className,
-            style: {"--zoom": calcScale(), ...props.style},
+            style: {"--zoom": calcScale(svgRef.current, viewBox), ...props.style},
             ref: svgRef,
             viewBox: viewboxString(viewBox),
             ...props,
-            onMouseDown: (e) => onmousedown(e),
+            onMouseDown: (e) => panViewportTool(e),
             onWheel: (e) => onmousewheel(e)     
         },
         h('defs', null, 

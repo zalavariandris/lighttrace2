@@ -39,7 +39,7 @@ const mouseTools = {
 };
 
 
-import simpleRaytraceStore from "./stores/simpleRaytraceStore.js";
+
 
 function Toolbar()
 {
@@ -125,15 +125,7 @@ const App = ()=>{
     });
 
     console.log("render app")
-    const simpleRaytraceResults = React.useSyncExternalStore((listener)=>simpleRaytraceStore.subscribe(listener), ()=>simpleRaytraceStore.getSnapshot());
 
-    React.useEffect(()=>{
-        simpleRaytraceStore.updateRaytrace(scene, {
-            maxBounce: 9, 
-            samplingMethod: SamplingMethod.Uniform,
-            lightSamples: 9
-        });
-    }, [scene]);
 
     // inital raytrace
 
@@ -164,9 +156,6 @@ const App = ()=>{
             h(SVGViewport, {
                 className:"viewport",
                 viewBox: viewBox,
-                rays: displayOptions.lightrays?simpleRaytraceResults.lightrays:[],
-                hitPoints: displayOptions.hitpoints?simpleRaytraceResults.hitPoints:[], 
-                paths:displayOptions.lightpaths?simpleRaytraceResults.lightPaths:[], 
                 onViewChange: viewBox=>setViewBox(viewBox),
                 onMouseDown: e=>{
                     console.log("handle mousedown")
