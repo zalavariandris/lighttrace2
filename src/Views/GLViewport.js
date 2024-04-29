@@ -2,6 +2,10 @@ import React, {useState} from "react"
 import createREGL from "regl"
 import {mat4} from 'gl-matrix'
 import GLLightpathRenderer from "../GLLightpathRenderer2.js"
+import { raytrace, SamplingMethod } from "../scene/raytrace.js";
+
+import Shape from "../scene/shapes/Shape.js";
+import Light from "../scene/lights/Light.js"
 
 /* Utilities */
 function makeCircle (N=36)
@@ -28,6 +32,13 @@ function makeTransform({position=[0,0,0],rotation=[0,0,0],scale=[1,1,1]}={}){
     ])
     mat4.scale(model, model, [scale[0], scale[1], scale[2]]);
     return model;
+}
+
+function makeProjectionFromViewbox(viewBox)
+{
+    const projection = mat4.identity([]);
+    mat4.ortho(projection, viewBox.x, viewBox.x+viewBox.w, viewBox.y+viewBox.h, viewBox.y, -1,1) //left, right, bottom, top, near, far
+    return projection;
 }
 
 function matchProjectionToSVGViewbox(svg_viewbox, win)
@@ -57,10 +68,64 @@ function matchProjectionToSVGViewbox(svg_viewbox, win)
     }
 }
 
+function drawLines({regl, points, colors, viewport, projection}={})
+{
+    const draw = regl(({
+        viewport: viewport,
+        vert: `
+        precision mediump float;
+        uniform mat4 projection;
+        attribute vec2 position;
+        attribute vec3 color;
+        varying vec3 vColor;
+        
+        void main () {
+            vColor = color;
+            gl_Position = projection * vec4(position, 0, 1);
+        }`,
+
+        frag: `
+        precision mediump float;
+        uniform vec3 baseColor;
+        varying vec3 vColor;
+        void main () {
+            float rasterizationBias = 1.0;
+            gl_FragColor = vec4(vColor.rgb,1);
+        }`,
+        attributes: {
+            position: points,
+            color: colors,
+        },
+
+        uniforms: {
+            baseColor: [1,1,1],
+            projection: projection
+        },
+
+        blend: {
+            enable: true,
+            func: {
+                srcRGB: 'src alpha',
+                srcAlpha: 1,
+                dstRGB: 'one minus src alpha',
+                dstAlpha: 1
+            },
+            equation: {
+                rgb: 'add',
+                alpha: 'add'
+            },
+            color: [0, 0, 0, 0]
+        },
+        lineWidth:1,
+        count: points.length+1,
+        primitive: "line strip"
+    }));
+    draw();
+}
+
 function GLViewport({
     viewBox,
     scene,
-    paths,
     style, 
     onReset=()=>{},
     onDidRender=(sample)=>{},
@@ -69,8 +134,36 @@ function GLViewport({
 {
     const canvasRef = React.useRef(null);
     const reglRef = React.useRef(null);
-    const rendererRef = React.useRef(null);
+
+    // const rendererRef = React.useRef(null);
     const resizeHandlerRef = React.useRef(null);
+
+    // const lights = Object.values(scene).filter(obj=>obj instanceof Light);
+    // const shapes = Object.values(scene).filter(obj=>obj instanceof Shape);
+    // const newRaytraceResults = raytrace(lights, [shapes, shapes.map(shape=>shape.material)], {
+    //     maxBounce: 9, 
+    //     samplingMethod: SamplingMethod.Random,
+    //     lightSamples: 9
+    // });
+
+    const positions = [0,0,20,20];
+    const colors = [[0,0,1],[1,1,1]];
+
+    // callbacks
+    const onGLRender = (regl)=>{
+        drawLines({
+            regl, 
+            points: positions, 
+            colors:colors,
+            viewport: {x: 0, y:0, width: canvasRef.current.clientWidth, height: canvasRef.current.clientHeight},
+            projection: makeProjectionFromViewbox(viewBox)
+        });
+        console.log("gl render");
+    }
+
+    const onGLResize = (regl)=>{
+        console.log("gl resize");
+    }
 
     // component did mount (kinda...)
     React.useEffect(()=>{
@@ -96,39 +189,26 @@ function GLViewport({
         console.assert(reglRef.current!=undefined, "cant create REGL context")
 
         // INITIAL
-        rendererRef.current = new GLLightpathRenderer(reglRef.current);
-        rendererRef.current.resizeGL(reglRef.current, {
-            width: canvasRef.current.offsetWidth, 
-            height: canvasRef.current.offsetHeight
-        });
-        rendererRef.current.renderGL(reglRef.current, {
-            lightpaths: paths, 
-            viewBox: viewBox, 
-            width: canvasRef.current.offsetWidth, 
-            height: canvasRef.current.offsetHeight
-        });
+        // rendererRef.current = new GLLightpathRenderer(reglRef.current);
+        // rendererRef.current.resizeGL(reglRef.current, {
+        //     width: canvasRef.current.offsetWidth, 
+        //     height: canvasRef.current.offsetHeight
+        // });
+
+        onGLRender(reglRef.current);
+
         
         const [canvaswidth, canvasheight] = [canvasRef.current.offsetWidth, canvasRef.current.offsetHeight]
         canvasRef.current.width=canvaswidth;
         canvasRef.current.height=canvasheight;
+
         // render on resize
         const resizeHandler = (event)=>{
             const [canvaswidth, canvasheight] = [canvasRef.current.offsetWidth, canvasRef.current.offsetHeight]
             canvasRef.current.width=canvaswidth;
             canvasRef.current.height=canvasheight;
 
-            rendererRef.current.reset(reglRef.current);
-            onReset()
-            rendererRef.current.resizeGL(reglRef.current, {
-                width: canvasRef.current.offsetWidth, 
-                height: canvasRef.current.offsetHeight
-            });
-            rendererRef.current.renderGL(reglRef.current, {
-                lightpaths: paths, 
-                viewBox: viewBox, 
-                width: canvasRef.current.offsetWidth, 
-                height: canvasRef.current.offsetHeight
-            });
+            onGLResize(reglRef.current);
         }
         
         if(resizeHandlerRef.current){
@@ -138,24 +218,10 @@ function GLViewport({
         resizeHandlerRef.current = resizeHandler
     }, [])
 
-    const renderStartTime = React.useRef(Date.now())
 
-    React.useEffect(()=>{
-        rendererRef.current.reset(reglRef.current);
-        onReset()
-        renderStartTime.current = Date.now()
-    },[scene, viewBox])
-
-    
-    // console.log(opacity)
-    if(reglRef.current && rendererRef.current)
+    if(reglRef.current)
     {
-        rendererRef.current.renderGL(reglRef.current, { 
-            lightpaths: paths, 
-            viewBox: viewBox, 
-            width: canvasRef.current.offsetWidth, 
-            height: canvasRef.current.offsetHeight
-        });
+        onGLRender(reglRef.current);
     }
     const h = React.createElement
     return h("canvas", {

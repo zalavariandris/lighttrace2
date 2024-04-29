@@ -39,8 +39,6 @@ const mouseTools = {
 };
 
 
-
-
 function Toolbar()
 {
     const currentToolName = React.useSyncExternalStore(mouseToolsStore.subscribe, mouseToolsStore.getSnapshot);
@@ -107,8 +105,6 @@ function Sidebar()
     )
 }
 
-
-
 const App = ()=>{
     /*Settings*/
     const raytraceOptions = useSyncExternalStore(raytraceOptionsStore.subscribe, raytraceOptionsStore.getSnapshot);
@@ -123,9 +119,6 @@ const App = ()=>{
     const [viewBox, setViewBox] = React.useState({
         x:0,y:0,w:512,h:512
     });
-
-    console.log("render app")
-
 
     // inital raytrace
 
@@ -143,16 +136,11 @@ const App = ()=>{
 
     return h("div", null,
             /*VIEWPORTS*/
-            // displayOptions.glPaint?h(GLViewport,  {
-            //     className:"viewport",
-            //     viewBox: viewBox,
-            //     scene: scene,
-            //     paths: randomRaytraceResults.lightPaths,
-            //     onReset: ()=>{
-            //         // TODO: this is temporary. rendering and raytacing should be seperated from this component.
-            //         setCurrentSampleStep(0); setAnimate(true);
-            //     }
-            // }):null,
+            displayOptions.glPaint?h(GLViewport,  {
+                className:"viewport",
+                viewBox: viewBox,
+                scene: scene
+            }):null,
             h(SVGViewport, {
                 className:"viewport",
                 viewBox: viewBox,

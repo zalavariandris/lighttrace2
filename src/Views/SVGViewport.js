@@ -19,9 +19,12 @@ import SphericalLensView from "../UI/SVGEditableElements/SphericalLensView.js"
 
 import sceneStore from "../stores/sceneStore.js";
 import selectionStore from "../stores/selectionStore.js";
-import simpleRaytraceStore from "../stores/simpleRaytraceStore.js";
 import { SamplingMethod } from "../stores/raytraceOptionsStore.js";
 import displayOptionsStore from "../stores/displayOptionsStore.js"
+
+import Shape from "../scene/shapes/Shape.js";
+import Light from "../scene/lights/Light.js";
+import { raytrace } from "../scene/raytrace.js"
 
 function viewboxString(viewBox)
 {
@@ -127,16 +130,16 @@ function SVGViewport({
         window.addEventListener('mousemove', handleDrag);
         window.addEventListener('mouseup', ()=>window.removeEventListener("mousemove", handleDrag), {once: true});
     }
-
-    const simpleRaytraceResults = React.useSyncExternalStore((listener)=>simpleRaytraceStore.subscribe(listener), ()=>simpleRaytraceStore.getSnapshot());
+ 
     const displayOptions = React.useSyncExternalStore(displayOptionsStore.subscribe, displayOptionsStore.getSnapshot);
-    React.useEffect(()=>{
-        simpleRaytraceStore.updateRaytrace(scene, {
-            maxBounce: 9, 
-            samplingMethod: SamplingMethod.Uniform,
-            lightSamples: 9
-        });
-    }, [scene]);
+
+    const lights = Object.values(scene).filter(obj=>obj instanceof Light);
+    const shapes = Object.values(scene).filter(obj=>obj instanceof Shape);
+    const simpleRaytraceResults = raytrace(lights, [shapes, shapes.map(shape=>shape.material)], {
+        maxBounce: 9, 
+        samplingMethod: SamplingMethod.Random,
+        lightSamples: 16
+    });
 
     const rays = displayOptions.lightrays ? simpleRaytraceResults.lightrays || [] : [];
     const hitPoints =  displayOptions.hitpoints ? simpleRaytraceResults.hitPoints || [] : [];
