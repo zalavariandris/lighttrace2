@@ -61,6 +61,7 @@ function matchProjectionToSVGViewbox(svg_viewbox, win)
     } else {
         // If the window is taller than the SVG viewbox, scale the height to fit the window
         const scaled_height = svg_viewbox.w / win_aspect_ratio;
+
         const offset_y = (svg_viewbox.h - scaled_height) / 2.0;
 
         projection = mat4.ortho(projection, svg_viewbox.x, svg_viewbox.x + svg_viewbox.w, svg_viewbox.y - offset_y, svg_viewbox.y + scaled_height - offset_y, -1.0, 1.0, -1.0, 1.0) //left, right, bottom, top, near, far
@@ -123,6 +124,19 @@ function drawLines({regl, points, colors, viewport, projection}={})
     draw();
 }
 
+// render callbacks
+const onGLRender = (regl)=>{
+    console.log("clear GL")
+    regl.clear({color: [0,.1,.1,1]});
+        
+    
+    // console.log("gl render");
+}
+
+const onGLResize = (regl)=>{
+    console.log("gl resize");
+}
+
 function GLViewport({
     viewBox,
     scene,
@@ -149,27 +163,13 @@ function GLViewport({
     const positions = [0,0,20,20];
     const colors = [[0,0,1],[1,1,1]];
 
-    // callbacks
-    const onGLRender = (regl)=>{
-        drawLines({
-            regl, 
-            points: positions, 
-            colors:colors,
-            viewport: {x: 0, y:0, width: canvasRef.current.clientWidth, height: canvasRef.current.clientHeight},
-            projection: makeProjectionFromViewbox(viewBox)
-        });
-        console.log("gl render");
-    }
 
-    const onGLResize = (regl)=>{
-        console.log("gl resize");
-    }
 
     // component did mount (kinda...)
     React.useEffect(()=>{
-        console.log("mount GLViewport")
-        console.log("canvas size:", canvasRef.current.offsetWidth, canvasRef.current.offsetHeight)
-        // Crate REGL context
+        // console.log("mount GLViewport")
+        // console.log("canvas size:", canvasRef.current.offsetWidth, canvasRef.current.offsetHeight)
+        // // Crate REGL context
         reglRef.current = createREGL({
             canvas: canvasRef.current,
             // pixelRatio: 2.0,
@@ -186,43 +186,45 @@ function GLViewport({
             },
             extensions: ['OES_texture_float', "OES_texture_half_float"]
         });
-        console.assert(reglRef.current!=undefined, "cant create REGL context")
 
-        // INITIAL
-        // rendererRef.current = new GLLightpathRenderer(reglRef.current);
-        // rendererRef.current.resizeGL(reglRef.current, {
-        //     width: canvasRef.current.offsetWidth, 
-        //     height: canvasRef.current.offsetHeight
-        // });
+        onGLRender(reglRef.current)
+        // console.assert(reglRef.current!=undefined, "cant create REGL context")
 
-        onGLRender(reglRef.current);
+        // // INITIAL
+        // // rendererRef.current = new GLLightpathRenderer(reglRef.current);
+        // // rendererRef.current.resizeGL(reglRef.current, {
+        // //     width: canvasRef.current.offsetWidth, 
+        // //     height: canvasRef.current.offsetHeight
+        // // });
+
+        // onGLRender(reglRef.current);
 
         
-        const [canvaswidth, canvasheight] = [canvasRef.current.offsetWidth, canvasRef.current.offsetHeight]
-        canvasRef.current.width=canvaswidth;
-        canvasRef.current.height=canvasheight;
+        // const [canvaswidth, canvasheight] = [canvasRef.current.offsetWidth, canvasRef.current.offsetHeight]
+        // canvasRef.current.width=canvaswidth;
+        // canvasRef.current.height=canvasheight;
 
-        // render on resize
-        const resizeHandler = (event)=>{
-            const [canvaswidth, canvasheight] = [canvasRef.current.offsetWidth, canvasRef.current.offsetHeight]
-            canvasRef.current.width=canvaswidth;
-            canvasRef.current.height=canvasheight;
+        // // render on resize
+        // const resizeHandler = (event)=>{
+        //     const [canvaswidth, canvasheight] = [canvasRef.current.offsetWidth, canvasRef.current.offsetHeight]
+        //     canvasRef.current.width=canvaswidth;
+        //     canvasRef.current.height=canvasheight;
 
-            onGLResize(reglRef.current);
-        }
+        //     onGLResize(reglRef.current);
+        // }
         
-        if(resizeHandlerRef.current){
-            window.removeEventListener("resize", resizeHandlerRef.current);
-        }
-        window.addEventListener("resize", resizeHandler);
-        resizeHandlerRef.current = resizeHandler
-    }, [])
+        // if(resizeHandlerRef.current){
+        //     window.removeEventListener("resize", resizeHandlerRef.current);
+        // }
+        // window.addEventListener("resize", resizeHandler);
+        // resizeHandlerRef.current = resizeHandler
+    }, []);
 
-
-    if(reglRef.current)
-    {
+    React.useEffect( ()=>{
         onGLRender(reglRef.current);
-    }
+    }, [scene, viewBox]);
+
+
     const h = React.createElement
     return h("canvas", {
         style: {
