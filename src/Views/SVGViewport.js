@@ -141,7 +141,7 @@ function SVGViewport({
         lightSamples: 16
     });
 
-    const rays = displayOptions.lightrays ? simpleRaytraceResults.lightrays || [] : [];
+    const rays = displayOptions.lightrays ? simpleRaytraceResults.lightRays || [] : [];
     const hitPoints =  displayOptions.hitpoints ? simpleRaytraceResults.hitPoints || [] : [];
     const paths = displayOptions.lightpaths ? simpleRaytraceResults.lightPaths || [] : [];
 

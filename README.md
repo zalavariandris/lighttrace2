@@ -55,6 +55,7 @@ https://zalavariandris.github.io/lighttrace2/
 - [ ] use redux for UI View models?
 - [ ] refactor UI to reusable widgets and ModelViews. Like SVGViewport and SVG Panel?
 
+- [ ] check if webgl extensions are supported by the platform. eg: float texturtres, and half float textures
 
 - [ ] simulate light as wave
 - [ ] rotate shapes

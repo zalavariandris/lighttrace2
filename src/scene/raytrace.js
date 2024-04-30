@@ -75,9 +75,9 @@ class LightPath{
 
 class RaytraceResults
 {
-    constructor(lightrays, hitPoints, lightPaths)
+    constructor(lightRays, hitPoints, lightPaths)
     {
-        this.lightrays = lightrays;
+        this.lightRays = lightRays;
         this.hitPoints = hitPoints;
         this.lightPaths = lightPaths;
     }
@@ -91,6 +91,21 @@ function sampleWavelength(temperature)
     return Math.random()*300+380
     // return 550;
 }
+
+function sampleLight(light, {sampleCount, samplingMethod})
+{
+    switch (light.constructor.name) {
+        case "PointLight":
+            return samplePointlight(light, {sampleCount:sampleCount, samplingMethod});
+        case "LaserLight":
+            return sampleLaserLight(light, {sampleCount:sampleCount, samplingMethod});
+        case "DirectionalLight":
+            return sampleDirectionalLight(light, {sampleCount:sampleCount, samplingMethod});
+        default:
+            return [];
+    }
+}
+
 
 function samplePointlight(light, {sampleCount, samplingMethod})
 {
@@ -163,7 +178,24 @@ function sampleDirectionalLight(light, {sampleCount, samplingMethod})
     });
 }
 
+
 /* HIT TESTS */
+function hitShape(ray, shape)
+{
+    switch (shape.constructor.name) {
+        case "Circle":
+            return hitCircle(ray, shape);
+        case "Rectangle":
+            return hitRectangle(ray, shape);
+        case "SphericalLens":
+            return hitSphericalLens(ray, shape);
+        case "LineSegment":
+            return hitLineSegment(ray, shape);
+        default:
+            return [];
+    }
+}
+
 function hitCircle(ray, circle)
 {
     // solve quadratic equatation: at**2+bt+c=0
@@ -464,7 +496,9 @@ function sampleDiffuse(incidentRay, hitPoint)
     });
 }
 
-function raytrace_pass(rays, [shapes, materials], {THRESHOLD=1e-6})
+
+
+function raytracePass(rays, [shapes, materials], {THRESHOLD=1e-6}={})
 {
     // intersection Threshold
     const THRESHOLD_SQUARED = THRESHOLD**THRESHOLD;
@@ -477,23 +511,7 @@ function raytrace_pass(rays, [shapes, materials], {THRESHOLD=1e-6})
         }
 
         const raySceneHitPoints = _.zip(shapes, materials).map(([shape, material])=>{
-            let hitPoints = []
-            switch (shape.constructor.name) {
-                case "Circle":
-                    hitPoints = hitCircle(ray, shape);
-                    break;
-                case "Rectangle":
-                    hitPoints = hitRectangle(ray, shape);
-                    break;
-                case "SphericalLens":
-                    hitPoints = hitSphericalLens(ray, shape);
-                    break;
-                case "LineSegment":
-                    hitPoints = hitLineSegment(ray, shape);
-                    break;
-                default:
-                    break;
-            }
+            let hitPoints = hitShape(ray,   shape);
             // hitPoints = shape.hitTest(ray)
             
             // filter raypoints within distance threshold
@@ -560,19 +578,8 @@ function raytrace(lights, [shapes, materials], {maxBounce=3, samplingMethod="Uni
 {
     // initial rays
     const initialLightrays = lights.map((light)=>{
-        switch (light.constructor.name) {
-            case "PointLight":
-                return samplePointlight(light, {sampleCount:lightSamples, samplingMethod});
-                break;
-            case "LaserLight":
-                return sampleLaserLight(light, {sampleCount:lightSamples, samplingMethod});
-                break;
-            case "DirectionalLight":
-                return sampleDirectionalLight(light, {sampleCount:lightSamples, samplingMethod});
-                break;
-            default:
-                break;
-        }
+        return sampleLight(light, {sampleCount:lightSamples, samplingMethod});
+        
     }).flat(1);
 
     // raytrace steps
@@ -582,7 +589,7 @@ function raytrace(lights, [shapes, materials], {maxBounce=3, samplingMethod="Uni
     const lightPaths = initialLightrays.map(r=>new LightPath([r]));
     for(let i=0; i<maxBounce; i++)
     {
-        const [secondaries, hitPoints] = raytrace_pass(currentRays, [shapes, materials], {THRESHOLD:1e-6});
+        const [secondaries, hitPoints] = raytracePass(currentRays, [shapes, materials], {THRESHOLD:1e-6});
         raytraceSteps.push(secondaries);
         hitPointSteps.push(hitPoints);
 
@@ -611,4 +618,6 @@ function raytrace(lights, [shapes, materials], {maxBounce=3, samplingMethod="Uni
 }
 
 export {raytrace, SamplingMethod}
+export {raytracePass}
+export {sampleLight}
 export {Lightray, HitPoint}

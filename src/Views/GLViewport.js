@@ -2,11 +2,11 @@ import React, {useState} from "react"
 import createREGL from "regl"
 import {mat4} from 'gl-matrix'
 import GLLightpathRenderer from "../GLLightpathRenderer2.js"
-import { raytrace, SamplingMethod } from "../scene/raytrace.js";
+import { raytrace, SamplingMethod, raytracePass, sampleLight } from "../scene/raytrace.js";
 
 import Shape from "../scene/shapes/Shape.js";
 import Light from "../scene/lights/Light.js"
-
+import _ from "lodash";
 /* Utilities */
 function makeCircle (N=36)
 {
@@ -69,10 +69,40 @@ function matchProjectionToSVGViewbox(svg_viewbox, win)
     }
 }
 
-function drawLines({regl, points, colors, viewport, projection}={})
+const glctx = {
+    blend: {
+        enable: true,
+        func: {
+            srcRGB: 'src alpha',
+            srcAlpha: 1,
+            dstRGB: 'one minus src alpha',
+            dstAlpha: 1
+        },
+        equation: {
+            rgb: 'add',
+            alpha: 'add'
+        },
+        color: [0, 0, 0, 0]
+    },
+    lineWidth:1,
+}
+
+function drawLines({regl, points, colors}={})
 {
-    const draw = regl(({
-        viewport: viewport,
+    const draw = regl({
+        ...glctx,
+        viewport: {x: 0, y: 0, w: 512, h: 512},
+        uniforms: {
+            view: mat4.identity([]),
+            projection: mat4.ortho(mat4.identity([]), 0,512,0,512,-1,1) //left, right, bottom, top, near, far
+        },
+        attributes: {
+            position: points,
+            color: colors,
+        },
+        count: points.length+1,
+        primitive: "line strip",
+
         vert: `
         precision mediump float;
         uniform mat4 projection;
@@ -89,63 +119,61 @@ function drawLines({regl, points, colors, viewport, projection}={})
         precision mediump float;
         uniform vec3 baseColor;
         varying vec3 vColor;
-        void main () {
-            float rasterizationBias = 1.0;
+        void main ()
+        {
             gl_FragColor = vec4(vColor.rgb,1);
         }`,
-        attributes: {
-            position: points,
-            color: colors,
-        },
-
-        uniforms: {
-            baseColor: [1,1,1],
-            projection: projection
-        },
-
-        blend: {
-            enable: true,
-            func: {
-                srcRGB: 'src alpha',
-                srcAlpha: 1,
-                dstRGB: 'one minus src alpha',
-                dstAlpha: 1
-            },
-            equation: {
-                rgb: 'add',
-                alpha: 'add'
-            },
-            color: [0, 0, 0, 0]
-        },
-        lineWidth:1,
-        count: points.length+1,
-        primitive: "line strip"
-    }));
+    });
     draw();
 }
 
-// render callbacks
-const onGLRender = (regl)=>{
-    console.log("clear GL")
-    regl.clear({color: [0,.1,.1,1]});
-        
-    
-    // console.log("gl render");
-}
 
-const onGLResize = (regl)=>{
-    console.log("gl resize");
-}
 
 function GLViewport({
     viewBox,
     scene,
-    style, 
-    onReset=()=>{},
-    onDidRender=(sample)=>{},
+    style,
     ...props
 }={})
 {
+    // render callbacks
+    const onGLRender = (regl)=>{
+
+        regl.clear({color: [0,.1,.1,1]});
+
+        const lights = Object.values(scene).filter(obj=>obj instanceof Light);
+        const shapes = Object.values(scene).filter(obj=>obj instanceof Shape);
+
+        // initial rays
+        const rays = lights.map(light=>sampleLight(light, {sampleCount:9, samplingMethod:SamplingMethod.Random}));
+
+        // intersections
+        // const [secondaries, hitPoints] = raytracePass(rays, [shapes, shapes.map(shape=>shape.material)]);
+
+
+        // calc ray bounce
+
+
+        // const points = _.zip(simpleRaytraceResults.lightRays, hitPoints).map( ([ray, hit])=>{
+        //     const A = [ray.origin.x, ray.origin.y];
+        //     const B = hit=null?[0,0,0]:[hit.position.x, hit.position.y];
+        //     return [A,B];
+        // }).flat();
+        // const colors = simpleRaytraceResults.lightPaths.map(ray=>[1,1,1]);
+
+        // drawLines({
+        //     regl: regl,
+        //     points: points,
+        //     colors: colors
+        // });
+        
+        console.log("gl render");
+    }
+
+    const onGLResize = (regl)=>{
+        console.log("gl resize");
+    }
+
     const canvasRef = React.useRef(null);
     const reglRef = React.useRef(null);
 
@@ -159,10 +187,6 @@ function GLViewport({
     //     samplingMethod: SamplingMethod.Random,
     //     lightSamples: 9
     // });
-
-    const positions = [0,0,20,20];
-    const colors = [[0,0,1],[1,1,1]];
-
 
 
     // component did mount (kinda...)
@@ -186,8 +210,9 @@ function GLViewport({
             },
             extensions: ['OES_texture_float', "OES_texture_half_float"]
         });
-
-        onGLRender(reglRef.current)
+        // reglRef.current = createREGL(canvasRef.current);
+        console.log("init gl")
+        // onGLRender(reglRef.current)
         // console.assert(reglRef.current!=undefined, "cant create REGL context")
 
         // // INITIAL
@@ -221,6 +246,7 @@ function GLViewport({
     }, []);
 
     React.useEffect( ()=>{
+        console.log("gl update")
         onGLRender(reglRef.current);
     }, [scene, viewBox]);
 
