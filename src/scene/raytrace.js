@@ -179,23 +179,8 @@ function sampleDirectionalLight(light, {sampleCount, samplingMethod})
 }
 
 
-/* HIT TESTS */
-function hitShape(ray, shape)
-{
-    switch (shape.constructor.name) {
-        case "Circle":
-            return hitCircle(ray, shape);
-        case "Rectangle":
-            return hitRectangle(ray, shape);
-        case "SphericalLens":
-            return hitSphericalLens(ray, shape);
-        case "LineSegment":
-            return hitLineSegment(ray, shape);
-        default:
-            return [];
-    }
-}
 
+/* HIT TESTS */
 function hitCircle(ray, circle)
 {
     // solve quadratic equatation: at**2+bt+c=0
@@ -497,7 +482,6 @@ function sampleDiffuse(incidentRay, hitPoint)
 }
 
 
-
 function raytracePass(rays, [shapes, materials], {THRESHOLD=1e-6}={})
 {
     // intersection Threshold
@@ -511,7 +495,23 @@ function raytracePass(rays, [shapes, materials], {THRESHOLD=1e-6}={})
         }
 
         const raySceneHitPoints = _.zip(shapes, materials).map(([shape, material])=>{
-            let hitPoints = hitShape(ray,   shape);
+            let hitPoints = []
+            switch (shape.constructor.name) {
+                case "Circle":
+                    hitPoints = hitCircle(ray, shape);
+                    break;
+                case "Rectangle":
+                    hitPoints = hitRectangle(ray, shape);
+                    break;
+                case "SphericalLens":
+                    hitPoints = hitSphericalLens(ray, shape);
+                    break;
+                case "LineSegment":
+                    hitPoints = hitLineSegment(ray, shape);
+                    break;
+                default:
+                    break;
+            }
             // hitPoints = shape.hitTest(ray)
             
             // filter raypoints within distance threshold
