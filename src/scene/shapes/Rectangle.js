@@ -2,7 +2,7 @@ import Shape from "./Shape.js"
 import LineSegment from "./LineSegment.js";
 import {Point, Vector} from "../geo.js"
 import {P, V} from "../geo.js"
-import { HitPoint } from "../raytrace.js";
+// import { HitPoint } from "../raytrace.js";
 
 class Rectangle extends Shape
 {
@@ -45,34 +45,6 @@ class Rectangle extends Shape
     
         // Check if the point is within the bounds of the rectangle
         return point.x >= minX && point.x <= maxX && point.y >= minY && point.y <= maxY;
-    }
-
-    hitTest(ray)
-    {
-        const top =    this.Cy+this.height/2
-        const left =   this.Cx-this.width/2
-        const bottom = this.Cy-this.height/2
-        const right =  this.Cx+this.width/2
-        
-        const topLeft = new Point(left, top)
-        const bottomRight = new Point(right, bottom)
-        const topRight = new Point(right, top)
-        const bottomLeft = new Point(left, bottom)
-        
-        const sides = [
-            new LineSegment({Ax:left, Ay: top, Bx:right, By:top, material: this.material}),
-            new LineSegment({Bx:right, By: bottom, Ax:right, Ay:top, material: this.material}),
-            new LineSegment({Ax:right, Ay: bottom, Bx:left, By:bottom, material: this.material}),
-            new LineSegment({Ax:left, Ay: bottom, Bx:left, By:top, material: this.material}),
-        ];
-        
-        let hits = []
-        for (const side of sides) {
-            const side_hits = side.hitTest(ray);
-            hits = [...hits, ...side_hits]
-        }
-
-        return hits;
     }
 }
 

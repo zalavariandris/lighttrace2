@@ -7,11 +7,6 @@ class Shape extends SceneObject
         super({Cx, Cy})
         this.material = material;
     }
-
-    hitTest()
-    {
-        return []
-    }
 }
 
 export default Shape

@@ -1,6 +1,6 @@
 import React, {useSyncExternalStore} from "react";
 import raytraceOptionsStore, {SamplingMethod} from "../stores/raytraceOptionsStore.js";
-import { raytrace } from "../scene/raytrace.js";
+import { raytrace } from "../raytracer/raytrace.js";
 const h = React.createElement;
 
 

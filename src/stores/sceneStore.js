@@ -11,6 +11,15 @@ import DirectionalLight from "../scene/lights/DirectionalLight.js"
 
 
 let scene = {
+    // "ball": new Circle({
+    //     Cx: 200, Cy:250, radius:50, material: "mirror"
+    // }),
+    // "box": new Rectangle({
+    //     Cx: 500, Cy: 250, 
+    //     width: 200, 
+    //     height: 200, 
+    //     material: "mirror"
+    // }),
     "floor line": new LineSegment({
         Ax: 50, 
         Ay: 450, 
@@ -18,14 +27,14 @@ let scene = {
         By: 450, 
         material: "mirror"
     }),
-    "concave lens": new SphericalLens({
-        Cx: 130, 
-        Cy: 290, 
-        diameter: 140,
-        edgeThickness: 5,
-        centerThickness:80,
-        material: "glass" 
-    }),
+    // "concave lens": new SphericalLens({
+    //     Cx: 130, 
+    //     Cy: 290, 
+    //     diameter: 140,
+    //     edgeThickness: 5,
+    //     centerThickness:80,
+    //     material: "glass" 
+    // }),
 
     // "laser": new LaserLight({
     //     Cx:50, 

@@ -8,11 +8,6 @@ class Material{
     {
         return new Material()
     }
-
-    sample(V, N)
-    {
-        return null;
-    }
 }
 
 export default Material;

@@ -1,7 +1,7 @@
 import Shape from "./Shape.js"
 import {Point, Vector} from "../geo.js"
 import {P, V} from "../geo.js"
-import { HitPoint } from "../raytrace.js";
+// import { HitPoint } from "../raytrace.js";
 const EPSILON=1e-6;
 
 
@@ -79,55 +79,6 @@ class Circle extends Shape
     toString()
     {
         return `Circle ${this.key} (${this.Cx.toFixed(1)}, ${this.Cy.toFixed(1)}), r${this.radius.toFixed(1)}`
-    }
-
-    hitTest(ray)
-    {
-        // solve quadratic equatation: at**2+bt+c=0
-        const d = new Vector(ray.origin.x - this.Cx, ray.origin.y - this.Cy); // to circle
-        const a = ray.direction.dotProduct(ray.direction);
-        const b = 2 * ray.direction.dotProduct(d);
-        const c = d.dotProduct(d) - this.radius * this.radius;
-        const discriminant = b * b - 4 * a * c;
-        
-        if (discriminant < 0)
-        {
-            return [];
-        }
-        
-        // calc the distance along the ray (parameter of intersection points)
-        const t1 = (-b + Math.sqrt(discriminant)) / (2 * a);
-        const t2 = (-b - Math.sqrt(discriminant)) / (2 * a);
-
-        
-        let t=-1;
-        if(t1>0 && t2>0)
-        {
-            t = Math.min(t1, t2)
-        }
-        else if(t1>0)
-        {
-            t = t1
-        }
-        else if(t2>0)
-        {
-            t = t2
-        }
-        else
-        {
-            return []
-        }
-
-        return [t1, t2].filter(t=>t>EPSILON).map( t => {
-            const hitPosition = P(ray.origin.x + t * ray.direction.x, ray.origin.y + t * ray.direction.y);
-            const surfaceNormal = V(hitPosition.x - this.Cx, hitPosition.y - this.Cy).normalized();
-            
-            return new HitPoint({
-                position: hitPosition, 
-                surfaceNormal: surfaceNormal,
-                shape: this
-            });
-        })
     }
 }
 

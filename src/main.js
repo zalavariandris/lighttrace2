@@ -8,7 +8,7 @@ import Collapsable from "./UI/Collapsable.js";
 
 
 
-import {raytrace, SamplingMethod} from "./scene/raytrace.js"
+import {raytrace, SamplingMethod} from "./raytracer/raytrace.js"
 import Inspector from "./Views/Inspector.js"
 
 

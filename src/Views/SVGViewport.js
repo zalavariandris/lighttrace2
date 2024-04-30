@@ -1,6 +1,6 @@
 import React, {useState} from "react"
 import {RGBToCSS, wavelengthToRGB, temperatureToRGB} from "../scene/colorUtils.js"
-
+import _ from "lodash"
 import Circle from "../scene/shapes/Circle.js"
 import LineSegment from "../scene/shapes/LineSegment.js"
 import Rectangle from "../scene/shapes/Rectangle.js"
@@ -21,10 +21,14 @@ import sceneStore from "../stores/sceneStore.js";
 import selectionStore from "../stores/selectionStore.js";
 import { SamplingMethod } from "../stores/raytraceOptionsStore.js";
 import displayOptionsStore from "../stores/displayOptionsStore.js"
+import raytraceOptionsStore from "../stores/raytraceOptionsStore.js"
 
 import Shape from "../scene/shapes/Shape.js";
 import Light from "../scene/lights/Light.js";
-import { raytrace } from "../scene/raytrace.js"
+import { raytrace } from "../raytracer/raytrace.js"
+import { sampleLight } from "../raytracer/raytrace.js"
+import {hitShape, hitScene, reduceHitpointsToClosest} from "../raytracer/hitTests.js"
+import { sampleMaterial } from "../raytracer/sampleMaterials.js"
 
 function viewboxString(viewBox)
 {
@@ -57,6 +61,7 @@ const calcScale = (svg, viewBox)=>{
     }
 }
 
+
 const h = React.createElement;
 function SVGViewport({
     viewBox={x:0, y:0, w:512, h:512}, 
@@ -68,6 +73,7 @@ function SVGViewport({
 {
     const scene = React.useSyncExternalStore(sceneStore.subscribe, sceneStore.getSnapshot);
     const selectionKeys = React.useSyncExternalStore(selectionStore.subscribe, selectionStore.getSnapshot);
+    const raytraceoOptions = React.useSyncExternalStore(raytraceOptionsStore.subscribe, raytraceOptionsStore.getSnapshot);
     const svgRef = React.useRef()
 
     // event handling
@@ -133,17 +139,55 @@ function SVGViewport({
  
     const displayOptions = React.useSyncExternalStore(displayOptionsStore.subscribe, displayOptionsStore.getSnapshot);
 
+
+    // RAYTRACE
     const lights = Object.values(scene).filter(obj=>obj instanceof Light);
     const shapes = Object.values(scene).filter(obj=>obj instanceof Shape);
-    const simpleRaytraceResults = raytrace(lights, [shapes, shapes.map(shape=>shape.material)], {
-        maxBounce: 9, 
-        samplingMethod: SamplingMethod.Random,
-        lightSamples: 16
+
+    //
+    const initialRays = lights.map( light=>sampleLight(light, {
+        sampleCount: raytraceoOptions.lightSamples, 
+        samplingMethod: raytraceoOptions.samplingMethod
+    })).flat(1);
+
+    const initialHitPoints = initialRays
+        .map( ray=> {
+            const hitPoints = shapes.map( (shape)=>hitShape(ray, shape, {DISTANCE_THRESHOLD: 1e-6} ) );
+            return reduceHitpointsToClosest(hitPoints, ray.origin);
+        });
+
+    const secondaryRays = _.zip(initialRays, initialHitPoints)
+        .map( ([incidentRay, hitPoint])=>{
+            if(incidentRay!=null && hitPoint!=null)
+            {
+                return sampleMaterial("mirror", incidentRay, hitPoint);
+            }
+            else
+            {
+                return null;
+            }
+        }).filter(ray=>ray!=null?true:false);
+
+    const secondaryHitPoints = secondaryRays
+        .map( ray=> hitScene(ray, shapes, {DISTANCE_THRESHOLD: 1e-6}));
+
+    const rays = [...initialRays, ...secondaryRays];
+    const hitPoints = [...initialHitPoints, ...secondaryHitPoints];
+
+    // stop lightrays and hitPoint
+    _.zip(rays, hitPoints).forEach( ([ray, hitPoint])=>{
+        if(hitPoint)
+        {
+            ray.direction.x=hitPoint.position.x-ray.origin.x;
+            ray.direction.y=hitPoint.position.y-ray.origin.y;
+        }
+        else
+        {
+            ray.direction.x*=50;
+            ray.direction.y*=50;
+        }
     });
 
-    const rays = displayOptions.lightrays ? simpleRaytraceResults.lightRays || [] : [];
-    const hitPoints =  displayOptions.hitpoints ? simpleRaytraceResults.hitPoints || [] : [];
-    const paths = displayOptions.lightpaths ? simpleRaytraceResults.lightPaths || [] : [];
 
     return h('svg', {
             xmlns:"http://www.w3.org/2000/svg",
@@ -174,29 +218,29 @@ function SVGViewport({
             x: 0, y:0,
             style: {transform: `scale(var(--zoom))`}
         }, "O"),
-        h('g', {className: 'paths'},
-            paths.filter(path => path.rays.length > 1).map(path =>
-                h('g', null,
-                    h('path', {
-                        d: pointsToSvgPath(lightpathToPoints(path)),
-                        fill: 'none',
-                        stroke: `hsl(0deg 100% 100% / 10%)`,
-                        className: 'lightpath',
-                        strokeLinejoin:"round",
-                        strokeLinecap:"round",
-                        vectorEffect: "non-scaling-stroke",
-                    })
-                )
-            )
-        ),
+        // h('g', {className: 'paths'},
+        //     paths.filter(path => path.rays.length > 1).map(path =>
+        //         h('g', null,
+        //             h('path', {
+        //                 d: pointsToSvgPath(lightpathToPoints(path)),
+        //                 fill: 'none',
+        //                 stroke: `hsl(0deg 100% 100% / 10%)`,
+        //                 className: 'lightpath',
+        //                 strokeLinejoin:"round",
+        //                 strokeLinecap:"round",
+        //                 vectorEffect: "non-scaling-stroke",
+        //             })
+        //         )
+        //     )
+        // ),
         h('g', { className: 'rays'},
             rays==undefined?null:rays.map(ray =>
                 h('g', null,
                     h('line', {
                         x1: ray.origin.x,
                         y1: ray.origin.y,
-                        x2: ray.origin.x + ray.direction.x * 1000,
-                        y2: ray.origin.y + ray.direction.y * 1000,
+                        x2: ray.origin.x + ray.direction.x,
+                        y2: ray.origin.y + ray.direction.y,
                         className: 'lightray',
                         vectorEffect: "non-scaling-stroke",
                         style: {stroke: RGBToCSS(wavelengthToRGB(ray.wavelength), ray.intensity)}
@@ -206,7 +250,7 @@ function SVGViewport({
         ),
 
         h('g', { className: 'hitPoints'},
-            hitPoints==undefined?null:hitPoints.map(hitPoint =>
+            hitPoints==undefined?null:hitPoints.filter(hit=>hit!==null).map(hitPoint =>
                 h('g', null,
                     h('line', {
                         x1: hitPoint.position.x,

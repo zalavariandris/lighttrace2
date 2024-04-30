@@ -2,7 +2,7 @@ import React, {useState} from "react"
 import createREGL from "regl"
 import {mat4} from 'gl-matrix'
 import GLLightpathRenderer from "../GLLightpathRenderer2.js"
-import { raytrace, SamplingMethod, raytracePass, sampleLight } from "../scene/raytrace.js";
+import { raytrace, SamplingMethod, raytracePass, sampleLight } from "../raytracer/raytrace.js";
 
 import Shape from "../scene/shapes/Shape.js";
 import Light from "../scene/lights/Light.js"

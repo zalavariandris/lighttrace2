@@ -39,6 +39,11 @@ function makeProjectionFromViewbox(viewBox)
     return projection;
 }
 
+function initGL(regl)
+{
+    
+}
+
 
 class GLLightpathRenderer{
     constructor(regl)
