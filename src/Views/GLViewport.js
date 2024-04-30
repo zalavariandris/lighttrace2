@@ -147,7 +147,7 @@ function GLViewport({
         // initial rays
         
         const rays = lights.map(light=>sampleLight(light, {sampleCount:9, samplingMethod:SamplingMethod.Random}));
-        console.log(rays)
+        console.log(rays);
         // intersections
         // const [secondaries, hitPoints] = raytracePass(rays, [shapes, shapes.map(shape=>shape.material)]);
 
