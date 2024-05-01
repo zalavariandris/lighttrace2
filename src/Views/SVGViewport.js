@@ -73,7 +73,7 @@ function SVGViewport({
 {
     const scene = React.useSyncExternalStore(sceneStore.subscribe, sceneStore.getSnapshot);
     const selectionKeys = React.useSyncExternalStore(selectionStore.subscribe, selectionStore.getSnapshot);
-    const raytraceoOptions = React.useSyncExternalStore(raytraceOptionsStore.subscribe, raytraceOptionsStore.getSnapshot);
+    const raytraceOptions = React.useSyncExternalStore(raytraceOptionsStore.subscribe, raytraceOptionsStore.getSnapshot);
     const svgRef = React.useRef()
 
     // event handling
@@ -146,8 +146,8 @@ function SVGViewport({
 
     //
     const initialRays = lights.map( light=>sampleLight(light, {
-        sampleCount: raytraceoOptions.lightSamples, 
-        samplingMethod: raytraceoOptions.samplingMethod
+        sampleCount: raytraceOptions.lightSamples, 
+        samplingMethod: raytraceOptions.samplingMethod
     })).flat(1);
 
     const initialHitPoints = initialRays
@@ -156,23 +156,39 @@ function SVGViewport({
             return reduceHitpointsToClosest(hitPoints, ray.origin);
         });
 
-    const secondaryRays = _.zip(initialRays, initialHitPoints)
-        .map( ([incidentRay, hitPoint])=>{
-            if(incidentRay!=null && hitPoint!=null)
-            {
-                return sampleMaterial("mirror", incidentRay, hitPoint);
-            }
-            else
-            {
-                return null;
-            }
-        }).filter(ray=>ray!=null?true:false);
+    // Store each ray trace bounce in an array of array of rays List[List[lightray]]
+    let rays = [initialRays];
+    let hitPoints = [initialHitPoints];
+    
 
-    const secondaryHitPoints = secondaryRays
-        .map( ray=> hitScene(ray, shapes, {DISTANCE_THRESHOLD: 1e-6}));
+    for(let bounce=0; bounce<raytraceOptions.maxBounce; bounce++)
+    {
+        // calc bouncing rays 
+        const secondaryRays = _.zip(_.last(rays), _.last(hitPoints))
+            .map( ([incidentRay, hitPoint])=>{
+                if(incidentRay!=null && hitPoint!=null)
+                {
+                    return sampleMaterial("mirror", incidentRay, hitPoint);
+                }
+                else
+                {
+                    return null;
+                }
+            }).filter(ray=>ray!=null?true:false);
 
-    const rays = [...initialRays, ...secondaryRays];
-    const hitPoints = [...initialHitPoints, ...secondaryHitPoints];
+        // calc new hitpoints
+        const secondaryHitPoints = secondaryRays
+            .map( ray=> hitScene(ray, shapes, {DISTANCE_THRESHOLD: 1e-6}));
+
+        // set rays and hitpoints for new round
+        rays.push(secondaryRays)
+        hitPoints.push(secondaryHitPoints)
+    }
+
+
+    // rays for visualization
+    rays = rays.flat(1)
+    hitPoints = hitPoints.flat(1)
 
     // stop lightrays and hitPoint
     _.zip(rays, hitPoints).forEach( ([ray, hitPoint])=>{
@@ -183,11 +199,10 @@ function SVGViewport({
         }
         else
         {
-            ray.direction.x*=50;
-            ray.direction.y*=50;
+            ray.direction.x*=1000;
+            ray.direction.y*=1000;
         }
     });
-
 
     return h('svg', {
             xmlns:"http://www.w3.org/2000/svg",
