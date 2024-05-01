@@ -74,10 +74,13 @@ function SVGViewport({
     const scene = React.useSyncExternalStore(sceneStore.subscribe, sceneStore.getSnapshot);
     const selectionKeys = React.useSyncExternalStore(selectionStore.subscribe, selectionStore.getSnapshot);
     const raytraceOptions = React.useSyncExternalStore(raytraceOptionsStore.subscribe, raytraceOptionsStore.getSnapshot);
+    const displayOptions = React.useSyncExternalStore(displayOptionsStore.subscribe, displayOptionsStore.getSnapshot);
+
+
     const svgRef = React.useRef()
 
     // event handling
-    const onmousewheel = (e)=>{
+    const zoomViewportWithmouseWheel = (e)=>{
         const clientSize = {w: svgRef.current.clientWidth, h: svgRef.current.clientHeight}
         var w = viewBox.w;
         var h = viewBox.h;
@@ -97,7 +100,7 @@ function SVGViewport({
         onViewChange(newViewBox)
     }
 
-    const panViewportTool = (e)=>{ 
+    const panViewportWithMouseDrag = (e)=>{ 
         if(props.onMouseDown)
         {
             props.onMouseDown(e);
@@ -137,29 +140,29 @@ function SVGViewport({
         window.addEventListener('mouseup', ()=>window.removeEventListener("mousemove", handleDrag), {once: true});
     }
  
-    const displayOptions = React.useSyncExternalStore(displayOptionsStore.subscribe, displayOptionsStore.getSnapshot);
-
-
-    // RAYTRACE
+    /*
+     * RAYTRACE !!!
+     */
     const lights = Object.values(scene).filter(obj=>obj instanceof Light);
     const shapes = Object.values(scene).filter(obj=>obj instanceof Shape);
 
-    //
+    // shoot ibnitial rays from lightsources
     const initialRays = lights.map( light=>sampleLight(light, {
         sampleCount: raytraceOptions.lightSamples, 
         samplingMethod: raytraceOptions.samplingMethod
     })).flat(1);
 
+    // intersect initial rays with scene
     const initialHitPoints = initialRays
         .map( ray=> {
             const hitPoints = shapes.map( (shape)=>hitShape(ray, shape, {DISTANCE_THRESHOLD: 1e-6} ) );
             return reduceHitpointsToClosest(hitPoints, ray.origin);
         });
 
-    // Store each ray trace bounce in an array of array of rays List[List[lightray]]
-    let rays = [initialRays];
-    let hitPoints = [initialHitPoints];
     
+    // bounce secondary rays around the scene
+    let rays = [initialRays]; // Store each ray trace bounce in an array of array of rays List[List[lightray]]
+    let hitPoints = [initialHitPoints];
 
     for(let bounce=0; bounce<raytraceOptions.maxBounce; bounce++)
     {
@@ -186,7 +189,7 @@ function SVGViewport({
     }
 
 
-    // rays for visualization
+    // prepare Rays for visualization
     rays = rays.flat(1)
     hitPoints = hitPoints.flat(1)
 
@@ -213,8 +216,8 @@ function SVGViewport({
             ref: svgRef,
             viewBox: viewboxString(viewBox),
             ...props,
-            onMouseDown: (e) => panViewportTool(e),
-            onWheel: (e) => onmousewheel(e)     
+            onMouseDown: (e) => panViewportWithMouseDrag(e),
+            onWheel: (e) => zoomViewportWithmouseWheel(e)     
         },
         h('defs', null, 
             h('marker', {
@@ -258,7 +261,9 @@ function SVGViewport({
                         y2: ray.origin.y + ray.direction.y,
                         className: 'lightray',
                         vectorEffect: "non-scaling-stroke",
-                        style: {stroke: RGBToCSS(wavelengthToRGB(ray.wavelength), ray.intensity)}
+                        style: {
+                            stroke: RGBToCSS(wavelengthToRGB(ray.wavelength), ray.intensity)
+                        }
                     })
                 )
             )

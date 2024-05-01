@@ -91,7 +91,7 @@ svg .lightray{
     stroke: yellow;
     stroke-width: 1;
     opacity: 1.0;
-    stroke-dasharray: 10 10;
+    /* stroke-dasharray: 10 10; */
 }
 
 svg .hitPoint{
