@@ -136,11 +136,11 @@ const App = ()=>{
 
     return h("div", null,
             /*VIEWPORTS*/
-            displayOptions.glPaint?h(GLViewport,  {
+            h(GLViewport,  {
                 className:"viewport",
                 viewBox: viewBox,
                 scene: scene
-            }):null,
+            }),
             h(SVGViewport, {
                 className:"viewport",
                 viewBox: viewBox,

@@ -7,6 +7,8 @@ import { raytrace, SamplingMethod, raytracePass, sampleLight } from "../raytrace
 import Shape from "../scene/shapes/Shape.js";
 import Light from "../scene/lights/Light.js"
 import _ from "lodash";
+
+
 /* Utilities */
 function makeCircle (N=36)
 {
@@ -69,6 +71,14 @@ function matchProjectionToSVGViewbox(svg_viewbox, win)
     }
 }
 
+function Wave(min, max, speed=1.0)
+{
+    const sec = Date.now()*0.001*speed
+    const val = (Math.sin(sec)/2.0+0.5)*(max-min)+min;
+    return val;
+    return Math.sin(Date.now()*speed)/2.0+0.5*(max-min)+min;
+}
+
 const glctx = {
     blend: {
         enable: true,
@@ -91,7 +101,7 @@ function drawLines(regl, {points, colors}={})
 {
     const draw = regl({
         ...glctx,
-        viewport: {x: 0, y: 0, w: 512, h: 512},
+        // viewport: {x: 0, y: 0, w: 512, h: 512},
         uniforms: {
             view: mat4.identity([]),
             projection: mat4.ortho(mat4.identity([]), 0,512,0,512,-1,1) //left, right, bottom, top, near, far
@@ -135,24 +145,180 @@ function drawQuad(regl, {texture})
 class GLRenderer{
     constructor()
     {
-
+        this.mouse = {x: 0, y: 0};
     }
 
-    initGL(regl)
+    initGL(regl, {width, height})
     {
-        console.log("initGL")
-        regl.clear({color: [0,.1,.1,1]});
+        console.log("initGL", width, height)
+        regl.clear({color: [0.1,.1,.1,1]});
 
-        this.sceneTexture = regl.texture({
-            width: 512,
-            height: 512,
+        this.sdfTexture = regl.texture({
+            width: width, 
+            height: height,
             wrap: 'clamp',
             format: "rgba",
             type: "float"
         });
 
-        this.setupQuad = regl({
-            viewport: {x: 0, y: 0, w: 1, h: 1},
+        this.sdfFbo = regl.framebuffer({
+            color: this.sdfTexture,
+            depth: false
+        });
+    }
+
+    resizeGL(regl, {width, height})
+    {
+        this.sdfFbo.resize(width, height);
+        console.log("resizeGL", width, height);
+    }
+
+    renderGL(regl, {width, height})
+    {
+        this.circleData = new Float32Array([
+            Wave(0, width), 500.0, 100.0, Wave(0, height, 1.66)
+        ]);
+
+        regl.clear({color: [0.0,0.1,0.1,1]})
+        const drawSDF = regl({
+            framebuffer: this.sdfFbo,
+            viewport: {x: 0, y: 0, width: width, height: height},
+            depth: { enable: false },
+            primitive: "triangle fan",
+            attributes: {
+                position: [
+                    [ 0, 0],
+                    [ 1, 0],
+                    [ 1, 1],
+                    [ 0, 1]
+                ],
+                uv:[
+                    [ 0, 0],
+                    [ 1, 0],
+                    [ 1, 1],
+                    [ 0, 1]
+                    ]
+            },
+            count: 6,
+            uniforms:{
+                projection: mat4.ortho(mat4.identity([]), 0,1,0,1,-1,1),
+                iResolution: [width, height, 0],
+                iMouse: [this.mouse.x, this.mouse.y,0,0],
+                circleData: this.circleData,
+            },
+            vert: `
+                precision mediump float;
+                uniform mat4 projection;
+                attribute vec2 position;
+                attribute vec2 uv;
+                varying vec2 vUV;
+                void main() {
+                    vUV = uv;
+                    gl_Position = projection * vec4(position, 0, 1);
+                }`,
+            frag: `precision mediump float;
+
+                #define e 2.71828
+                #define PI 3.14159
+
+                uniform vec3 iResolution; // viewport resolution in pixels
+                uniform float iTime; // shade plazback time (in seconds)
+                uniform float iTimeDelta; // render time (in seconds)
+                uniform float iFrameRate; // shader frme rate
+                uniform int iFrame; // shader plazback frame
+                uniform vec4 iMouse; // mouse pixel coords. xy: current(if MLB down) zw: click
+                uniform vec4 iDate; // (year, month, day, time in seconds)
+                varying vec2 vUV;
+
+                // Declare the uniform block to store circle data
+                uniform vec2 circleData[2];
+
+                float cosh(float x) {
+                    return (exp(x) + exp(-x)) / 2.0;
+                }
+                
+                float sinh(float x) {
+                    return (exp(x) - exp(-x)) / 2.0;
+                }
+
+                float tanh(float x) {
+                    return (exp(x) - exp(-x)) / (exp(x) + exp(-x));
+                }
+
+                float atanh(float x) {
+                    return 0.5 * log((1.0 + x) / (1.0 - x));
+                }
+
+                vec2 translate(vec2 samplePosition, vec2 offset){
+                    return samplePosition - offset;
+                }
+
+                float rectangle(vec2 samplePosition, vec2 halfSize){
+                    vec2 componentWiseEdgeDistance = abs(samplePosition) - halfSize;
+                    float outsideDistance = length(max(componentWiseEdgeDistance, 0.0));
+                    float insideDistance = min(max(componentWiseEdgeDistance.x, componentWiseEdgeDistance.y), 0.0);
+                    return outsideDistance + insideDistance;
+                }
+
+
+                float circle(vec2 samplePosition, float radius){
+                    return length(samplePosition)-radius;
+                }
+
+                vec2 rotate(vec2 samplePosition, float angle_in_degrees){
+                    float angle_in_radians = angle_in_degrees/180.0 * PI * -1.0;
+                    float sine = sin(angle_in_radians);
+                    float cosine = cos(angle_in_radians);
+                    return vec2(cosine * samplePosition.x + sine * samplePosition.y, cosine * samplePosition.y - sine * samplePosition.x);
+                }
+
+                float intersectSDF(float A, float B)
+                {
+                    return max(A, B);
+                }
+
+                float unionSDF(float A, float B)
+                {
+                    return min(A, B); 
+                }
+
+                float scene(vec2 coord)
+                {
+                    // collect all circles
+                    float sceneDistance = 9999.0;
+                    for(int i=0; i<2; i++){
+                        vec2 center = circleData[i];
+                        float circleDistance = circle(translate(coord, vec2(center.x, center.y)), 55.0);
+                        sceneDistance = unionSDF(sceneDistance, circleDistance);
+                    }
+                    
+                    // add mouse circle
+                    float mouseCircleDistance = circle(translate(coord, vec2(iMouse.x,iResolution.y-iMouse.y)), 55.0);
+                    sceneDistance = unionSDF(sceneDistance, mouseCircleDistance);
+
+                    // collect all rectangles
+                    float rectangleDistance = rectangle(rotate(translate(coord, vec2(iMouse.x,iResolution.y-iMouse.y+0.0)), iMouse.x/iResolution.x*180.0), vec2(50.0,50.0));
+                    sceneDistance = unionSDF(sceneDistance, rectangleDistance);
+                    
+                    return sceneDistance; 
+                }
+
+                vec4 mainImage(vec2 fragCoord)
+                {
+                    float d = scene(fragCoord)/max(iResolution.x, iResolution.y);
+                    float c = smoothstep(0.0, 0.0, d*1.0);
+                    return vec4(d,d,d, 1.0);
+                }
+                
+                void main()
+                {
+                    gl_FragColor = mainImage(gl_FragCoord.xy);
+                }`
+        });
+        drawSDF();
+
+        const drawToScreen = regl({
+            viewport: {x: 0, y: 0, width: width, height: height},
             depth: { enable: false },
             primitive: "triangle fan",
             attributes: {
@@ -170,8 +336,10 @@ class GLRenderer{
                 ]
             },
             count: 6,
-            uniforms: {
-                projection: mat4.ortho(mat4.identity([]), 0,1,0,1,-1,1)
+            uniforms:{
+                sdfTexture: this.sdfTexture,
+                projection: mat4.ortho(mat4.identity([]), 0,1,0,1,-1,1),
+                iResolution: [width, height, 0],
             },
             vert: `
                 precision mediump float;
@@ -183,77 +351,47 @@ class GLRenderer{
                     vUV = uv;
                     gl_Position = projection * vec4(position, 0, 1);
                 }`,
+            frag: `precision mediump float;
+                uniform vec3 iResolution; // viewport resolution in pixels
+                uniform sampler2D sdfTexture;
 
-            frag: `
-                precision mediump float;
-                varying vec2 vUV;
-                uniform sampler2D texture;
-            
-                void main() {
-                    vec4 tex = texture2D(texture, vUV).rgba;
-                    gl_FragColor = vec4(tex.r, tex.g, tex.b, 1.0);
-                }`
-        });
-    }
-
-    renderGL(regl)
-    {
-        console.log("renderGL")
-
-        this.setupQuad({}, ()=>{
-            regl({
-                framebuffer: this.compFbo,
-                uniforms: {
-                    texture: this.sceneTexture
-                },
-                frag: `precision mediump float;
-                varying vec2 vUV;
-                
-                vec2 translate(vec2 samplePosition, vec2 offset){
-                    return samplePosition - offset;
-                }
-
-                float rectangle(vec2 samplePosition, vec2 halfSize){
-                    vec2 componentWiseEdgeDistance = abs(samplePosition) - halfSize;
-                    float outsideDistance = length(max(componentWiseEdgeDistance, 0.0));
-                    float insideDistance = min(max(componentWiseEdgeDistance.x, componentWiseEdgeDistance.y), 0.0);
-                    return 0.0;
-
-                    // 
-                    // return outsideDistance + insideDistance;
-                }
-
-                vec2 rotate(vec2 samplePosition, float rotation){
-                    const float PI = 3.14159;
-                    float angle = rotation * PI * 2.0 * -1.0;
-                    float sine = sin(angle);
-                    float cosine = cos(angle);
-                    return vec2(cosine * samplePosition.x + sine * samplePosition.y, cosine * samplePosition.y - sine * samplePosition.x);
-                }
-
-                float circle(vec2 samplePosition, float radius){
-                    return (length(samplePosition)>radius)?1.0:0.0;
-                }
-
-                float scene(vec2 coord)
+                vec3 calculateNormal(vec2 p)
                 {
-                    float sceneDistance = circle(translate(coord, vec2(50,50)), 10.0);
-                    return sceneDistance; 
+                    float sdfWidth = iResolution.x;
+                    float sdfHeight = iResolution.y;
+                    float eps = 0.1; // Small epsilon value for numerical differentiation
+                    
+                    // Sample the SDF at neighboring points
+                    float sdfLeft =  texture2D(sdfTexture, (p + vec2(-eps,  0.0)) / vec2(sdfWidth, sdfHeight)).r;
+                    float sdfRight = texture2D(sdfTexture, (p + vec2( eps,  0.0)) / vec2(sdfWidth, sdfHeight)).r;
+                    float sdfDown =  texture2D(sdfTexture, (p + vec2( 0.0, -eps)) / vec2(sdfWidth, sdfHeight)).r;
+                    float sdfUp =    texture2D(sdfTexture, (p + vec2( 0.0,  eps)) / vec2(sdfWidth, sdfHeight)).r;
+                
+                    // Compute the gradient using central differencing
+                    vec2 gradient = vec2(sdfRight - sdfLeft, sdfUp - sdfDown) / (2.0 * eps);
+                    
+                    // Normalize the gradient to obtain the normal
+                    return normalize(vec3(-gradient, 1.0));
+                } 
+
+                vec4 mainImage(vec2 fragCoord)
+                {
+                    vec2 UV = fragCoord/iResolution.xy;
+
+                    vec4 tex = texture2D(sdfTexture, UV).rgba;
+                    vec3 N = calculateNormal(fragCoord);
+                    return vec4(tex.rgb, 1.0);
                 }
                 
-                void main() {
-                    float d = scene(gl_FragCoord.xy);
-                    gl_FragColor = vec4(d,d,d, 1.0);
+                void main()
+                {
+                    gl_FragColor = mainImage(gl_FragCoord.xy);
                 }`
-            })()
         });
-
+        drawToScreen()
     }
 
-    resizeGL(regl, {width, height})
-    {
-        console.log("resizeGL", width, height);
-    }
+
 }
 
 function GLViewport({
@@ -264,31 +402,17 @@ function GLViewport({
 }={})
 {
     // render callbacks
-    const renderer = React.useRef(null);
-
-
-
-
+    
     const canvasRef = React.useRef(null);
     const reglRef = React.useRef(null);
-
-    // const rendererRef = React.useRef(null);
-    const resizeHandlerRef = React.useRef(null);
-
-    // const lights = Object.values(scene).filter(obj=>obj instanceof Light);
-    // const shapes = Object.values(scene).filter(obj=>obj instanceof Shape);
-    // const newRaytraceResults = raytrace(lights, [shapes, shapes.map(shape=>shape.material)], {
-    //     maxBounce: 9, 
-    //     samplingMethod: SamplingMethod.Random,
-    //     lightSamples: 9
-    // });
-
+    const renderer = React.useRef(null);
 
     // component did mount (kinda...)
     React.useEffect(()=>{
-        // console.log("mount GLViewport")
-        // console.log("canvas size:", canvasRef.current.offsetWidth, canvasRef.current.offsetHeight)
         // // Crate REGL context
+        const [canvaswidth, canvasheight] = [canvasRef.current.offsetWidth, canvasRef.current.offsetHeight]
+        canvasRef.current.width = canvaswidth;
+        canvasRef.current.height = canvasheight;
         reglRef.current = createREGL({
             canvas: canvasRef.current,
             // pixelRatio: 2.0,
@@ -306,54 +430,53 @@ function GLViewport({
             extensions: ['OES_texture_float', "OES_texture_half_float"]
         });
         renderer.current = new GLRenderer();    
-        renderer.current.initGL(reglRef.current);
-        // reglRef.current = createREGL(canvasRef.current);
-
-
-        // onGLRender(reglRef.current)
-        // console.assert(reglRef.current!=undefined, "cant create REGL context")
-
-        // // INITIAL
-        renderer.current.resizeGL(reglRef.current, {
-            width: canvasRef.current.offsetWidth, 
-            height: canvasRef.current.offsetHeight
-        });
-
-        // onGLRender(reglRef.current);
-
-        
-        // const [canvaswidth, canvasheight] = [canvasRef.current.offsetWidth, canvasRef.current.offsetHeight]
-        // canvasRef.current.width=canvaswidth;
-        // canvasRef.current.height=canvasheight;
+        renderer.current.initGL(reglRef.current, {width: canvaswidth, height:canvasheight});
 
         // render on resize
-        const resizeHandler = (event)=>{
+        const handleResize = (event)=>{
+            console.log("resize canvas: ", canvasRef.current)
             const [canvaswidth, canvasheight] = [canvasRef.current.offsetWidth, canvasRef.current.offsetHeight]
             canvasRef.current.width=canvaswidth;
             canvasRef.current.height=canvasheight;
-
+            
             renderer.current.resizeGL(reglRef.current, {width:canvaswidth, height: canvasheight});
         }
-        
-        if(resizeHandlerRef.current){
-            window.removeEventListener("resize", resizeHandlerRef.current);
+
+        function handleMouseMove(){
+            renderer.current.mouse = {x: event.clientX, y: event.clientY};
         }
-        window.addEventListener("resize", resizeHandler);
-        resizeHandlerRef.current = resizeHandler;
+        window.addEventListener("mousemove", handleMouseMove);
+        window.addEventListener("resize", handleResize);
+        function animate()
+        {
+            window.requestAnimationFrame(animate);
+            const width =  canvasRef.current.width;
+            const height = canvasRef.current.height;
+            renderer.current.renderGL(reglRef.current, {width, height});
+
+        }
+        animate()
+        return ()=>{
+            window.removeEventListener("resize", handleResize);
+            window.removeEventListener("mousemove", handleMouseMove)
+        }
     }, []);
 
     React.useEffect( ()=>{
-        renderer.current.renderGL(reglRef.current);
+        const width = canvasRef.current.width;
+        const height = canvasRef.current.height;
+        renderer.current.renderGL(reglRef.current, {width, height});
     }, [scene, viewBox]);
 
 
     const h = React.createElement
+
     return h("canvas", {
+        ref:canvasRef,
         style: {
             ...style
         },
-        ...props, 
-        ref:canvasRef
+        ...props
     });
 }
 
