@@ -137,9 +137,58 @@ function drawLines(regl, {points, colors}={})
     draw();
 }
 
-function drawQuad(regl, {texture})
-{
+const drawTextureToScreen = function(regl, {texture, screenWidth, screenHeight}){
+    regl({
+        viewport: {x: 0, y: 0, width: screenWidth, height: screenHeight},
+        depth: { enable: false },
+        primitive: "triangle fan",
+        attributes: {
+        position: [
+            [ 0, 0],
+            [ 1, 0],
+            [ 1, 1],
+            [ 0, 1]
+        ],
+        uv:[
+            [ 0, 0],
+            [ 1, 0],
+            [ 1, 1],
+            [ 0, 1]
+            ]
+        },
+        count: 6,
+        uniforms:{
+            texture: texture,
+            projection: mat4.ortho(mat4.identity([]), 0,1,0,1,-1,1),
+            iResolution: [screenWidth, screenHeight, 0],
+        },
+        vert: `
+            precision mediump float;
+            uniform mat4 projection;
+            attribute vec2 position;
+            attribute vec2 uv;
+            varying vec2 vUV;
+            void main() {
+                vUV = uv;
+                gl_Position = projection * vec4(position, 0, 1);
+            }`,
+        frag: `precision mediump float;
+            uniform vec3 iResolution; // viewport resolution in pixels
+            uniform sampler2D texture;
 
+            vec4 mainImage(vec2 fragCoord)
+            {
+                vec2 UV = fragCoord/iResolution.xy;
+
+                vec3 tex = texture2D(texture, UV).rgb;
+                return vec4(tex.rgb, 1.0);
+            }
+            
+            void main()
+            {
+                gl_FragColor = mainImage(gl_FragCoord.xy);
+            }`
+    })();
 }
 
 class GLRenderer{
@@ -165,11 +214,25 @@ class GLRenderer{
             color: this.sdfTexture,
             depth: false
         });
+
+        this.normalTexture = regl.texture({
+            width: width, 
+            height: height,
+            wrap: 'clamp',
+            format: "rgba",
+            type: "float"
+        });
+
+        this.normalFbo = regl.framebuffer({
+            color: this.normalTexture,
+            depth: false
+        });
     }
 
     resizeGL(regl, {width, height})
     {
         this.sdfFbo.resize(width, height);
+        this.normalFbo.resize(width, height);
         console.log("resizeGL", width, height);
     }
 
@@ -180,7 +243,7 @@ class GLRenderer{
         ]);
 
         regl.clear({color: [0.0,0.1,0.1,1]})
-        const drawSDF = regl({
+        const drawSDFToFBO = regl({
             framebuffer: this.sdfFbo,
             viewport: {x: 0, y: 0, width: width, height: height},
             depth: { enable: false },
@@ -286,11 +349,11 @@ class GLRenderer{
                 {
                     // collect all circles
                     float sceneDistance = 9999.0;
-                    for(int i=0; i<2; i++){
-                        vec2 center = circleData[i];
-                        float circleDistance = circle(translate(coord, vec2(center.x, center.y)), 55.0);
-                        sceneDistance = unionSDF(sceneDistance, circleDistance);
-                    }
+                    // for(int i=0; i<2; i++){
+                    //     vec2 center = circleData[i];
+                    //     float circleDistance = circle(translate(coord, vec2(center.x, center.y)), 55.0);
+                    //     sceneDistance = unionSDF(sceneDistance, circleDistance);
+                    // }
                     
                     // add mouse circle
                     float mouseCircleDistance = circle(translate(coord, vec2(iMouse.x,iResolution.y-iMouse.y)), 55.0);
@@ -315,83 +378,11 @@ class GLRenderer{
                     gl_FragColor = mainImage(gl_FragCoord.xy);
                 }`
         });
-        drawSDF();
+        drawSDFToFBO();
 
-        const drawToScreen = regl({
-            viewport: {x: 0, y: 0, width: width, height: height},
-            depth: { enable: false },
-            primitive: "triangle fan",
-            attributes: {
-            position: [
-                [ 0, 0],
-                [ 1, 0],
-                [ 1, 1],
-                [ 0, 1]
-            ],
-            uv:[
-                [ 0, 0],
-                [ 1, 0],
-                [ 1, 1],
-                [ 0, 1]
-                ]
-            },
-            count: 6,
-            uniforms:{
-                sdfTexture: this.sdfTexture,
-                projection: mat4.ortho(mat4.identity([]), 0,1,0,1,-1,1),
-                iResolution: [width, height, 0],
-            },
-            vert: `
-                precision mediump float;
-                uniform mat4 projection;
-                attribute vec2 position;
-                attribute vec2 uv;
-                varying vec2 vUV;
-                void main() {
-                    vUV = uv;
-                    gl_Position = projection * vec4(position, 0, 1);
-                }`,
-            frag: `precision mediump float;
-                uniform vec3 iResolution; // viewport resolution in pixels
-                uniform sampler2D sdfTexture;
-
-                vec3 calculateNormal(vec2 p)
-                {
-                    float sdfWidth = iResolution.x;
-                    float sdfHeight = iResolution.y;
-                    float eps = 0.1; // Small epsilon value for numerical differentiation
-                    
-                    // Sample the SDF at neighboring points
-                    float sdfLeft =  texture2D(sdfTexture, (p + vec2(-eps,  0.0)) / vec2(sdfWidth, sdfHeight)).r;
-                    float sdfRight = texture2D(sdfTexture, (p + vec2( eps,  0.0)) / vec2(sdfWidth, sdfHeight)).r;
-                    float sdfDown =  texture2D(sdfTexture, (p + vec2( 0.0, -eps)) / vec2(sdfWidth, sdfHeight)).r;
-                    float sdfUp =    texture2D(sdfTexture, (p + vec2( 0.0,  eps)) / vec2(sdfWidth, sdfHeight)).r;
-                
-                    // Compute the gradient using central differencing
-                    vec2 gradient = vec2(sdfRight - sdfLeft, sdfUp - sdfDown) / (2.0 * eps);
-                    
-                    // Normalize the gradient to obtain the normal
-                    return normalize(vec3(-gradient, 1.0));
-                } 
-
-                vec4 mainImage(vec2 fragCoord)
-                {
-                    vec2 UV = fragCoord/iResolution.xy;
-
-                    vec4 tex = texture2D(sdfTexture, UV).rgba;
-                    vec3 N = calculateNormal(fragCoord);
-                    return vec4(tex.rgb, 1.0);
-                }
-                
-                void main()
-                {
-                    gl_FragColor = mainImage(gl_FragCoord.xy);
-                }`
-        });
-        drawToScreen()
+        
+        drawTextureToScreen(regl, {texture: this.sdfTexture, screenWidth: width, screenHeight: height});
     }
-
-
 }
 
 function GLViewport({
