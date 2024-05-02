@@ -137,7 +137,7 @@ function drawLines(regl, {points, colors}={})
     draw();
 }
 
-const drawTextureToScreen = function(regl, {texture, screenWidth, screenHeight}){
+function drawTextureToScreen(regl, {texture, screenWidth, screenHeight}){
     regl({
         viewport: {x: 0, y: 0, width: screenWidth, height: screenHeight},
         depth: { enable: false },
@@ -189,6 +189,11 @@ const drawTextureToScreen = function(regl, {texture, screenWidth, screenHeight})
                 gl_FragColor = mainImage(gl_FragCoord.xy);
             }`
     })();
+}
+
+function drawLinestoScreen()
+{
+
 }
 
 class GLRenderer{
