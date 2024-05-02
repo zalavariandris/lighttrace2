@@ -87,7 +87,7 @@ const glctx = {
     lineWidth:1,
 }
 
-function drawLines({regl, points, colors}={})
+function drawLines(regl, {points, colors}={})
 {
     const draw = regl({
         ...glctx,
@@ -127,7 +127,134 @@ function drawLines({regl, points, colors}={})
     draw();
 }
 
+function drawQuad(regl, {texture})
+{
 
+}
+
+class GLRenderer{
+    constructor()
+    {
+
+    }
+
+    initGL(regl)
+    {
+        console.log("initGL")
+        regl.clear({color: [0,.1,.1,1]});
+
+        this.sceneTexture = regl.texture({
+            width: 512,
+            height: 512,
+            wrap: 'clamp',
+            format: "rgba",
+            type: "float"
+        });
+
+        this.setupQuad = regl({
+            viewport: {x: 0, y: 0, w: 1, h: 1},
+            depth: { enable: false },
+            primitive: "triangle fan",
+            attributes: {
+            position: [
+                [ 0, 0],
+                [ 1, 0],
+                [ 1, 1],
+                [ 0, 1]
+            ],
+            uv:[
+                [ 0, 0],
+                [ 1, 0],
+                [ 1, 1],
+                [ 0, 1]
+                ]
+            },
+            count: 6,
+            uniforms: {
+                projection: mat4.ortho(mat4.identity([]), 0,1,0,1,-1,1)
+            },
+            vert: `
+                precision mediump float;
+                uniform mat4 projection;
+                attribute vec2 position;
+                attribute vec2 uv;
+                varying vec2 vUV;
+                void main() {
+                    vUV = uv;
+                    gl_Position = projection * vec4(position, 0, 1);
+                }`,
+
+            frag: `
+                precision mediump float;
+                varying vec2 vUV;
+                uniform sampler2D texture;
+            
+                void main() {
+                    vec4 tex = texture2D(texture, vUV).rgba;
+                    gl_FragColor = vec4(tex.r, tex.g, tex.b, 1.0);
+                }`
+        });
+    }
+
+    renderGL(regl)
+    {
+        console.log("renderGL")
+
+        this.setupQuad({}, ()=>{
+            regl({
+                framebuffer: this.compFbo,
+                uniforms: {
+                    texture: this.sceneTexture
+                },
+                frag: `precision mediump float;
+                varying vec2 vUV;
+                
+                vec2 translate(vec2 samplePosition, vec2 offset){
+                    return samplePosition - offset;
+                }
+
+                float rectangle(vec2 samplePosition, vec2 halfSize){
+                    vec2 componentWiseEdgeDistance = abs(samplePosition) - halfSize;
+                    float outsideDistance = length(max(componentWiseEdgeDistance, 0.0));
+                    float insideDistance = min(max(componentWiseEdgeDistance.x, componentWiseEdgeDistance.y), 0.0);
+                    return 0.0;
+
+                    // 
+                    // return outsideDistance + insideDistance;
+                }
+
+                vec2 rotate(vec2 samplePosition, float rotation){
+                    const float PI = 3.14159;
+                    float angle = rotation * PI * 2.0 * -1.0;
+                    float sine = sin(angle);
+                    float cosine = cos(angle);
+                    return vec2(cosine * samplePosition.x + sine * samplePosition.y, cosine * samplePosition.y - sine * samplePosition.x);
+                }
+
+                float circle(vec2 samplePosition, float radius){
+                    return (length(samplePosition)>radius)?1.0:0.0;
+                }
+
+                float scene(vec2 coord)
+                {
+                    float sceneDistance = circle(translate(coord, vec2(50,50)), 10.0);
+                    return sceneDistance; 
+                }
+                
+                void main() {
+                    float d = scene(gl_FragCoord.xy);
+                    gl_FragColor = vec4(d,d,d, 1.0);
+                }`
+            })()
+        });
+
+    }
+
+    resizeGL(regl, {width, height})
+    {
+        console.log("resizeGL", width, height);
+    }
+}
 
 function GLViewport({
     viewBox,
@@ -137,43 +264,10 @@ function GLViewport({
 }={})
 {
     // render callbacks
-    const onGLRender = (regl)=>{
-
-        regl.clear({color: [0,.1,.1,1]});
-
-        const lights = Object.values(scene).filter(obj=>obj instanceof Light);
-        const shapes = Object.values(scene).filter(obj=>obj instanceof Shape);
-
-        // initial rays
-        
-        const rays = lights.map(light=>sampleLight(light, {sampleCount:9, samplingMethod:SamplingMethod.Random}));
-        console.log(rays);
-        // intersections
-        // const [secondaries, hitPoints] = raytracePass(rays, [shapes, shapes.map(shape=>shape.material)]);
+    const renderer = React.useRef(null);
 
 
-        // calc ray bounce
 
-
-        // const points = _.zip(simpleRaytraceResults.lightRays, hitPoints).map( ([ray, hit])=>{
-        //     const A = [ray.origin.x, ray.origin.y];
-        //     const B = hit=null?[0,0,0]:[hit.position.x, hit.position.y];
-        //     return [A,B];
-        // }).flat();
-        // const colors = simpleRaytraceResults.lightPaths.map(ray=>[1,1,1]);
-
-        // drawLines({
-        //     regl: regl,
-        //     points: points,
-        //     colors: colors
-        // });
-        
-        console.log("gl render");
-    }
-
-    const onGLResize = (regl)=>{
-        console.log("gl resize");
-    }
 
     const canvasRef = React.useRef(null);
     const reglRef = React.useRef(null);
@@ -211,17 +305,19 @@ function GLViewport({
             },
             extensions: ['OES_texture_float', "OES_texture_half_float"]
         });
+        renderer.current = new GLRenderer();    
+        renderer.current.initGL(reglRef.current);
         // reglRef.current = createREGL(canvasRef.current);
-        console.log("init gl")
+
+
         // onGLRender(reglRef.current)
         // console.assert(reglRef.current!=undefined, "cant create REGL context")
 
         // // INITIAL
-        // // rendererRef.current = new GLLightpathRenderer(reglRef.current);
-        // // rendererRef.current.resizeGL(reglRef.current, {
-        // //     width: canvasRef.current.offsetWidth, 
-        // //     height: canvasRef.current.offsetHeight
-        // // });
+        renderer.current.resizeGL(reglRef.current, {
+            width: canvasRef.current.offsetWidth, 
+            height: canvasRef.current.offsetHeight
+        });
 
         // onGLRender(reglRef.current);
 
@@ -230,25 +326,24 @@ function GLViewport({
         // canvasRef.current.width=canvaswidth;
         // canvasRef.current.height=canvasheight;
 
-        // // render on resize
-        // const resizeHandler = (event)=>{
-        //     const [canvaswidth, canvasheight] = [canvasRef.current.offsetWidth, canvasRef.current.offsetHeight]
-        //     canvasRef.current.width=canvaswidth;
-        //     canvasRef.current.height=canvasheight;
+        // render on resize
+        const resizeHandler = (event)=>{
+            const [canvaswidth, canvasheight] = [canvasRef.current.offsetWidth, canvasRef.current.offsetHeight]
+            canvasRef.current.width=canvaswidth;
+            canvasRef.current.height=canvasheight;
 
-        //     onGLResize(reglRef.current);
-        // }
+            renderer.current.resizeGL(reglRef.current, {width:canvaswidth, height: canvasheight});
+        }
         
-        // if(resizeHandlerRef.current){
-        //     window.removeEventListener("resize", resizeHandlerRef.current);
-        // }
-        // window.addEventListener("resize", resizeHandler);
-        // resizeHandlerRef.current = resizeHandler
+        if(resizeHandlerRef.current){
+            window.removeEventListener("resize", resizeHandlerRef.current);
+        }
+        window.addEventListener("resize", resizeHandler);
+        resizeHandlerRef.current = resizeHandler;
     }, []);
 
     React.useEffect( ()=>{
-        console.log("gl update")
-        onGLRender(reglRef.current);
+        renderer.current.renderGL(reglRef.current);
     }, [scene, viewBox]);
 
 
