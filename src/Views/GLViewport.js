@@ -10,6 +10,12 @@ import Light from "../scene/lights/Light.js"
 import displayOptionsStore from "../stores/displayOptionsStore.js"
 import _ from "lodash";
 
+const PASS_THROUGH_VERT = `
+precision mediump float;
+attribute vec2 position;
+void main() {
+    gl_Position = vec4(position, 0, 1);
+}`
 
 /* Utilities */
 function makeCircle (N=36)
@@ -71,6 +77,14 @@ function matchProjectionToSVGViewbox(svg_viewbox, win)
         projection = mat4.ortho(projection, svg_viewbox.x, svg_viewbox.x + svg_viewbox.w, svg_viewbox.y - offset_y, svg_viewbox.y + scaled_height - offset_y, -1.0, 1.0, -1.0, 1.0) //left, right, bottom, top, near, far
         return projection
     }
+}
+
+function gridPoints({left, right, bottom, top, spacing}){
+    return _.range(left, right, spacing).map(x=>{
+        return _.range(bottom, top, spacing).map(y=>{
+            return [x,y];
+        });
+    }).flat(1);
 }
 
 function Wave(min, max, speed=1.0)
@@ -219,6 +233,7 @@ function drawSDFToFBO(regl, {circleData, targetFbo, width, height})
             projection: mat4.ortho(mat4.identity([]), 0,1,0,1,-1,1),
             iResolution: [width, height, 0],
             circleData: circleData,
+            dataCount: circleData.length/2
         },
         vert: `
             precision mediump float;
@@ -299,13 +314,12 @@ function drawSDFToFBO(regl, {circleData, targetFbo, width, height})
             {
                 // collect all circles
                 float sceneDistance = 9999.0;
-                for(int i=0; i<3; i++){
+                for(int i=0; i<1; i++){
                     vec2 center = circleData[i];
                     float circleDistance = circle(translate(coord, vec2(center.x, center.y)), 55.0);
                     sceneDistance = unionSDF(sceneDistance, circleDistance);
                 }
 
-                
                 return sceneDistance; 
             }
 
@@ -322,6 +336,58 @@ function drawSDFToFBO(regl, {circleData, targetFbo, width, height})
             }`
     })();
 };
+
+function ortho({left, right, bottom, top, near, far}){
+    return  mat4.ortho(mat4.identity([]), left, right, bottom, top, near, far);
+}
+
+function drawArrows(regl, {
+    points, 
+    width, height,
+    projection,
+    sizeField,
+    directionField,
+    targetFbo=null
+}={})
+{
+
+    regl({
+        framebuffer: targetFbo,
+        viewport: {x: 0, y: 0, width: width, height: height},
+        depth: { enable: false },
+        primitive: "points",
+        attributes: {
+            position: points
+        },
+        count: points.length, // number of primitives vec2 coords
+        uniforms:{
+            projection: projection,
+            iResolution: [width, height],
+            sizeField: sizeField,
+            directionField: directionField
+        },
+        vert: `precision mediump float;
+            attribute vec2 position;
+            uniform mat4 projection;
+            uniform sampler2D sizeField;
+            uniform sampler2D directionField;
+            uniform vec2 iResolution;
+            void main()
+            {
+                vec2 UV = position.xy/iResolution.xy;
+                float size = texture2D(sizeField, UV).r;
+                vec2 dir = texture2D(directionField, UV).xy;
+                dir = normalize(dir);
+                gl_PointSize = size*10.0;
+                gl_Position = projection*vec4(position+dir*200.0, 0, 1);
+            }`,
+        frag: `precision mediump float;
+            void main()
+            {
+                gl_FragColor = vec4(1.0,1.0,1.0,1.0);
+            }`
+    })();
+}
 
 function renderNormalsToTexture(regl, {signedDistanceFieldTexture, targetFbo, width, height}){
     regl({
@@ -347,7 +413,7 @@ function renderNormalsToTexture(regl, {signedDistanceFieldTexture, targetFbo, wi
         uniforms: {
             sdf: signedDistanceFieldTexture,
             projection: mat4.ortho(mat4.identity([]), 0,1,0,1,-1,1),
-            iResolution: [width, height, 0],
+            iResolution: [width, height],
         },
         vert: `
             precision mediump float;
@@ -364,12 +430,16 @@ function renderNormalsToTexture(regl, {signedDistanceFieldTexture, targetFbo, wi
         #define e 2.71828
         #define PI 3.14159
         uniform sampler2D sdf;
+        uniform vec2 iResolution;
 
         vec2 normalAtPoint(vec2 P, sampler2D heightField)
         {
-            
-            float height = texture2D(heightField, P).r;
-            return normalize(vec2(height,height));
+            float eps = 1.0/iResolution.x;
+            vec2 UV = P/iResolution;
+            float current = texture2D(heightField, P).r;
+            float right = texture2D(heightField,    UV+vec2(-1.0*eps, 1.0*eps)).r-current;
+            float up =    texture2D(heightField,    UV+vec2(-1.0*eps,1.0*eps)).r-current;
+            return normalize(vec3(right,up,1.0)).xy;
         }
 
         vec4 mainImage(vec2 fragCoord)
@@ -430,15 +500,15 @@ class GLRenderer{
         console.log("resizeGL", width, height);
     }
 
-    renderGL(regl, {width, height})
+    renderGL(regl, {width, height, viewBox})
     {
 
-
+        console.log(viewBox);
         regl.clear({color: [0.0,0.1,0.1,1]})
 
         const circleData = new Float32Array([
-            [Wave(0, width), 500.0], 
-            [100.0, Wave(0, height, 1.66)],
+            // [Wave(0, width), 500.0], 
+            // [100.0, Wave(0, height, 1.66)],
             [this.mouse.x, height-this.mouse.y]
         ].flat(1));
 
@@ -456,9 +526,17 @@ class GLRenderer{
         });
         
         drawTextureToScreen(regl, {
-            texture: this.normalTexture, 
+            texture: this.sdfTexture, 
             screenWidth: width, 
             screenHeight: height
+        });
+
+        drawArrows(regl, {
+            points: gridPoints({left:0, right:width, bottom:0, top:height, spacing: 20}),
+            projection: ortho ({left:0, right: width, bottom: 0, top: height, near:-1, far: 1}),
+            width, height,
+            sizeField: this.sdfTexture,
+            directionField: this.normalTexture
         });
     }
 }
@@ -522,7 +600,7 @@ function GLViewport({
             window.requestAnimationFrame(animate);
             const width =  canvasRef.current.width;
             const height = canvasRef.current.height;
-            renderer.current.renderGL(reglRef.current, {width, height});
+            renderer.current.renderGL(reglRef.current, {width, height, viewBox: viewBox});
 
         }
         animate()
@@ -535,7 +613,7 @@ function GLViewport({
     React.useEffect( ()=>{
         const width = canvasRef.current.width;
         const height = canvasRef.current.height;
-        renderer.current.renderGL(reglRef.current, {width, height});
+        renderer.current.renderGL(reglRef.current, {width, height, viewBox: viewBox});
     }, [scene, viewBox]);
 
 
