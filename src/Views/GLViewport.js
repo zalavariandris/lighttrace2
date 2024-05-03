@@ -193,11 +193,8 @@ function drawTextureToScreen(regl, {texture, screenWidth, screenHeight}){
     })();
 }
 
-function drawSDFToFBO(regl, {targetFbo, mouse, width, height})
+function drawSDFToFBO(regl, {circleData, targetFbo, width, height})
 {
-    const circleData = new Float32Array([
-        Wave(0, width), 500.0, 100.0, Wave(0, height, 1.66)
-    ]);
     regl({
         framebuffer: targetFbo,
         viewport: {x: 0, y: 0, width: width, height: height},
@@ -221,7 +218,6 @@ function drawSDFToFBO(regl, {targetFbo, mouse, width, height})
         uniforms:{
             projection: mat4.ortho(mat4.identity([]), 0,1,0,1,-1,1),
             iResolution: [width, height, 0],
-            iMouse: [mouse.x, mouse.y,0,0],
             circleData: circleData,
         },
         vert: `
@@ -244,12 +240,11 @@ function drawSDFToFBO(regl, {targetFbo, mouse, width, height})
             uniform float iTimeDelta; // render time (in seconds)
             uniform float iFrameRate; // shader frme rate
             uniform int iFrame; // shader plazback frame
-            uniform vec4 iMouse; // mouse pixel coords. xy: current(if MLB down) zw: click
             uniform vec4 iDate; // (year, month, day, time in seconds)
             varying vec2 vUV;
 
             // Declare the uniform block to store circle data
-            uniform vec2 circleData[2];
+            uniform vec2 circleData[3];
 
             float cosh(float x) {
                 return (exp(x) + exp(-x)) / 2.0;
@@ -304,19 +299,12 @@ function drawSDFToFBO(regl, {targetFbo, mouse, width, height})
             {
                 // collect all circles
                 float sceneDistance = 9999.0;
-                // for(int i=0; i<2; i++){
-                //     vec2 center = circleData[i];
-                //     float circleDistance = circle(translate(coord, vec2(center.x, center.y)), 55.0);
-                //     sceneDistance = unionSDF(sceneDistance, circleDistance);
-                // }
-                
-                // add mouse circle
-                float mouseCircleDistance = circle(translate(coord, vec2(iMouse.x,iResolution.y-iMouse.y)), 55.0);
-                sceneDistance = unionSDF(sceneDistance, mouseCircleDistance);
+                for(int i=0; i<3; i++){
+                    vec2 center = circleData[i];
+                    float circleDistance = circle(translate(coord, vec2(center.x, center.y)), 55.0);
+                    sceneDistance = unionSDF(sceneDistance, circleDistance);
+                }
 
-                // collect all rectangles
-                float rectangleDistance = rectangle(rotate(translate(coord, vec2(iMouse.x,iResolution.y-iMouse.y+0.0)), iMouse.x/iResolution.x*180.0), vec2(50.0,50.0));
-                sceneDistance = unionSDF(sceneDistance, rectangleDistance);
                 
                 return sceneDistance; 
             }
@@ -377,9 +365,17 @@ function renderNormalsToTexture(regl, {signedDistanceFieldTexture, targetFbo, wi
         #define PI 3.14159
         uniform sampler2D sdf;
 
+        vec2 normalAtPoint(vec2 P, sampler2D heightField)
+        {
+            
+            float height = texture2D(heightField, P).r;
+            return normalize(vec2(height,height));
+        }
+
         vec4 mainImage(vec2 fragCoord)
         {
-            return vec4(1.0,0.0,1.0, 1.0);
+            vec2 N = normalAtPoint(fragCoord, sdf);
+            return vec4(N.x, N.y, 0.0, 1.0);
         }
 
         void main()
@@ -440,14 +436,15 @@ class GLRenderer{
 
         regl.clear({color: [0.0,0.1,0.1,1]})
 
-
-        
-        
-        
+        const circleData = new Float32Array([
+            [Wave(0, width), 500.0], 
+            [100.0, Wave(0, height, 1.66)],
+            [this.mouse.x, height-this.mouse.y]
+        ].flat(1));
 
         drawSDFToFBO(regl, {
+            circleData: circleData,
             targetFbo: this.sdfFbo,
-            mouse: this.mouse,
             width, height
         });
 
@@ -459,7 +456,7 @@ class GLRenderer{
         });
         
         drawTextureToScreen(regl, {
-            texture: this.sdfTexture, 
+            texture: this.normalTexture, 
             screenWidth: width, 
             screenHeight: height
         });
