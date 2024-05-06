@@ -23,12 +23,13 @@ import mouseToolsStore from "./stores/mouseToolsStore.js"
 import DisplayOptionsForm from "./Views/DisplayOptionsForm.js";
 import RaytraceOptionsForm from "./Views/RaytraceOptionsForm.js";
 import Outliner from "./Views/Outliner.js"
-import {circleTool, rectangleTool, lineTool, lensTool, pointlightTool, directionalLightTool, laserTool} from "./Views/MouseTools.js";
+import {selectAndMoveTool, circleTool, rectangleTool, lineTool, lensTool, pointlightTool, directionalLightTool, laserTool} from "./Views/MouseTools.js";
 
 /*MAIN*/ 
 const h = React.createElement;
 
 const mouseTools = {
+    "selectAndMove": selectAndMoveTool,
     "circle": circleTool, 
     "rectangle": rectangleTool, 
     "line": lineTool, 
@@ -48,10 +49,10 @@ function Toolbar()
     return h("div", {
         id: "toolbar", className: "panel"
     },
-        h("button", {
-            onClick: e=>mouseToolsStore.setCurrentTool(toolName),
-            className: currentToolName == null ? "active" : null
-        }, h("i", {className: "fa-solid fa-arrow-pointer"})),
+        // h("button", {
+        //     onClick: e=>mouseToolsStore.setCurrentTool("select"),
+        //     className: currentToolName == "select" ? "active" : null
+        // }, h("i", {className: "fa-solid fa-arrow-pointer"})),
 
         Object.keys(mouseTools).map(toolName=>{
             return h("button", {
@@ -136,11 +137,11 @@ const App = ()=>{
 
     return h("div", null,
             /*VIEWPORTS*/
-            h(GLViewport,  {
-                className:"viewport",
-                viewBox: viewBox,
-                scene: scene
-            }),
+            // h(GLViewport,  {
+            //     className:"viewport",
+            //     viewBox: viewBox,
+            //     scene: scene
+            // }),
             h(SVGViewport, {
                 className:"viewport",
                 viewBox: viewBox,

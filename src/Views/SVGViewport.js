@@ -145,6 +145,7 @@ function SVGViewport({
      */
     const lights = Object.values(scene).filter(obj=>obj instanceof Light);
     const shapes = Object.values(scene).filter(obj=>obj instanceof Shape);
+    const materials = shapes.map(shape=>shape.material);
 
     // shoot ibnitial rays from lightsources
     const initialRays = lights.map( light=>sampleLight(light, {
@@ -153,11 +154,7 @@ function SVGViewport({
     })).flat(1);
 
     // intersect initial rays with scene
-    const initialHitPoints = initialRays
-        .map( ray=> {
-            const hitPoints = shapes.map( (shape)=>hitShape(ray, shape, {DISTANCE_THRESHOLD: 1e-6} ) );
-            return reduceHitpointsToClosest(hitPoints, ray.origin);
-        });
+    const initialHitPoints = initialRays.map(ray=>hitScene(ray, shapes, materials, {DISTANCE_THRESHOLD:1.0}))
 
     
     // bounce secondary rays around the scene
@@ -168,24 +165,18 @@ function SVGViewport({
     {
         // calc bouncing rays 
         const secondaryRays = _.zip(_.last(rays), _.last(hitPoints))
+            .filter(([incidentRay, hitPoint])=>incidentRay!=null && hitPoint!=null)
             .map( ([incidentRay, hitPoint])=>{
-                if(incidentRay!=null && hitPoint!=null)
-                {
-                    return sampleMaterial("mirror", incidentRay, hitPoint);
-                }
-                else
-                {
-                    return null;
-                }
-            }).filter(ray=>ray!=null?true:false);
+                return sampleMaterial(hitPoint.material, incidentRay, hitPoint);
+            });
 
         // calc new hitpoints
         const secondaryHitPoints = secondaryRays
-            .map( ray=> hitScene(ray, shapes, {DISTANCE_THRESHOLD: 1e-6}));
+            .map( ray=> hitScene(ray, shapes, materials, {DISTANCE_THRESHOLD: 1e-6}));
 
         // set rays and hitpoints for new round
-        rays.push(secondaryRays)
-        hitPoints.push(secondaryHitPoints)
+        rays.push(secondaryRays);
+        hitPoints.push(secondaryHitPoints);
     }
 
 

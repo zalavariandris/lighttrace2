@@ -67,8 +67,12 @@ function sampleMirror(incidentRay, hitPoint)
 function sampleDiffuse(incidentRay, hitPoint)
 {
     const V = incidentRay.direction.normalized();
-    const N = hitPoint.surfaceNormal.normalized();
-
+    let N = hitPoint.surfaceNormal.normalized();
+    const HitFromOutside = V.dotProduct(N)>0.0;
+    if(HitFromOutside){
+        N = N.negate();
+    }
+    
     const spread = 1/1;
     const angle = Math.random()*Math.PI*spread-Math.PI*spread/2 + Math.atan2(N.y, N.x);
 

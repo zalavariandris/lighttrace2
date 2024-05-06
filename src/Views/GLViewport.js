@@ -53,7 +53,6 @@ function makeProjectionFromViewbox(viewBox)
 
 function matchProjectionToSVGViewbox(svg_viewbox, win)
 {
-
     // Calculate the aspect ratio of the SVG viewbox and the window
     const svg_aspect_ratio = svg_viewbox.w / svg_viewbox.h;
     const win_aspect_ratio = win.width / win.height;
@@ -79,7 +78,7 @@ function matchProjectionToSVGViewbox(svg_viewbox, win)
     }
 }
 
-function gridPoints({left, right, bottom, top, spacing}){
+function gridPoints2D({left, right, bottom, top, spacing}){
     return _.range(left, right, spacing).map(x=>{
         return _.range(bottom, top, spacing).map(y=>{
             return [x,y];
@@ -206,6 +205,130 @@ function drawTextureToScreen(regl, {texture, screenWidth, screenHeight}){
             }`
     })();
 }
+
+function ortho({left, right, bottom, top, near, far}){
+    return  mat4.ortho(mat4.identity([]), left, right, bottom, top, near, far);
+}
+
+function drawArrows(regl, {
+    points, 
+    width, height,
+    projection,
+    sizeField,
+    directionField,
+    targetFbo=null
+}={})
+{
+    const positions = points.map(([x,y])=>[[x,y,0.0],[x,y,1.0]]).flat(1);
+    regl({
+        framebuffer: targetFbo,
+        viewport: {x: 0, y: 0, width: width, height: height},
+        depth: { enable: false },
+        primitive: "lines",
+        attributes: {
+            position: positions
+        },
+        count: points.length*2, // number of indices?
+        uniforms:{
+            projection: projection,
+            iResolution: [width, height],
+            sizeField: sizeField,
+            directionField: directionField
+        },
+        vert: `precision mediump float;
+            attribute vec3 position;
+            uniform mat4 projection;
+            uniform sampler2D sizeField;
+            uniform sampler2D directionField;
+            uniform vec2 iResolution;
+            void main()
+            {
+                vec2 UV = position.xy/iResolution.xy;
+                float size = texture2D(sizeField, UV).r;
+                vec2 dir = texture2D(directionField, UV).xy*2000.0;
+                gl_Position = projection*vec4(position.xy+dir*position.z, 0.0, 1);
+            }`,
+        frag: `precision mediump float;
+            void main()
+            {
+                gl_FragColor = vec4(1.0,1.0,1.0,1.0);
+            }`
+    })();
+}
+
+function renderNormalsToTexture(regl, {signedDistanceFieldTexture, targetFbo, width, height}){
+    regl({
+        framebuffer: targetFbo,
+        viewport: {x: 0, y: 0, width: width, height: height},
+        depth: { enable: false },
+        primitive: "triangle fan",
+        attributes: {
+            position: [
+                [ 0, 0],
+                [ 1, 0],
+                [ 1, 1],
+                [ 0, 1]
+            ],
+            uv:[
+                [ 0, 0],
+                [ 1, 0],
+                [ 1, 1],
+                [ 0, 1]
+                ]
+        },
+        count: 6,
+        uniforms: {
+            sdf: signedDistanceFieldTexture,
+            projection: mat4.ortho(mat4.identity([]), 0,1,0,1,-1,1),
+            iResolution: [width, height],
+        },
+        vert: `
+            precision mediump float;
+            uniform mat4 projection;
+            attribute vec2 position;
+            attribute vec2 uv;
+            varying vec2 vUV;
+            void main() {
+                vUV = uv;
+                gl_Position = projection * vec4(position, 0, 1);
+            }`,
+        frag: `precision mediump float;
+
+        #define e 2.71828
+        #define PI 3.14159
+        uniform sampler2D sdf;
+        uniform vec2 iResolution;
+
+        vec3 normalAtPoint(vec2 P, sampler2D heightField)
+        {
+            // Sample distance field texture and neighboring texels
+            vec2 texelSize = vec2(1.0/iResolution.x, 1.0/iResolution.y); 
+            vec2 UV = P/iResolution;
+            float distance = texture2D(heightField, UV).r;
+            float distanceRight = texture2D(heightField, UV + vec2(texelSize.x, 0.0)).r;
+            float distanceUp = texture2D(heightField, UV + vec2(0.0, texelSize.y)).r;
+        
+            // Calculate gradients in x and y directions
+            float dx = distanceRight - distance;
+            float dy = distanceUp - distance;
+        
+            // Calculate normal vector
+            return normalize(vec3(dx, dy, 1.0)); // Negate the gradient and normalize
+        }
+
+        vec4 mainImage(vec2 fragCoord)
+        {
+            vec3 N = normalAtPoint(fragCoord, sdf);
+            return vec4(N.x, N.y, 0.0, 1.0);
+        }
+
+        void main()
+        {
+            gl_FragColor = mainImage(gl_FragCoord.xy);
+        }`
+    })();
+}
+
 
 function drawSDFToFBO(regl, {circleData, targetFbo, width, height})
 {
@@ -337,124 +460,6 @@ function drawSDFToFBO(regl, {circleData, targetFbo, width, height})
     })();
 };
 
-function ortho({left, right, bottom, top, near, far}){
-    return  mat4.ortho(mat4.identity([]), left, right, bottom, top, near, far);
-}
-
-function drawArrows(regl, {
-    points, 
-    width, height,
-    projection,
-    sizeField,
-    directionField,
-    targetFbo=null
-}={})
-{
-
-    regl({
-        framebuffer: targetFbo,
-        viewport: {x: 0, y: 0, width: width, height: height},
-        depth: { enable: false },
-        primitive: "points",
-        attributes: {
-            position: points
-        },
-        count: points.length, // number of primitives vec2 coords
-        uniforms:{
-            projection: projection,
-            iResolution: [width, height],
-            sizeField: sizeField,
-            directionField: directionField
-        },
-        vert: `precision mediump float;
-            attribute vec2 position;
-            uniform mat4 projection;
-            uniform sampler2D sizeField;
-            uniform sampler2D directionField;
-            uniform vec2 iResolution;
-            void main()
-            {
-                vec2 UV = position.xy/iResolution.xy;
-                float size = texture2D(sizeField, UV).r;
-                vec2 dir = texture2D(directionField, UV).xy;
-                dir = normalize(dir);
-                gl_PointSize = size*10.0;
-                gl_Position = projection*vec4(position+dir*200.0, 0, 1);
-            }`,
-        frag: `precision mediump float;
-            void main()
-            {
-                gl_FragColor = vec4(1.0,1.0,1.0,1.0);
-            }`
-    })();
-}
-
-function renderNormalsToTexture(regl, {signedDistanceFieldTexture, targetFbo, width, height}){
-    regl({
-        framebuffer: targetFbo,
-        viewport: {x: 0, y: 0, width: width, height: height},
-        depth: { enable: false },
-        primitive: "triangle fan",
-        attributes: {
-            position: [
-                [ 0, 0],
-                [ 1, 0],
-                [ 1, 1],
-                [ 0, 1]
-            ],
-            uv:[
-                [ 0, 0],
-                [ 1, 0],
-                [ 1, 1],
-                [ 0, 1]
-                ]
-        },
-        count: 6,
-        uniforms: {
-            sdf: signedDistanceFieldTexture,
-            projection: mat4.ortho(mat4.identity([]), 0,1,0,1,-1,1),
-            iResolution: [width, height],
-        },
-        vert: `
-            precision mediump float;
-            uniform mat4 projection;
-            attribute vec2 position;
-            attribute vec2 uv;
-            varying vec2 vUV;
-            void main() {
-                vUV = uv;
-                gl_Position = projection * vec4(position, 0, 1);
-            }`,
-        frag: `precision mediump float;
-
-        #define e 2.71828
-        #define PI 3.14159
-        uniform sampler2D sdf;
-        uniform vec2 iResolution;
-
-        vec2 normalAtPoint(vec2 P, sampler2D heightField)
-        {
-            float eps = 1.0/iResolution.x;
-            vec2 UV = P/iResolution;
-            float current = texture2D(heightField, P).r;
-            float right = texture2D(heightField,    UV+vec2(-1.0*eps, 1.0*eps)).r-current;
-            float up =    texture2D(heightField,    UV+vec2(-1.0*eps,1.0*eps)).r-current;
-            return normalize(vec3(right,up,1.0)).xy;
-        }
-
-        vec4 mainImage(vec2 fragCoord)
-        {
-            vec2 N = normalAtPoint(fragCoord, sdf);
-            return vec4(N.x, N.y, 0.0, 1.0);
-        }
-
-        void main()
-        {
-            gl_FragColor = mainImage(gl_FragCoord.xy);
-        }`
-    })();
-}
-
 class GLRenderer{
     constructor()
     {
@@ -532,7 +537,7 @@ class GLRenderer{
         });
 
         drawArrows(regl, {
-            points: gridPoints({left:0, right:width, bottom:0, top:height, spacing: 20}),
+            points: gridPoints2D({left:0, right:width, bottom:0, top:height, spacing: 20}),
             projection: ortho ({left:0, right: width, bottom: 0, top: height, near:-1, far: 1}),
             width, height,
             sizeField: this.sdfTexture,

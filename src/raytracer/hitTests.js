@@ -2,26 +2,27 @@
 import {Point, Vector, P, V} from "../scene/geo.js"
 import LineSegment from "../scene/shapes/LineSegment.js";
 import HitPoint from "./HitPoint.js";
+import _ from "lodash"
 const EPSILON=1e-6;
 
-function hitShape(ray, shape, {DISTANCE_THRESHOLD})
+function hitShape(ray, shape, material, {DISTANCE_THRESHOLD})
 {
     switch (shape.constructor.name) {
         case "Circle":
-            return hitCircle(ray, shape, {DISTANCE_THRESHOLD});
+            return hitCircle(ray, shape, material, {DISTANCE_THRESHOLD});
         case "Rectangle":
-            return hitRectangle(ray, shape, {DISTANCE_THRESHOLD});
+            return hitRectangle(ray, shape, material, {DISTANCE_THRESHOLD});
         case "SphericalLens":
-            return hitSphericalLens(ray, shape, {DISTANCE_THRESHOLD});
+            return hitSphericalLens(ray, shape, material, {DISTANCE_THRESHOLD});
         case "LineSegment":
-            return hitLineSegment(ray, shape, {DISTANCE_THRESHOLD});
+            return hitLineSegment(ray, shape, material, {DISTANCE_THRESHOLD});
         default:
             return null;
     }
 }
 
 /* HIT TESTS */
-function hitCircle(ray, circle, {DISTANCE_THRESHOLD})
+function hitCircle(ray, circle, material, {DISTANCE_THRESHOLD})
 {
     // solve quadratic equatation: at**2+bt+c=0
     const d = new Vector(ray.origin.x - circle.Cx, ray.origin.y - circle.Cy); // to circle
@@ -65,7 +66,7 @@ function hitCircle(ray, circle, {DISTANCE_THRESHOLD})
         return new HitPoint({
             position: hitPosition, 
             surfaceNormal: surfaceNormal,
-            shape: circle
+            material: material
         });
     });
 
@@ -82,7 +83,7 @@ function hitCircle(ray, circle, {DISTANCE_THRESHOLD})
     return reduceHitpointsToClosest(filteredHitPoints, ray.origin);
 }
 
-function hitLineSegment(ray, shape, {DISTANCE_THRESHOLD})
+function hitLineSegment(ray, shape, material, {DISTANCE_THRESHOLD})
 {
     const rayOrigin = ray.origin;
     const rayDirection = ray.direction.normalized();
@@ -102,7 +103,6 @@ function hitLineSegment(ray, shape, {DISTANCE_THRESHOLD})
     if (Math.abs(determinant) < EPSILON) {
         return null;
     }
-    
     
     // Calculate the intersection along the ray
     const t1 = ((lineSegmentP1.x - rayOrigin.x) * lineSegmentDirection.y - (lineSegmentP1.y - rayOrigin.y) * lineSegmentDirection.x) / determinant;
@@ -125,7 +125,7 @@ function hitLineSegment(ray, shape, {DISTANCE_THRESHOLD})
         return new HitPoint({
             position: hitPosition, 
             surfaceNormal: N.negate(),
-            shape: shape
+            material: material
         });
     }
     else
@@ -134,7 +134,7 @@ function hitLineSegment(ray, shape, {DISTANCE_THRESHOLD})
     }
 }
 
-function hitRectangle(ray, shape, {DISTANCE_THRESHOLD})
+function hitRectangle(ray, shape, material, {DISTANCE_THRESHOLD})
 {
     const top =    shape.Cy - shape.height/2;
     const left =   shape.Cx - shape.width/2;
@@ -150,7 +150,7 @@ function hitRectangle(ray, shape, {DISTANCE_THRESHOLD})
     
     // merge all
 
-    const hitPoints = sides.map( side=>hitLineSegment(ray, side, {DISTANCE_THRESHOLD})).filter(hitPoint=>hitPoint!==null);
+    const hitPoints = sides.map( side=>hitLineSegment(ray, side, material, {DISTANCE_THRESHOLD})).filter(hitPoint=>hitPoint!==null);
 
     // filter hitPoints by distance treshold
     const DISTANCE_THRESHOLD_SQUARED = DISTANCE_THRESHOLD * DISTANCE_THRESHOLD;
@@ -165,7 +165,7 @@ function hitRectangle(ray, shape, {DISTANCE_THRESHOLD})
     return reduceHitpointsToClosest(filteredHitPoints, ray.origin);
 }
 
-function hitSphericalLens(ray, lens, {DISTANCE_THRESHOLD})
+function hitSphericalLens(ray, lens, material, {DISTANCE_THRESHOLD})
 {
     // create compound shapes
     const leftCircle = lens.getLeftCircle();
@@ -184,8 +184,8 @@ function hitSphericalLens(ray, lens, {DISTANCE_THRESHOLD})
     const bottomSide = new LineSegment(bottomLeft, bottomRight);
 
     // calc all possible hits
-    const leftCircleHitPoint = hitCircle(ray, leftCircle, {DISTANCE_THRESHOLD});
-    const rightCircleHitPoint = hitCircle(ray, rightCircle, {DISTANCE_THRESHOLD});
+    const leftCircleHitPoint = hitCircle(ray, leftCircle, material, {DISTANCE_THRESHOLD});
+    const rightCircleHitPoint = hitCircle(ray, rightCircle, material, {DISTANCE_THRESHOLD});
     if(lens.centerThickness<lens.edgeThickness)
     {
         for(let hitPoint of leftCircleHitPoints)
@@ -200,8 +200,8 @@ function hitSphericalLens(ray, lens, {DISTANCE_THRESHOLD})
     const hitPoints = [
         leftCircleHitPoint,
         rightCircleHitPoint,
-        hitLineSegment(ray, topSide, {DISTANCE_THRESHOLD}),
-        hitLineSegment(ray, bottomSide, {DISTANCE_THRESHOLD})
+        hitLineSegment(ray, topSide, material, {DISTANCE_THRESHOLD}),
+        hitLineSegment(ray, bottomSide, material, {DISTANCE_THRESHOLD})
     ].filter(hitPoint=>hitPoint!==null);
 
     // filter to bbox
@@ -227,10 +227,9 @@ function hitSphericalLens(ray, lens, {DISTANCE_THRESHOLD})
     return reduceHitpointsToClosest(filteredHitPoints, ray.origin);
 }
 
-function hitScene(ray, shapes, {DISTANCE_THRESHOLD})
+function hitScene(ray, shapes, materials, {DISTANCE_THRESHOLD})
 {
-    const hitPoints = shapes.map( shape=> hitShape(ray, shape, {DISTANCE_THRESHOLD}));
-        // get closest hitpoint
+    const hitPoints = _.zip(shapes, materials).map( ([shape, material])=> hitShape(ray, shape, material, {DISTANCE_THRESHOLD}));
     return reduceHitpointsToClosest(hitPoints, ray.origin)
 }
 

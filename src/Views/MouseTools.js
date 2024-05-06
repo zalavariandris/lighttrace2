@@ -18,6 +18,10 @@ const generateId = ()=>{
     return Math.random().toString(32).substring(2, 9);
 };
 
+const selectAndMoveTool = e => {
+
+}
+
 const circleTool = e => {
     e.preventDefault();
     var svg  = e.target.closest("SVG");
@@ -251,4 +255,4 @@ const laserTool = e => {
 
 
 
-export {circleTool, rectangleTool, lineTool, lensTool, pointlightTool, directionalLightTool, laserTool};
+export {selectAndMoveTool, circleTool, rectangleTool, lineTool, lensTool, pointlightTool, directionalLightTool, laserTool};

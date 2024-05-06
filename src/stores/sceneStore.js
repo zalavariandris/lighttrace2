@@ -9,6 +9,20 @@ import PointLight from "../scene/lights/PointLight.js"
 import LaserLight from "../scene/lights/LaserLight.js"
 import DirectionalLight from "../scene/lights/DirectionalLight.js"
 
+class Entity{
+    constructor({}){
+        this.shape = shape;
+        this.material = material;
+    }
+
+    copy(other)
+    {
+        return new Entity({
+            shape: this.shape.copy(),
+            material: this.material
+        });
+    }
+}
 
 let scene = {
     // "ball": new Circle({

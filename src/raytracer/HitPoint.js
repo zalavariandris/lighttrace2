@@ -1,10 +1,10 @@
 class HitPoint
 {
-     constructor({position, surfaceNormal, shape}={})
+     constructor({position, surfaceNormal, shape, material}={})
     {
         this.position = position;
         this.surfaceNormal = surfaceNormal;
-        this.shape = shape;
+        this.material = material;
     }
 
     copy()
@@ -12,7 +12,7 @@ class HitPoint
         return new HitPoint({
             position: this.position, 
             surfacenormal: this.surfaceNormal, 
-            shape: this.shape
+            material: this.material
         });
     }
 
