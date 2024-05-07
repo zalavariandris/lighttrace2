@@ -235,7 +235,7 @@
                     scene["ball"].pos.x, 512-scene["ball"].pos.y, scene["ball"].shape.radius
                 ].flat(1));
 
-                // draw SignedDistanceField to screen
+                // draw SignedDistanceField to FBO
                 regl({
                     framebuffer: this.sdfFbo,
                     depth: { enable: false },
@@ -337,7 +337,7 @@
                     void main()
                     {   
                         float d = scene(gl_FragCoord.xy)*1.0;
-                        d = abs(d);
+                        // d = abs(d);
                         gl_FragColor = vec4(d,d,d,1.0);
                     }`
                 })();
@@ -373,8 +373,10 @@
                     void main()
                     {
                         vec2 UV = gl_FragCoord.xy/outputResolution;
-                        float d = texture2D(sdfTexture, UV).r;
-                        gl_FragColor = vec4(d,d,d,1.0);
+                        float d = texture2D(sdfTexture, UV).r*0.001;
+                        d = abs(d);
+                        float c = smoothstep(0.0,0.01,d);
+                        gl_FragColor = vec4(c,c,c+0.3,1.0);
                     } `
                 })();
 
@@ -454,7 +456,7 @@
                 //     }`
                 // })();
                 
-                // draw rays based on rayDataTexture
+                // draw rays based on rayDataTexture and intersect with sdf
                 regl({
                     // viewport: {x: 0, y: 0, w: 1, h: 1},
                     depth: { enable: false },
@@ -484,6 +486,10 @@
                         color: [0, 0, 0, 0]
                     },
                     vert: `precision mediump float;
+                        #define MAX_RAYMARCH_STEPS 9
+                        #define MIN_HIT_DISTANCE 1.0;
+                        #define MAX_DISTANCE 250.0
+
                         attribute float vertexIdx;
                         uniform sampler2D rayDataTexture;
                         uniform sampler2D sdfTexture;
@@ -512,15 +518,53 @@
                             return (P / outputResolution.xy * 2.0 - 1.0) * vec2(1, -1);
                         }
 
-                        bool rayMarch(Ray ray){
+                        float sdf(vec2 sceneCoord)
+                        {
+                            vec2 texCoord = sceneCoord/outputResolution.xy;
+                            texCoord = vec2(texCoord.x, 1.0-texCoord.y);
+                            return texture2D(sdfTexture, texCoord).r;
+                        }
+
+                        struct HitPoint{
+                            vec2 pos;
+                        };
+
+                        bool hitTest(Ray ray, sampler2D sdf)
+                        {
+                            HitPoint(vec2(0,0));
                             return true;
                         }
 
+                        Ray rayMarch(Ray ray)
+                        {
+                            vec2 pos = ray.pos;
+                            float totalDistanceTraveled = 0.0;
+                            for(int i=0; i<MAX_RAYMARCH_STEPS; i++){
+                                float currentDistance = sdf(pos);
+                                totalDistanceTraveled+=currentDistance;
+                                if(totalDistanceTraveled>MAX_DISTANCE){
+                                    ray.dir = normalize(ray.dir) * MAX_DISTANCE;
+                                    return ray;
+                                }
+                                if(currentDistance<1.0)
+                                {
+                                    ray.dir = normalize(ray.dir)*distance(pos, ray.pos);
+                                    return ray;
+                                }
+                                pos+=normalize(ray.dir)*currentDistance;
+                            }
+
+                            ray.dir = normalize(ray.dir) * MAX_DISTANCE;
+                            return ray;
+                        }
+
+ 
                         void main()
                         {
                             float lineIdx = floor(vertexIdx/2.0);
                             float pixelX = mod(lineIdx, dataResolution.x);
                             float pixelY = floor(lineIdx / dataResolution.x);
+                            float EPSILON = 5.0;
 
                             // Calculate the texture coordinates for the center of the texel corresponding to vertexIdx
                             vec2 texCoords = (vec2(pixelX, pixelY) + 0.5) / dataResolution;
@@ -531,23 +575,28 @@
                             // Extract the position and direction from the sampled data
                             Ray ray = unpackRay(rayData);
 
-                            // intersect ray with SDF
-                            for(int i=0; i<9; i++)
+                            bool IsLineStartPoint = modI(vertexIdx, 2.0) < 1.0;
+                            if(IsLineStartPoint){
+                                vec2 screenPos = mapToScreen(ray.pos);
+                                gl_Position = vec4(screenPos, 0, 1);
+                            }
+                            else
                             {
-                                vec2 P = ray.pos;
-
+                                ray = rayMarch(ray);
+                                vec2 screenPos = mapToScreen(ray.pos+ray.dir*1.0);
+                                gl_Position = vec4(screenPos, 0, 1);
                             }
 
                             // draw line vertices
-                            bool IsLineStartPoint = modI(vertexIdx, 2.0) < 1.0;
-                            vec2 screenPos = IsLineStartPoint?mapToScreen(ray.pos):mapToScreen(ray.pos+ray.dir*300.0);
-                            gl_Position = vec4(screenPos, 0, 1);
+                            
+                            
+                            
                         }`,
 
                     frag:`precision mediump float;
                     void main()
                     {
-                        gl_FragColor = vec4(1.0,0.8, 0.2, 0.1);
+                        gl_FragColor = vec4(1.0,0.0, 0.0, 0.3);
                     }`
                 })();
             }
