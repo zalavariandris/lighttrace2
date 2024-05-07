@@ -25,23 +25,16 @@ import raytraceOptionsStore from "../stores/raytraceOptionsStore.js"
 
 import Shape from "../scene/shapes/Shape.js";
 import Light from "../scene/lights/Light.js";
-import { raytrace } from "../raytracer/raytrace.js"
-import { sampleLight } from "../raytracer/raytrace.js"
+import { raytrace, sampleLight } from "../raytracer/raytrace.js"
 import {hitShape, hitScene, reduceHitpointsToClosest} from "../raytracer/hitTests.js"
 import { sampleMaterial } from "../raytracer/sampleMaterials.js"
 
+const h = React.createElement;
+
+// UTILS
 function viewboxString(viewBox)
 {
     return viewBox.x+" "+viewBox.y+" "+viewBox.w+" "+viewBox.h;
-}
-
-// utils
-function lightpathToPoints(lightpath)
-{
-    const points = lightpath.rays.map(r=>r.origin);
-    const lastRay = lightpath.rays[lightpath.rays.length-1]
-    points.push({x: lastRay.origin.x+lastRay.direction.x*1000, y: lastRay.origin.y+lastRay.direction.y*1000});
-    return points;
 }
     
 function pointsToSvgPath(points)
@@ -61,13 +54,9 @@ const calcScale = (svg, viewBox)=>{
     }
 }
 
-
-const h = React.createElement;
 function SVGViewport({
     viewBox={x:0, y:0, w:512, h:512}, 
     onViewChange=()=>{},
-    onSceneObject=()=>{},
-    onSelection=()=>{},
     ...props
 }={})
 {
@@ -75,8 +64,7 @@ function SVGViewport({
     const selectionKeys = React.useSyncExternalStore(selectionStore.subscribe, selectionStore.getSnapshot);
     const raytraceOptions = React.useSyncExternalStore(raytraceOptionsStore.subscribe, raytraceOptionsStore.getSnapshot);
     const displayOptions = React.useSyncExternalStore(displayOptionsStore.subscribe, displayOptionsStore.getSnapshot);
-
-
+    
     const svgRef = React.useRef()
 
     // event handling
@@ -154,7 +142,11 @@ function SVGViewport({
     })).flat(1);
 
     // intersect initial rays with scene
-    const initialHitPoints = initialRays.map(ray=>hitScene(ray, shapes, materials, {DISTANCE_THRESHOLD:1.0}))
+    const initialHitPoints = initialRays
+        .map( ray=> {
+            const hitPoints = _.zip(shapes, materials).map( ([shape, material])=>hitShape(ray, shape, material, {DISTANCE_THRESHOLD: 1e-6} ) );
+            return reduceHitpointsToClosest(hitPoints, ray.origin);
+        });
 
     
     // bounce secondary rays around the scene
@@ -165,20 +157,25 @@ function SVGViewport({
     {
         // calc bouncing rays 
         const secondaryRays = _.zip(_.last(rays), _.last(hitPoints))
-            .filter(([incidentRay, hitPoint])=>incidentRay!=null && hitPoint!=null)
             .map( ([incidentRay, hitPoint])=>{
-                return sampleMaterial(hitPoint.material, incidentRay, hitPoint);
-            });
+                if(incidentRay!=null && hitPoint!=null)
+                {
+                    return sampleMaterial(hitPoint.material, incidentRay, hitPoint);
+                }
+                else
+                {
+                    return null;
+                }
+            }).filter(ray=>ray!=null?true:false);
 
         // calc new hitpoints
         const secondaryHitPoints = secondaryRays
             .map( ray=> hitScene(ray, shapes, materials, {DISTANCE_THRESHOLD: 1e-6}));
 
         // set rays and hitpoints for new round
-        rays.push(secondaryRays);
-        hitPoints.push(secondaryHitPoints);
+        rays.push(secondaryRays)
+        hitPoints.push(secondaryHitPoints)
     }
-
 
     // prepare Rays for visualization
     rays = rays.flat(1)
@@ -227,21 +224,6 @@ function SVGViewport({
             x: 0, y:0,
             style: {transform: `scale(var(--zoom))`}
         }, "O"),
-        // h('g', {className: 'paths'},
-        //     paths.filter(path => path.rays.length > 1).map(path =>
-        //         h('g', null,
-        //             h('path', {
-        //                 d: pointsToSvgPath(lightpathToPoints(path)),
-        //                 fill: 'none',
-        //                 stroke: `hsl(0deg 100% 100% / 10%)`,
-        //                 className: 'lightpath',
-        //                 strokeLinejoin:"round",
-        //                 strokeLinecap:"round",
-        //                 vectorEffect: "non-scaling-stroke",
-        //             })
-        //         )
-        //     )
-        // ),
         h('g', { className: 'rays'},
             rays==undefined?null:rays.map(ray =>
                 h('g', null,

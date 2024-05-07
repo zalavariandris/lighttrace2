@@ -1,5 +1,4 @@
-import ReactDOM from "react-dom"
-import React, {createContext, useState, useReducer, useSyncExternalStore} from "react"
+import React from "react"
 
 import SVGViewport from "./Views/SVGViewport.js";
 import GLViewport from "./Views/GLViewport.js";
@@ -43,7 +42,7 @@ const mouseTools = {
 function Toolbar()
 {
     const currentToolName = React.useSyncExternalStore(mouseToolsStore.subscribe, mouseToolsStore.getSnapshot);
-    const selectionKeys = useSyncExternalStore(selectionStore.subscribe, selectionStore.getSnapshot);
+    const selectionKeys = React.useSyncExternalStore(selectionStore.subscribe, selectionStore.getSnapshot);
 
     /*TOOLBAR*/
     return h("div", {
@@ -80,8 +79,8 @@ function Toolbar()
 
 function Sidebar()
 {
-    const scene = useSyncExternalStore(sceneStore.subscribe, sceneStore.getSnapshot);
-    const selectionKeys = useSyncExternalStore(selectionStore.subscribe, selectionStore.getSnapshot);
+    const scene = React.useSyncExternalStore(sceneStore.subscribe, sceneStore.getSnapshot);
+    const selectionKeys = React.useSyncExternalStore(selectionStore.subscribe, selectionStore.getSnapshot);
 
     return h("div", {
         className: "panel", 
@@ -108,12 +107,12 @@ function Sidebar()
 
 const App = ()=>{
     /*Settings*/
-    const raytraceOptions = useSyncExternalStore(raytraceOptionsStore.subscribe, raytraceOptionsStore.getSnapshot);
-    const displayOptions = useSyncExternalStore(displayOptionsStore.subscribe, displayOptionsStore.getSnapshot);
+    const raytraceOptions = React.useSyncExternalStore(raytraceOptionsStore.subscribe, raytraceOptionsStore.getSnapshot);
+    const displayOptions = React.useSyncExternalStore(displayOptionsStore.subscribe, displayOptionsStore.getSnapshot);
 
     // SCENE OBJECTS
-    const scene = useSyncExternalStore(sceneStore.subscribe, sceneStore.getSnapshot);
-    const selectionKeys = useSyncExternalStore(selectionStore.subscribe, selectionStore.getSnapshot);
+    const scene = React.useSyncExternalStore(sceneStore.subscribe, sceneStore.getSnapshot);
+    const selectionKeys = React.useSyncExternalStore(selectionStore.subscribe, selectionStore.getSnapshot);
     
 
     // sync svg- and glviewport viewbox
@@ -137,11 +136,11 @@ const App = ()=>{
 
     return h("div", null,
             /*VIEWPORTS*/
-            // h(GLViewport,  {
-            //     className:"viewport",
-            //     viewBox: viewBox,
-            //     scene: scene
-            // }),
+            h(GLViewport,  {
+                className:"viewport",
+                viewBox: viewBox,
+                scene: scene
+            }),
             h(SVGViewport, {
                 className:"viewport",
                 viewBox: viewBox,
@@ -167,6 +166,4 @@ const App = ()=>{
             h(Sidebar)
         )
 }
-
-const rdom = ReactDOM.createRoot(document.getElementById('root'));
-rdom.render(React.createElement(App));
+export default App;

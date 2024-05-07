@@ -1,7 +1,6 @@
 let displayOptions = {
     lightrays: false,
     hitpoints: false,
-    lightpaths: true,
     glPaint: true,
     signedDistanceField: true,
     normalField: true

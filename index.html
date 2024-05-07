@@ -14,7 +14,8 @@
                 "react": "https://cdn.jsdelivr.net/npm/react@18.2.0/+esm",
                 "gl-matrix": "https://cdn.jsdelivr.net/npm/gl-matrix@3.4.3/+esm",
 				"regl": "https://cdn.jsdelivr.net/npm/regl@2.1/+esm",
-				"lodash": "https://cdn.jsdelivr.net/npm/lodash@4.17.21/+esm"
+				"lodash": "https://cdn.jsdelivr.net/npm/lodash@4.17.21/+esm",
+				"immer": "https://cdn.jsdelivr.net/npm/immer@10.1.1/+esm"
 			}
 		}
 	</script>
@@ -26,6 +27,13 @@
 		<div id="root">
 		</div>
 	</main>
-	<script type="module" src="./src/main.js"></script>
+	<script type="module">
+		import ReactDOM from "react-dom"
+		import React from "react"
+		import App from "./src/main.js"
+
+		const rdom = ReactDOM.createRoot(document.getElementById('root'));
+		rdom.render(React.createElement(App));
+	</script>
 </body>
 </html>

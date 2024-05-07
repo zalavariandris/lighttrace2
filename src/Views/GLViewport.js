@@ -206,7 +206,7 @@ function drawTextureToScreen(regl, {texture, screenWidth, screenHeight}){
     })();
 }
 
-function ortho({left, right, bottom, top, near, far}){
+function orthoProjection({left, right, bottom, top, near, far}){
     return  mat4.ortho(mat4.identity([]), left, right, bottom, top, near, far);
 }
 
@@ -220,6 +220,7 @@ function drawArrows(regl, {
 }={})
 {
     const positions = points.map(([x,y])=>[[x,y,0.0],[x,y,1.0]]).flat(1);
+
     regl({
         framebuffer: targetFbo,
         viewport: {x: 0, y: 0, width: width, height: height},
@@ -245,7 +246,7 @@ function drawArrows(regl, {
             {
                 vec2 UV = position.xy/iResolution.xy;
                 float size = texture2D(sizeField, UV).r;
-                vec2 dir = texture2D(directionField, UV).xy*2000.0;
+                vec2 dir = texture2D(directionField, UV).xy*20000.0;
                 gl_Position = projection*vec4(position.xy+dir*position.z, 0.0, 1);
             }`,
         frag: `precision mediump float;
@@ -274,7 +275,7 @@ function renderNormalsToTexture(regl, {signedDistanceFieldTexture, targetFbo, wi
                 [ 1, 0],
                 [ 1, 1],
                 [ 0, 1]
-                ]
+            ]
         },
         count: 6,
         uniforms: {
@@ -329,8 +330,7 @@ function renderNormalsToTexture(regl, {signedDistanceFieldTexture, targetFbo, wi
     })();
 }
 
-
-function drawSDFToFBO(regl, {circleData, targetFbo, width, height})
+function drawSignedDistanceField(regl, {circleData, targetFbo, width, height})
 {
     regl({
         framebuffer: targetFbo,
@@ -412,7 +412,9 @@ function drawSDFToFBO(regl, {circleData, targetFbo, width, height})
             }
 
 
-            float circle(vec2 samplePosition, float radius){
+            float circle(vec2 samplePosition, float radius)
+            {
+                float d = length(samplePosition);
                 return length(samplePosition)-radius;
             }
 
@@ -439,7 +441,7 @@ function drawSDFToFBO(regl, {circleData, targetFbo, width, height})
                 float sceneDistance = 9999.0;
                 for(int i=0; i<1; i++){
                     vec2 center = circleData[i];
-                    float circleDistance = circle(translate(coord, vec2(center.x, center.y)), 55.0);
+                    float circleDistance = circle(translate(coord, vec2(center.x, center.y)), 200.0);
                     sceneDistance = unionSDF(sceneDistance, circleDistance);
                 }
 
@@ -449,7 +451,8 @@ function drawSDFToFBO(regl, {circleData, targetFbo, width, height})
             vec4 mainImage(vec2 fragCoord)
             {
                 float d = scene(fragCoord)/max(iResolution.x, iResolution.y);
-                float c = smoothstep(0.0, 0.0, d*1.0);
+                d = abs(d);
+                float c = smoothstep(0.0, 0.99, d*1.0);
                 return vec4(d,d,d, 1.0);
             }
             
@@ -517,7 +520,7 @@ class GLRenderer{
             [this.mouse.x, height-this.mouse.y]
         ].flat(1));
 
-        drawSDFToFBO(regl, {
+        drawSignedDistanceField(regl, {
             circleData: circleData,
             targetFbo: this.sdfFbo,
             width, height
@@ -538,7 +541,7 @@ class GLRenderer{
 
         drawArrows(regl, {
             points: gridPoints2D({left:0, right:width, bottom:0, top:height, spacing: 20}),
-            projection: ortho ({left:0, right: width, bottom: 0, top: height, near:-1, far: 1}),
+            projection: orthoProjection({left:0, right: width, bottom: 0, top: height, near:-1, far: 1}),
             width, height,
             sizeField: this.sdfTexture,
             directionField: this.normalTexture

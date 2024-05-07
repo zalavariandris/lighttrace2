@@ -9,20 +9,9 @@ import PointLight from "../scene/lights/PointLight.js"
 import LaserLight from "../scene/lights/LaserLight.js"
 import DirectionalLight from "../scene/lights/DirectionalLight.js"
 
-class Entity{
-    constructor({}){
-        this.shape = shape;
-        this.material = material;
-    }
+import {produce} from "immer";
 
-    copy(other)
-    {
-        return new Entity({
-            shape: this.shape.copy(),
-            material: this.material
-        });
-    }
-}
+
 
 let scene = {
     // "ball": new Circle({
@@ -82,7 +71,9 @@ export default {
         emitChange();
     },
 
-    removeSceneObject(key){
+    removeSceneObject(key)
+    {
+        
         scene = Object.fromEntries(Object.entries(scene).filter(([k, v]) =>{
             return k!== key;
         }));
@@ -90,19 +81,30 @@ export default {
         emitChange();
     },
 
-    updateSceneObject(key, newAttributes){
+    updateSceneObject(key, newAttributes)
+    {
+
         if(!scene.hasOwnProperty(key))
         {
             console.warn("old scene object not in current scene")
             return scene;
         }
-        const newSceneObject = scene[key].copy()
-        for(let [attr, value] of Object.entries(newAttributes)){
-            newSceneObject[attr] = value;
+
+        const updatedScene = produce(scene, draft=>{
+            for(let [attr, value] of Object.entries(newAttributes))
+            {
+                draft[key][attr] = value;
+            }
+        });
+
+        if(updatedScene!=scene)
+
+            scene = updatedScene;
+            emitChange()
         }
-        
-        scene = {...scene, [key]: newSceneObject};
-        emitChange();
+        // scene = {...updatedScene};
+        // // scene = {...scene, [key]: newSceneObject};
+        // emitChange();
     },
 
     setSelectionKeys(newSelectionKeys)

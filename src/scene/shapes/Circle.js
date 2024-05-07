@@ -14,7 +14,6 @@ class Circle extends Shape
     }
 
     static fromThreePoints(S, M, E, {material}={}) {
-
         var Sx = S.x;
         var Sy = S.y;
         var Mx = M.x;

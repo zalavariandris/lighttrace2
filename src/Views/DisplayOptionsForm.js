@@ -36,15 +36,6 @@ function DisplayOptionsForm()
         ),
         h("br"),
         h("label", null,
-            h("input", {
-                name:"lightPaths",
-                checked: displayOptions.lightpaths, 
-                onChange: (e)=>displayOptionsStore.updateVisibility({lightpaths: e.target.checked}),
-                type: "checkbox"
-            }),
-            "show lightpaths"
-        ),
-        h("label", null,
         h("input", {
             name:"glPaint",
             checked: displayOptions.glPaint, 
