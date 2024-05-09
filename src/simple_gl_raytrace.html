@@ -71,7 +71,7 @@ class Lightray{
  */
 let scene = {
     "ball": {
-        pos: {x: 255.0, y:350.0},
+        pos: {x: 265.0, y:260.0},
         shape: {type: "circle", radius: 50},
         material: "mirror"
     },
@@ -355,7 +355,7 @@ function intersectRaysWithSDF(regl, {
         uniform vec2 sdfResolution;
         uniform vec2 outputResolution;
 
-        #define MAX_RAYMARCH_STEPS 9
+        #define MAX_RAYMARCH_STEPS 30
         #define MIN_HIT_DISTANCE 1.0
         #define MAX_TRACE_DISTANCE 2048.0
 
@@ -405,7 +405,7 @@ function intersectRaysWithSDF(regl, {
             // ray did not hit anythin while raymarching.
             rayDir = normalize(rayDir) * MAX_TRACE_DISTANCE;
             vec2 hitPos = rayPos+rayDir;
-            return hitPos;
+            return vec2(hitPos);
         }
 
         void main()
@@ -588,7 +588,7 @@ class GLRenderer{
     constructor(canvas)
     {
         this.canvas = canvas;
-        this.LightSamples = 64*64; //Math.pow(4,4);
+        this.LightSamples = 4*4; //Math.pow(4,4);
     }
 
     initGL()
@@ -773,7 +773,7 @@ class GLRenderer{
         /*
          * RAYTRACE Bounces 
          */
-        const MAX_BOUNCE = 9;
+        const MAX_BOUNCE = 2;
         for(let i=0; i<MAX_BOUNCE; i++)
         {
             raytraceSecondaryRays(regl, {
