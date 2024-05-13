@@ -6,9 +6,9 @@ import PASS_THROUGH_VERTEX_SHADER from "../shaders/PASS_THROUGH_VERTEX_SHADER.js
  * @param {Array} circleData - circleData as array of circles eg.: [[centerX, centerY, radius], ...]
  * @param {Array} outputResolution [width, height] - the output resolution of the framebuffer
  */
-function drawSceneToSDF(regl, {
+function drawCSGToSDF(regl, {
     framebuffer,
-    circleData,
+    CSG,
     outputResolution
 })
 {
@@ -18,8 +18,8 @@ function drawSceneToSDF(regl, {
         depth: { enable: false },
         uniforms:{
             outputResolution: outputResolution,
-            circleData: circleData.flat(),
-            circleCount: circleData.length
+            circleData: CSG.flat(),
+            circleCount: CSG.length
         },
         frag:`precision mediump float;
         #define e 2.71828
@@ -105,4 +105,4 @@ function drawSceneToSDF(regl, {
     })();
 }
 
-export {drawSceneToSDF};
+export {drawCSGToSDF};
