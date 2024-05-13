@@ -1,195 +1,19 @@
-<!DOCTYPE html>
-<html lang="en">
+import React from "react";
 
-<head>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>immer test</title>
-
-    <style>
-        .viewports{
-            position: relative;
-        }
-        .viewports>canvas,
-        .viewports>svg{
-            position: absolute;
-            top: 0;
-            left:0;
-
-        }
-        .viewports>canvas{
-            pointer-events: none;
-            transform: scale(1, -1);
-        }
-        .viewports>svg{
-            opacity: 0.2;
-        }
-        .viewports>svg circle{
-            stroke: white;
-        }
-        </style>
-	<script type="importmap">
-		{
-			"imports": {
-                "react-dom": "https://cdn.jsdelivr.net/npm/react-dom@18.2.0/+esm",
-                "react": "https://cdn.jsdelivr.net/npm/react@18.2.0/+esm",
-                "gl-matrix": "https://cdn.jsdelivr.net/npm/gl-matrix@3.4.3/+esm",
-				"regl": "https://cdn.jsdelivr.net/npm/regl@2.1/+esm",
-				"lodash": "https://cdn.jsdelivr.net/npm/lodash@4.17.21/+esm",
-				"immer": "https://cdn.jsdelivr.net/npm/immer@10.1.1/+esm",
-                "immutable": "https://cdn.jsdelivr.net/npm/immutable@5.0.0-beta.5/+esm"
-			}
-		}
-	</script>
-</head>
-
-<body>
-	<main id="main">
-		<div id="root">
-		</div>
-	</main>
-	<script type="module">
-        import React from "react";
-        import ReactDOM from "react-dom";
-        import {produce} from "immer";
-        import createREGL from "regl"
-        import Manipulator from "./UI/Manipulator.js"
-        import {vec2} from "gl-matrix"
-        import _ from "lodash"
+import createREGL from "regl"
+import Manipulator from "../UI/Manipulator.js"
+import {vec2} from "gl-matrix"
+import _ from "lodash"
 
 
-
-class Lightray{
-    constructor(origin, direction){
-        this.origin = origin;
-        this.direction = direction;
-    }
-}
-
-/*
- * STORE
- */
-let scene = {
-    "ball": {
-        pos: {x: 265.0, y:260.0},
-        shape: {type: "circle", radius: 50},
-        material: "mirror"
-    },
-    "ball2": {
-        pos: {x: 128.0, y:350.0},
-        shape: {type: "circle", radius: 70},
-        material: "mirror"
-    },
-    "ball3": {
-        pos: {x: 18.0, y:350.0},
-        shape: {type: "circle", radius: 70},
-        material: "mirror"
-    },
-    "light": {
-        pos: {x: 255, y: 150},
-        light: {type: "point"}
-    }
-};
-let listeners = [];
-function emitChange() {
-    for (let listener of listeners) {
-        listener();
-    }
-}
-
-const sceneStore = {
-    addEntity(key, entity)
-    {
-        const updatedScene = produce(scene, draft=>{
-            draft[key]=entity;
-        });
-
-        if(scene!=updatedScene){
-            scene=updatedScene;
-            emitChange();
-        }
-    },
-
-    updateComponent(key, component, newAttributes)
-    {
-        const updatedScene = produce(scene, draft=>{
-            Object.assign(draft[key][component], newAttributes);
-        });
-
-        if(scene!=updatedScene){
-            scene=updatedScene;
-            emitChange();
-        }
-    },
-
-    nudgeShape(key)
-    {
-        console.log("toggle shape", key)
-
-        const updatedScene = produce(scene, draft=>{
-            draft[key]["shape"]["Cx"]+=Math.random()*10-5;
-            draft[key]["shape"]["Cy"]+=Math.random()*10-5;
-        });
-        
-        if(scene!=updatedScene){
-            scene=updatedScene;
-            emitChange();
-        }
-    },
-
-    removeEntity(key)
-    {
-
-    },
-
-    subscribe(listener) 
-    {
-        listeners = [...listeners, listener];
-        return () => {
-            listeners = listeners.filter(l => l !== listener);
-        };
-    },
-
-    getSnapshot() {
-        return scene;
-    }
-}
+import sceneStore from "./entityStore.js"
 
 /*
  * GL Renderer
  */
-const QUAD = {
-    primitive: "triangle fan",
-    attributes: {
-        position: [
-            [-1,-1],
-            [ 1,-1],
-            [ 1, 1],
-            [-1, 1]
-        ],
-        uv: [
-            [ 0, 0],
-            [ 1, 0],
-            [ 1, 1],
-            [ 0, 1]
-        ]
-    },
-    count: 4
-};
 
-const PASS_THROUGH_VERTEX_SHADER = `precision mediump float;
-attribute vec2 position;
-attribute vec2 uv;
-varying vec2 vUV;
-void main()
-{
-    vUV = uv;
-    gl_Position = vec4(position, 0, 1);
-}`;
-
-const fragmentPreamble = `precision mediump float;
-#define e 2.71828
-#define PI 3.14159`
+import QUAD from "./QUAD.js"
+import PASS_THROUGH_VERTEX_SHADER from "./shaders/PASS_THROUGH_VERTEX_SHADER.js"
 
 // draw Texture to screen
 function drawTexture(regl, {
@@ -221,110 +45,7 @@ function drawTexture(regl, {
     })();
 }
 
-/**
- * draw Scene to SignedDistanceField FBO
- * @param {FBO} framebuffer - The OUTPUT framebuffer to render SDF scene
- * @param {Array} circleData - circleData as array of circles eg.: [[centerX, centerY, radius], ...]
- * @param {Array} outputResolution [width, height] - the output resolution of the framebuffer
- */
- function drawSceneToSDF(regl, {
-    framebuffer,
-    circleData,
-    outputResolution
-})
-{
-    regl({...QUAD,
-        vert: PASS_THROUGH_VERTEX_SHADER,
-        framebuffer: framebuffer,
-        depth: { enable: false },
-        uniforms:{
-            outputResolution: outputResolution,
-            circleData: circleData.flat(),
-            circleCount: circleData.length
-        },
-        frag:`precision mediump float;
-        #define e 2.71828
-        #define PI 3.14159
-        #define MAX_CIRCLES 10
-
-        uniform vec3 circleData[MAX_CIRCLES];
-        uniform float circleCount;
-        uniform vec2 outputResolution;
-
-        float cosh(float x) {
-            return (exp(x) + exp(-x)) / 2.0;
-        }
-        
-        float sinh(float x) {
-            return (exp(x) - exp(-x)) / 2.0;
-        }
-
-        float tanh(float x) {
-            return (exp(x) - exp(-x)) / (exp(x) + exp(-x));
-        }
-
-        float atanh(float x) {
-            return 0.5 * log((1.0 + x) / (1.0 - x));
-        }
-
-        vec2 translate(vec2 samplePosition, vec2 offset){
-            return samplePosition - offset;
-        }
-
-        float rectangle(vec2 samplePosition, vec2 halfSize){
-            vec2 componentWiseEdgeDistance = abs(samplePosition) - halfSize;
-            float outsideDistance = length(max(componentWiseEdgeDistance, 0.0));
-            float insideDistance = min(max(componentWiseEdgeDistance.x, componentWiseEdgeDistance.y), 0.0);
-            return outsideDistance + insideDistance;
-        }
-
-        float circle(vec2 samplePosition, float radius)
-        {
-            float d = length(samplePosition);
-            return length(samplePosition)-radius;
-        }
-
-        vec2 rotate(vec2 samplePosition, float angle_in_degrees){
-            float angle_in_radians = angle_in_degrees/180.0 * PI * -1.0;
-            float sine = sin(angle_in_radians);
-            float cosine = cos(angle_in_radians);
-            return vec2(cosine * samplePosition.x + sine * samplePosition.y, cosine * samplePosition.y - sine * samplePosition.x);
-        }
-
-        float intersectSDF(float A, float B)
-        {
-            return max(A, B);
-        }
-
-        float unionSDF(float A, float B)
-        {
-            return min(A, B); 
-        }
-
-        float scene(vec2 sceneCoord)
-        {
-            // collect all circles
-            float sceneDistance = 9999.0;
-            for(int i=0;i<MAX_CIRCLES;i++)
-            {
-                if(i<int(circleCount)){
-                    vec2 pos = circleData[i].xy;
-                    float r = circleData[i].z;
-                    float circleDistance = circle(translate(sceneCoord, pos), r);
-                    sceneDistance = unionSDF(circleDistance, sceneDistance);
-                }
-            }
-            return sceneDistance; 
-        }
-
-        void main()
-        {   
-            float d = scene(gl_FragCoord.xy);
-            // d = abs(d);
-            gl_FragColor = vec4(d,d,d,1.0);
-        }`
-    })();
-}
+import { drawSceneToSDF } from "./operators/drawSceneToSDF.js";
 
 /**
  * Intersect rays with an sdf
@@ -430,7 +151,104 @@ function intersectRaysWithSDF(regl, {
     })();
 }
 
+function intersectRaysWithCSG(regl, {
+    framebuffer, 
+    incidentRayDataTexture,
+    csg
+})
+{
+    regl({...QUAD, vert:PASS_THROUGH_VERTEX_SHADER,
+        framebuffer: framebuffer,
+        uniforms: {
+            rayDataTexture: incidentRayDataTexture,
+            rayDataResolution: [incidentRayDataTexture.width, incidentRayDataTexture.height],
+        },
+        frag: `precision mediump float;
+        
+        uniform sampler2D rayDataTexture;
+        uniform vec2 rayDataResolution;
 
+        struct Ray{
+            vec2 origin;
+            vec2 direction;
+        };
+
+        struct HitPoint{
+            vec2 position;
+            vec2 normal;
+        };
+
+        Ray sampleCurrentRay()
+        {
+            vec2 texCoord = gl_FragCoord.xy / rayDataResolution;
+            vec4 rayData = texture2D(rayDataTexture, texCoord);
+            vec2 rayPos = rayData.xy;
+            vec2 rayDir = rayData.zw;
+
+            return Ray(rayPos, rayDir);
+        }
+
+        /*return closest intersection along the ray*/
+        float intersectCircle(Ray ray, vec2 center, float radius)
+        {
+            vec2 p = ray.origin - center;
+            float A = dot(ray.direction, ray.direction);
+            float B = dot(p, ray.direction);
+            float C = dot(p, p) - radius*radius;
+            float detSq = B*B - C;
+
+            if(detSq<0.0)
+            {
+                return -1.0;
+            }
+            else
+            {
+                float det = sqrt(detSq);
+                float tNear = (-B - det) / (2.0*A);
+                float tFar  = (-B + det) / (2.0*A);
+
+                if(tNear<=0.0 && tFar<=0.0){
+                    return -1.0;
+                }
+                else if(tNear<0.0){
+                    return tFar;
+                }
+                else
+                {
+                    return min(tNear, tFar);
+                }
+            }
+        }
+
+        vec2 circleNormal(vec2 P, vec2 center, float radius)
+        {
+            return normalize(P-center);
+        }
+        
+        HitPoint intersectScene(Ray ray)
+        {
+
+            float t = intersectCircle(ray, vec2(256,256), 150.0);
+            if(t>0.0)
+            {
+                vec2 hitPos = ray.origin+ray.direction*t;
+                vec2 N = circleNormal(gl_FragCoord.xy, vec2(256,256), 150.0);
+                return HitPoint(hitPos, N);
+            }
+            return HitPoint(vec2(0.0,0.0), vec2(1.0,1.0));
+        }
+
+        void main()
+        {
+            // unpack ray from data texture
+
+            Ray incidentRay = sampleCurrentRay();
+            HitPoint hitPoint = intersectScene(incidentRay);
+            gl_FragColor = vec4(hitPoint.position, vec2(0.0,1.0));
+        }
+        `
+    })();
+};
 
 /**
 * Draw rays based on rayDataTexture and hitDataTexture
@@ -526,6 +344,106 @@ function drawRays(regl, {
                 else
                 {
                     vec2 screenPos = mapToScreen(hitPos);
+                    gl_Position = vec4(screenPos, 0, 1);
+                }
+            }`,
+
+        frag:`precision mediump float;
+        uniform vec4 rayColor;
+        void main()
+        {
+            gl_FragColor = vec4(rayColor);
+        }`
+    })();
+}
+
+/**
+* Draw rays based on rayDataTexture and hitDataTexture
+* 
+* @param {Texture} linesTexture - Texture containing Lines data in vec4(startPos, endPos).
+*/
+function drawLines(regl, {
+    lineCount,
+    lineDataTexture,
+    outputResolution,
+    lineColor=[0.9,0.5,0.0,0.3]
+}={}){
+    regl({
+        // viewport: {x: 0, y: 0, w: 1, h: 1},
+        depth: { enable: false },
+        primitive: "lines",
+        attributes: {
+            vertexIdx: _.range(lineCount*2),
+        },
+        count: rayCount*2,
+        uniforms:{
+            lineDataTexture: lineDataTexture,
+            lineDataResolution: [lineDataTexture.width, lineDataTexture.height],
+            outputResolution: outputResolution,
+            lineColor: lineColor
+        },
+        blend: {
+            enable: true,
+            func: {
+                srcRGB: 'src alpha',
+                srcAlpha: 1,
+                dstRGB: 'one minus src alpha',
+                dstAlpha: 1
+            },
+            equation: {
+                rgb: 'add',
+                alpha: 'add'
+            },
+            color: [0, 0, 0, 0]
+        },
+        vert: `precision mediump float;
+
+            attribute float vertexIdx;
+            uniform sampler2D lineDataTexture;
+            uniform vec2 lineDataResolution;
+            
+            uniform vec2 outputResolution;
+
+            float modI(float a,float b)
+            {
+                float m = a-floor((a+0.5)/b)*b;
+                return floor(m+0.5);
+            }
+
+            vec2 mapToScreen(vec2 P)
+            {
+                return (P / outputResolution.xy * 2.0 - 1.0);
+            }
+
+            struct Line{
+                vec2 start;
+                vec2 end;
+            };
+
+            void main()
+            {
+                float lineIdx = floor(vertexIdx/2.0);
+
+                // Sample lineData
+                float pixelX = mod(lineIdx, lineDataResolution.x);
+                float pixelY = floor(lineIdx / lineDataResolution.x);
+                // Calculate the texture coordinates for the center of the texel corresponding to vertexIdx
+                vec2 texCoords = (vec2(pixelX, pixelY) + 0.5) / rayDataResolution;
+                // Sample the rayData texture at the calculated UV coordinates
+                vec4 lineData = texture2D(lineDataTexture, texCoords);
+
+                // Extract the start and End pos from the sampled data
+                vec2 lineStart = lineData.xy;
+                vec2 lineEnd = lineData.wz;
+
+                bool IsLineStartPoint = modI(vertexIdx, 2.0) < 1.0;
+                if(IsLineStartPoint){
+                    vec2 screenPos = mapToScreen(lineStart);
+                    gl_Position = vec4(screenPos, 0, 1);
+                }
+                else
+                {
+                    vec2 screenPos = mapToScreen(lineEnd);
                     gl_Position = vec4(screenPos, 0, 1);
                 }
             }`,
@@ -681,6 +599,21 @@ class GLRenderer{
             color: this.secondaryHitDataTexture,
             depth: false
         });
+
+        this.lineDataTexture = regl.texture({
+            width: Math.sqrt(this.LightSamples),
+            height: Math.sqrt(this.LightSamples),
+            wrap: 'clamp',
+            min: "nearest", 
+            mag: "nearest",
+            format: "rgba",
+            type: "float",
+        });
+
+        this.lineDataFbo = regl.framebuffer({
+            color: this.linesDataTexture,
+            depth: false
+        });
     }
 
     renderGL(scene)
@@ -752,11 +685,19 @@ class GLRenderer{
             type: "float"
         });
 
-        intersectRaysWithSDF(regl, {
-            framebuffer: this.hitDataFbo, 
-            outputResolution: [512,512],
-            rayDataTexture: this.rayDataTexture,
-            sdfTexture:this.sdfTexture
+        // intersectRaysWithSDF(regl, {
+        //     framebuffer: this.hitDataFbo, 
+        //     outputResolution: [512,512],
+        //     rayDataTexture: this.rayDataTexture,
+        //     sdfTexture:this.sdfTexture
+        // });
+
+        
+
+        intersectRaysWithCSG(regl, {
+            framebuffer: this.hitDataFbo,
+            incidentRayDataTexture: this.rayDataTexture,
+            csg: [[50,50,150]], //Circle[centerX,centerY,radius]
         });
         
         /* 
@@ -773,7 +714,7 @@ class GLRenderer{
         /*
          * RAYTRACE Bounces 
          */
-        const MAX_BOUNCE = 2;
+        const MAX_BOUNCE = 2 ;
         for(let i=0; i<MAX_BOUNCE; i++)
         {
             raytraceSecondaryRays(regl, {
@@ -912,8 +853,5 @@ function App({})
     );
 }
 
-const rdom = ReactDOM.createRoot(document.getElementById('root'));
-rdom.render(React.createElement(App));
-    </script>
-</body>
-</html>
+export default App;
+
