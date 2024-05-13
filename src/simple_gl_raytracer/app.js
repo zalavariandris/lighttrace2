@@ -220,17 +220,10 @@ class GLRenderer{
             CSG: circleData
         });
 
-        // draw hitPoints
-        drawRays(regl, {
-            raysCount: RayCount,
-            raysTexture: this.hitDataFbo,
-            raysLength: 30.0,
-            outputResolution: [512,512],
-            raysColor: [0,1,0,1]
-        });
+
         
         /* 
-        Draw rays stored on texture 
+        Draw initial rays
         */
         drawLines(regl, {
             linesCount: RayCount,
@@ -240,6 +233,14 @@ class GLRenderer{
             linesColor: [1,1,1,100.0/this.LightSamples]
         });
 
+        // draw hitPoints
+        drawRays(regl, {
+            raysCount: RayCount,
+            raysTexture: this.hitDataFbo,
+            raysLength: 30.0,
+            outputResolution: [512,512],
+            raysColor: [0,1,0,1]
+        });
         /*
          * RAYTRACE Bounces 
          */
@@ -251,6 +252,15 @@ class GLRenderer{
             outputResolution: [dataWidth, dataHeight],
             incidentRaysTexture: this.rayDataFbo, 
             hitDataTexture: this.hitDataFbo
+        });
+
+        // draw secondary rays
+        drawRays(regl, {
+            raysCount: RayCount,
+            raysTexture: this.secondaryRayDataTexture,
+            raysLength: 100.0,
+            outputResolution: [512,512],
+            raysColor: [1,1,1,100.0/this.LightSamples]
         });
 
         // // reformat hitpoints to match the rays count
