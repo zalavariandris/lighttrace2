@@ -72,7 +72,6 @@ function intersectRaysWithCSG(regl, {
                 float tFar  = -B + det;
 
                 return smallestPositive(tNear, tFar, 9999.0);
-
             }
             else
             {
@@ -121,6 +120,7 @@ function intersectRaysWithCSG(regl, {
             // unpack ray from data texture
 
             Ray incidentRay = sampleCurrentRay();
+            incidentRay.origin+=incidentRay.direction*5.0;
             HitPoint hitPoint = intersectScene(incidentRay);
             gl_FragColor = vec4(hitPoint.position, hitPoint.normal);
         }

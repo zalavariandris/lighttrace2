@@ -20,7 +20,7 @@ let scene = {
         material: "mirror"
     },
     "light": {
-        pos: {x: 255, y: 150},
+        pos: {x: 216, y: 110},
         light: {type: "point"}
     }
 };

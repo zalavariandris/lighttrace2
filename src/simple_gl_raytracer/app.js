@@ -29,7 +29,7 @@ class GLRenderer{
     constructor(canvas)
     {
         this.canvas = canvas;
-        this.LightSamples = 4*4; //Math.pow(4,4);
+        this.LightSamples = 128*128; //Math.pow(4,4);
     }
 
     initGL()
@@ -41,7 +41,7 @@ class GLRenderer{
                 // width: 1024, heigh: 1024,
                 alpha: true,
                 depth: true,
-                stencil :false,
+                stencil: false,
                 antialias: true,
                 premultipliedAlpha: true,
                 preserveDrawingBuffer: false,
@@ -148,147 +148,122 @@ class GLRenderer{
         const circleData = Object.entries(scene)
             .filter(([key, entity])=>entity.hasOwnProperty("pos") && entity.hasOwnProperty("shape") && entity.shape.type=="circle")
             .map( ([key, entity])=>[entity.pos.x, entity.pos.y, entity.shape.radius] )
-        // const circleData = [
-        //     [scene["ball"].pos.x, scene["ball"].pos.y, scene["ball"].shape.radius]
-        // ];
 
-        drawCSGToSDF(regl, {
-            framebuffer: this.sdfFbo,
-            CSG: circleData,
-            outputResolution: [512,512]
-        });
+        // drawCSGToSDF(regl, {
+        //     framebuffer: this.sdfFbo,
+        //     CSG: circleData,
+        //     outputResolution: [512,512]
+        // });
         
-        drawTexture(regl, {
-            framebuffer: null,
-            texture: this.sdfTexture, 
-            outputResolution: [512,512],
-            exposure: 0.001
-        });
+        // drawTexture(regl, {
+        //     framebuffer: null,
+        //     texture: this.sdfTexture, 
+        //     outputResolution: [512,512],
+        //     exposure: 0.001
+        // });
 
         /*
         Cast Rays from lightsources
         */
         // Create packed lightraydata for each light [[Cx,Cy,Dx,Dy]...]
-        const LightSamples = this.LightSamples;
-        console.log(LightSamples)
+        function castRaysFromLights({
+            lightSamples,
+            lightEntities,
+            outputRayDataTexture
+        })
+        {   
+            const lightsCount =  lightEntities.length;
+            const RaysCount = lightSamples*lightsCount;
+    
+            // calc output texture resolution to hold rays data
+            const [dataWidth, dataHeight] = [Math.ceil(Math.sqrt(RaysCount)),Math.ceil(Math.sqrt(RaysCount))];
+    
+            let rayData = lightEntities.map( ([key, entity])=>{
+                return Array.from({length: lightSamples}).map((_, k)=>{
+                    const angle = k/lightSamples*Math.PI*2+Math.PI/8.0;
+                    return [entity.pos.x, entity.pos.y, Math.cos(angle), Math.sin(angle)];
+                })
+            }).flat(1);
+            
+            // upload data to an RGBA float texture
+            outputRayDataTexture({
+                width: dataWidth,
+                height: dataHeight,
+                format: "rgba",
+                type: "float",
+                data: rayData
+            });
 
-        const lightsCount =  Object.entries(scene)
-            .filter( ([key, entity])=>entity.hasOwnProperty("light") ).length;
+            return RaysCount;
+        }
 
-        const RayCount = LightSamples*lightsCount;
-        const [dataWidth, dataHeight] = [Math.ceil(Math.sqrt(RayCount)),Math.ceil(Math.sqrt(RayCount))];
-
-        let rayData = Object.entries(scene)
+        const lightEntities = Object.entries(scene)
             .filter( ([key, entity])=>entity.hasOwnProperty("light") )
-            .map( ([key, entity])=>{
-            return Array.from({length: LightSamples}).map((_, k)=>{
-                const angle = k/LightSamples*Math.PI*2+Math.PI/8.0;
-                return [entity.pos.x, entity.pos.y, Math.cos(angle), Math.sin(angle)];
-            })
-        }).flat(1);
-        
-        // upload data to an RGBA float texture
-        this.rayDataTexture({
-            width: dataWidth,
-            height: dataHeight,
-            format: "rgba",
-            type: "float",
-            data: rayData
+
+        const RaysCount = castRaysFromLights({
+            lightSamples: this.LightSamples,
+            lightEntities: lightEntities,
+            outputRayDataTexture: this.rayDataTexture
         });
 
-        /* 
-        Intersect Rays with SDF 
-        */
+
+
         // reformat hitpoints to match the rays count
         this.hitDataTexture({
-            width: dataWidth,
-            height: dataHeight,
+            width: this.rayDataTexture.width,
+            height: this.rayDataTexture.height,
             format: "rgba",
             type: "float"
         });
 
-        intersectRaysWithSDF(regl, {
-            framebuffer: this.hitDataFbo, 
-            outputResolution: [512,512],
-            rayDataTexture: this.rayDataTexture,
-            sdfTexture:this.sdfTexture
-        });        
+        const MAX_BOUNCE = 3;
+        for(let i=0; i<MAX_BOUNCE; i++)
+        {
+            // draw initial Rays
+            // drawRays(regl, {
+            //     raysCount: RayCount,
+            //     raysTexture: this.rayDataTexture,
+            //     raysLength: 10.0,
+            //     outputResolution: [512,512],
+            //     raysColor: [1,1,0,1]
+            // });
 
-        intersectRaysWithCSG(regl, {
-            framebuffer: this.hitDataFbo,
-            incidentRayDataTexture: this.rayDataTexture,
-            CSG: circleData
-        });
+            intersectRaysWithCSG(regl, {
+                framebuffer: this.hitDataFbo,
+                incidentRayDataTexture: this.rayDataTexture,
+                CSG: circleData
+            });
 
+            /* Draw RAYS to hitPoints*/
+            drawLines(regl, {
+                linesCount: RaysCount,
+                startpoints: this.rayDataTexture,
+                endpoints: this.hitDataTexture,
+                outputResolution: [512,512],
+                linesColor: [1,1,1,100.0/this.LightSamples]
+            });
 
-        
-        /* 
-        Draw initial rays
-        */
-        drawLines(regl, {
-            linesCount: RayCount,
-            startpoints: this.rayDataTexture,
-            endpoints: this.hitDataTexture,
-            outputResolution: [512,512],
-            linesColor: [1,1,1,100.0/this.LightSamples]
-        });
+            // // draw hitPoints
+            // drawRays(regl, {
+            //     raysCount: RayCount,
+            //     raysTexture: this.hitDataFbo,
+            //     raysLength: 30.0,
+            //     outputResolution: [512,512],
+            //     raysColor: [0,1,0,1]
+            // });
 
-        // draw hitPoints
-        drawRays(regl, {
-            raysCount: RayCount,
-            raysTexture: this.hitDataFbo,
-            raysLength: 30.0,
-            outputResolution: [512,512],
-            raysColor: [0,1,0,1]
-        });
-        /*
-         * RAYTRACE Bounces 
-         */
-        // const MAX_BOUNCE = 1 ;
-        // for(let i=0; i<MAX_BOUNCE; i++)
-        // {
-        bounceRays(regl, {
-            outputFramebuffer: this.secondaryRayDataFbo,
-            outputResolution: [dataWidth, dataHeight],
-            incidentRaysTexture: this.rayDataFbo, 
-            hitDataTexture: this.hitDataFbo
-        });
+            // Bounce rays with hitPoints
+            bounceRays(regl, {
+                outputFramebuffer: this.secondaryRayDataFbo,
+                outputResolution: [this.rayDataTexture.width, this.rayDataTexture.height],
+                incidentRaysTexture: this.rayDataFbo, 
+                hitDataTexture: this.hitDataFbo
+            });
 
-        // draw secondary rays
-        drawRays(regl, {
-            raysCount: RayCount,
-            raysTexture: this.secondaryRayDataTexture,
-            raysLength: 100.0,
-            outputResolution: [512,512],
-            raysColor: [1,1,1,100.0/this.LightSamples]
-        });
-
-        // // reformat hitpoints to match the rays count
-        // this.secondaryHitDataTexture({
-        //     width: dataWidth,
-        //     height: dataHeight,
-        //     format: "rgba",
-        //     type: "float"
-        // });
-
-        // // intrsect secondary rays with sdf
-        // intersectRaysWithSDF(regl, {
-        //     framebuffer: this.secondaryHitDataFbo, 
-        //     outputResolution: [512,512],
-        //     rayDataTexture: this.secondaryRayDataFbo,
-        //     sdfTexture:this.sdfTexture
-        // });
-
-        // // draw secondary rays
-        // drawLines(regl, {
-        //     linesCount: RayCount,
-        //     startpoints: this.secondaryRayDataFbo,
-        //     endpoints: this.secondaryHitDataFbo,
-        //     outputResolution: [512,512],
-        //     linesColor: [1,1,1,100.0/this.LightSamples]
-        // });
-
-
+            // Swap Buffers
+            [this.rayDataFbo, this.secondaryRayDataFbo] = [this.secondaryRayDataFbo, this.rayDataFbo];
+            [this.rayDataTexture, this.secondaryRayDataTexture] = [this.secondaryRayDataTexture, this.rayDataTexture];
+        }
     }
 }
 
