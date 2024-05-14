@@ -1,4 +1,8 @@
 import _ from "lodash"
+import {glMatrix, mat4} from "gl-matrix"
+
+window.glMatrix = glMatrix;
+window.mat4 = mat4;
 /**
 * Draw rays based on rayDataTexture and hitDataTexture
 * 
@@ -15,9 +19,17 @@ function drawLines(regl, {
     linesColor=[0.9,0.5,0.0,0.3]
 }={})
 {
+    console.log(outputResolution)
+    const projection = mat4.create();
+    mat4.ortho(projection, 0,outputResolution[0],0,outputResolution[1],-1.0, 1.0);
     regl({
-        // viewport: {x: 0, y: 0, w: 1, h: 1},
-        depth: { enable: false },
+        viewport: {
+            x: 0,
+            y: 0,
+            width: outputResolution[0],
+            height: outputResolution[1]
+          },
+        
         primitive: "lines",
         attributes: {
             vertexIdx: _.range(linesCount*2),
@@ -28,22 +40,23 @@ function drawLines(regl, {
             startpointsResolution: [startpoints.width, startpoints.height],
             endpointsTexture: endpoints,
             endpointsResolution: [endpoints.width, endpoints.height],
-            outputResolution: outputResolution,
-            lineColor: linesColor
+            lineColor: linesColor,
+            projection: projection
         },
+        depth: { enable: false },
         blend: {
             enable: true,
             func: {
                 srcRGB: 'src alpha',
-                srcAlpha: 1,
-                dstRGB: 'one minus src alpha',
-                dstAlpha: 1
+                dstRGB: 'one',
+                srcAlpha: 'src alpha',
+                dstAlpha: 'one',
             },
             equation: {
                 rgb: 'add',
                 alpha: 'add'
             },
-            color: [0, 0, 0, 0]
+            color: [1,1,1,1]
         },
         vert: `precision mediump float;
             #define MAX_RAYMARCH_STEPS 9
@@ -55,8 +68,8 @@ function drawLines(regl, {
             uniform vec2 startpointsResolution;
             uniform sampler2D endpointsTexture;
             uniform vec2 endpointsResolution;
+            uniform mat4 projection;
             
-            uniform vec2 outputResolution;
 
             float modI(float a,float b)
             {
@@ -64,10 +77,6 @@ function drawLines(regl, {
                 return floor(m+0.5);
             }
 
-            vec2 mapToScreen(vec2 P)
-            {
-                return (P / outputResolution.xy * 2.0 - 1.0);
-            }
 
             void main()
             {
@@ -83,8 +92,7 @@ function drawLines(regl, {
                     vec2 startPoint = texture2D(startpointsTexture, texCoords).xy;
 
                     // map world position to screen
-                    vec2 screenPos = mapToScreen(startPoint);
-                    gl_Position = vec4(screenPos, 0, 1);
+                    gl_Position = projection * vec4(startPoint, 0.0, 1.0);
                 }
                 else
                 {
@@ -94,8 +102,8 @@ function drawLines(regl, {
                     vec2 texCoords = (vec2(pixelX, pixelY) + 0.5) / endpointsResolution;
                     vec2 endPoint = texture2D(endpointsTexture, texCoords).xy;
 
-                    vec2 screenPos = mapToScreen(endPoint);
-                    gl_Position = vec4(screenPos, 0, 1);
+                    // map world position to screen
+                    gl_Position = projection * vec4(endPoint, 0.0, 1.0);
                 }
             }`,
 
@@ -103,7 +111,7 @@ function drawLines(regl, {
         uniform vec4 lineColor;
         void main()
         {
-            gl_FragColor = vec4(lineColor);
+            gl_FragColor = lineColor;
         }`
     })();
 }

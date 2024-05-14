@@ -2,7 +2,7 @@ import React from "react";
 
 import createREGL from "regl"
 import Manipulator from "../UI/Manipulator.js"
-import {vec2} from "gl-matrix"
+
 import _ from "lodash"
 
 
@@ -29,7 +29,8 @@ class GLRenderer{
     constructor(canvas)
     {
         this.canvas = canvas;
-        this.LightSamples = 128*128; //Math.pow(4,4);
+        this.LightSamples = Math.pow(4,6);//128*128; //Math.pow(4,4);
+        this.outputResolution = [512, 512]
     }
 
     initGL()
@@ -43,8 +44,8 @@ class GLRenderer{
                 depth: true,
                 stencil: false,
                 antialias: true,
-                premultipliedAlpha: true,
-                preserveDrawingBuffer: false,
+                premultipliedAlpha: false,
+                preserveDrawingBuffer: true,
                 preferLowPowerToHighPerformance: false,
                 failIfMajorPerformanceCaveat: false
             },
@@ -139,6 +140,16 @@ class GLRenderer{
         });
     }
 
+    resizeGL()
+    {
+        const [width, height] = [this.canvas.clientWidth, this.canvas.clientHeight];
+        this.canvas.width = width;
+        this.canvas.height = height;
+        console.log("resizeGL", width, height);
+        this.outputResolution = [width, height]
+        // this.outputResolution = [width, height]
+    }
+
     renderGL(scene)
     {
         const regl = this.regl;
@@ -149,16 +160,26 @@ class GLRenderer{
             .filter(([key, entity])=>entity.hasOwnProperty("pos") && entity.hasOwnProperty("shape") && entity.shape.type=="circle")
             .map( ([key, entity])=>[entity.pos.x, entity.pos.y, entity.shape.radius] )
 
+
+
+        // this.sdfTexture = regl.texture({
+        //     width: this.canvas.width, 
+        //     height: this.canvas.height,
+        //     wrap: 'clamp',
+        //     format: "rgba",
+        //     type: "float"
+        // });
+
         // drawCSGToSDF(regl, {
         //     framebuffer: this.sdfFbo,
         //     CSG: circleData,
-        //     outputResolution: [512,512]
+        //     outputResolution: [this.canvas.width, this.canvas.height]
         // });
         
         // drawTexture(regl, {
         //     framebuffer: null,
         //     texture: this.sdfTexture, 
-        //     outputResolution: [512,512],
+        //     outputResolution: [this.canvas.width, this.canvas.height],
         //     exposure: 0.001
         // });
 
@@ -221,7 +242,7 @@ class GLRenderer{
         {
             // draw initial Rays
             // drawRays(regl, {
-            //     raysCount: RayCount,
+            //     raysCount: RaysCount,
             //     raysTexture: this.rayDataTexture,
             //     raysLength: 10.0,
             //     outputResolution: [512,512],
@@ -239,13 +260,13 @@ class GLRenderer{
                 linesCount: RaysCount,
                 startpoints: this.rayDataTexture,
                 endpoints: this.hitDataTexture,
-                outputResolution: [512,512],
-                linesColor: [1,1,1,100.0/this.LightSamples]
+                outputResolution: this.outputResolution,
+                linesColor: [0.1,0.1,0.1,700.0/this.LightSamples]
             });
 
             // // draw hitPoints
             // drawRays(regl, {
-            //     raysCount: RayCount,
+            //     raysCount: RaysCount,
             //     raysTexture: this.hitDataFbo,
             //     raysLength: 30.0,
             //     outputResolution: [512,512],
@@ -328,6 +349,18 @@ function GLViewport({width, height, className})
     React.useEffect(()=>{
         renderer.current = new GLRenderer(canvasRef.current);
         renderer.current.initGL();
+        renderer.current.resizeGL();
+
+
+        function onResize(e)
+        {
+            renderer.current.resizeGL();
+            renderer.current.renderGL(scene);
+        }
+        window.addEventListener("resize", onResize);
+        return ()=>{
+            window.removeEventListener("resize", onResize);
+        }
     }, []);
 
     React.useEffect(()=>{
@@ -352,7 +385,12 @@ function App({})
     const scene = React.useSyncExternalStore(sceneStore.subscribe, sceneStore.getSnapshot);
     return h("div", {}, 
         h(Outliner),
-        h("div", {className: "viewports"},
+        h("div", {
+            className: "viewports", 
+            style: {
+
+            }
+        },
             h(GLViewport, {width: 512, height: 512}),
             h(SVGViewport, {width: 512, height: 512})
         )

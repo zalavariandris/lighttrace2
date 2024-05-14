@@ -17,7 +17,6 @@ function drawRays(regl, {
 {
     regl({
         // viewport: {x: 0, y: 0, w: 1, h: 1},
-        depth: { enable: false },
         primitive: "lines",
         attributes: {
             vertexIdx: _.range(raysCount*2),
@@ -30,19 +29,15 @@ function drawRays(regl, {
             outputResolution: outputResolution,
             raysColor: raysColor
         },
+        depth: { enable: false },
         blend: {
             enable: true,
             func: {
                 srcRGB: 'src alpha',
-                srcAlpha: 1,
-                dstRGB: 'one minus src alpha',
-                dstAlpha: 1
-            },
-            equation: {
-                rgb: 'add',
-                alpha: 'add'
-            },
-            color: [0, 0, 0, 0]
+                dstRGB: 'one',
+                srcAlpha: 'src alpha',
+                dstAlpha: 'one',
+            }
         },
         vert: `precision mediump float;
             #define MAX_RAYMARCH_STEPS 9

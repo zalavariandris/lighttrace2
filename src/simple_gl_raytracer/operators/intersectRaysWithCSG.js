@@ -20,6 +20,7 @@ function intersectRaysWithCSG(regl, {
         #define e 2.71828
         #define PI 3.14159
         #define MAX_CIRCLES 10
+        #define EPSILON 0.001
 
         uniform sampler2D rayDataTexture;
         uniform vec2 rayDataResolution;
@@ -120,7 +121,7 @@ function intersectRaysWithCSG(regl, {
             // unpack ray from data texture
 
             Ray incidentRay = sampleCurrentRay();
-            incidentRay.origin+=incidentRay.direction*5.0;
+            incidentRay.origin+=incidentRay.direction*EPSILON;
             HitPoint hitPoint = intersectScene(incidentRay);
             gl_FragColor = vec4(hitPoint.position, hitPoint.normal);
         }
